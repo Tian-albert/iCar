@@ -23,6 +23,7 @@
         <text wx:if="{{item.isFull}}" class="tag tag-green">加满</text>
         <text wx:if="{{item.isLowFuel}}" class="tag tag-orange">油量低</text>
       </view>
+      <view wx:if="{{item.remark}}" class="record-remark">{{item.remark}}</view>
       <view wx:if="{{item.seg}}" class="record-seg">
         <view class="seg-col">
           <view class="seg-value">{{item.seg.consumption}}</view>

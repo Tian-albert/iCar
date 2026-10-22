@@ -42,6 +42,8 @@ Page({
     const now = new Date();
     this.setData({
       carId: options.id,
+      // 从车辆详情「今年统计」进入时默认展示年维度
+      rangeType: options.range === 'year' ? 'year' : 'all',
       year: now.getFullYear(),
       month: now.getMonth() + 1
     });

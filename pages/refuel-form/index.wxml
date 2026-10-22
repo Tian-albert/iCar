@@ -47,6 +47,16 @@
         <view class="form-value">{{lowOptions[lowIndex]}}</view>
       </picker>
     </view>
+    <view class="form-row">
+      <view class="form-label">上次加油记了吗</view>
+      <picker range="{{lastOptions}}" value="{{lastIndex}}" bindchange="onLastChange">
+        <view class="form-value">{{lastOptions[lastIndex]}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <view class="form-label">备注</view>
+      <input class="form-input" placeholder="选填" value="{{remark}}" bindinput="onRemarkInput" />
+    </view>
   </view>
 
   <view class="footer">

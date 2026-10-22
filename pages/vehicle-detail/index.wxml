@@ -9,19 +9,41 @@
     <view class="header-records" hover-class="header-records-hover" bindtap="onOpenRecords">记录 ›</view>
   </view>
 
-  <!-- 油耗统计卡（点击进入统计看板） -->
-  <view class="stat-card" bindtap="onOpenStatistics">
+  <!-- 最近油耗 -->
+  <view class="latest-card">
+    <view class="latest-head">
+      <text class="latest-title">最近油耗</text>
+      <text class="latest-sub">{{hasLatest ? '最近一次有效加油区间' : '暂无有效区间'}}</text>
+    </view>
+    <view class="latest-body">
+      <view class="latest-col">
+        <view class="latest-value">{{latestConsumptionText}}</view>
+        <view class="latest-label">L/100km</view>
+      </view>
+      <view class="latest-col">
+        <view class="latest-value">{{latestMileageText}}</view>
+        <view class="latest-label">区间里程 km</view>
+      </view>
+      <view class="latest-col">
+        <view class="latest-value">{{latestCostPerKmText}}</view>
+        <view class="latest-label">元/km</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 今年统计（点击进入统计看板，默认年维度） -->
+  <view class="stat-card" bindtap="onOpenStatisticsYear">
     <view class="stat-arrow">›</view>
     <view class="stat-col">
-      <view class="stat-value">{{avgText}}</view>
-      <view class="stat-label">平均油耗 L/100km</view>
+      <view class="stat-value">{{yearAvgText}}</view>
+      <view class="stat-label">{{currentYear}} 年平均油耗</view>
     </view>
     <view class="stat-col">
-      <view class="stat-value">{{costPerKmText}}</view>
-      <view class="stat-label">元/公里</view>
+      <view class="stat-value">{{yearExpenseText}}</view>
+      <view class="stat-label">{{currentYear}} 年支出 (元)</view>
     </view>
     <view class="stat-col">
-      <view class="stat-value">{{totalMileageText}}</view>
+      <view class="stat-value">{{yearMileageText}}</view>
       <view class="stat-label">
         有效里程 km
         <text class="help-icon" catchtap="onExplainMileage">?</text>
@@ -79,6 +101,7 @@
       <text wx:if="{{item.isFull}}" class="tag tag-green">加满</text>
       <text wx:if="{{item.isLowFuel}}" class="tag tag-orange">油量低</text>
     </view>
+    <view wx:if="{{item.remark}}" class="record-remark">{{item.remark}}</view>
     <view wx:if="{{item.seg}}" class="record-seg">
       <view class="seg-col">
         <view class="seg-value">{{item.seg.consumption}}</view>

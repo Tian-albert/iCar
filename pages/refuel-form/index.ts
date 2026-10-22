@@ -23,7 +23,10 @@ Page({
     fullIndex: 0,
     fullOptions: ['加满', '没加满'],
     lowIndex: 1,
-    lowOptions: ['低', '不低']
+    lowOptions: ['低', '不低'],
+    lastIndex: 0,
+    lastOptions: ['记了', '没记'],
+    remark: ''
   },
   onLoad(options: Record<string, string>) {
     const storage = getStorage();
@@ -49,6 +52,8 @@ Page({
         patch.actualTouched = true;
         patch.fullIndex = log.isFull ? 0 : 1;
         patch.lowIndex = log.isLowFuel ? 0 : 1;
+        patch.lastIndex = log.lastRecorded ? 0 : 1;
+        patch.remark = log.remark;
       }
     }
     this.setData(patch);
@@ -87,6 +92,12 @@ Page({
   onLowChange(e: WechatMiniprogram.PickerChange) {
     this.setData({ lowIndex: Number(e.detail.value) });
   },
+  onLastChange(e: WechatMiniprogram.PickerChange) {
+    this.setData({ lastIndex: Number(e.detail.value) });
+  },
+  onRemarkInput(e: WechatMiniprogram.Input) {
+    this.setData({ remark: e.detail.value });
+  },
   onSave() {
     const { carId, mileages, unitPrice, volume, actual } = this.data;
     const mileageNum = Number(mileages);
@@ -121,7 +132,8 @@ Page({
       actualPayAmount: isNaN(actualNum) ? null : actualNum,
       isFull: this.data.fullIndex === 0,
       isLowFuel: this.data.lowIndex === 0,
-      remark: ''
+      lastRecorded: this.data.lastIndex === 0,
+      remark: this.data.remark
     };
 
     const storage = getStorage();

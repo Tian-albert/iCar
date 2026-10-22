@@ -1,9 +1,10 @@
 // 车辆详情（含加油记录 + 近期支出）
 import { getStorage } from '../../store/index';
 import { getCar } from '../../services/car.service';
-import { listRefuels, getConsumptions, getFuelSummary } from '../../services/refuel.service';
+import { listRefuels, getConsumptions, getLatestConsumption } from '../../services/refuel.service';
 import { listCosts, listCategories } from '../../services/cost.service';
 import { getMaintainProgress, ensureMaintainTemplates } from '../../services/maintain-record.service';
+import { buildStats } from '../../domain/stats.service';
 import { iconEmoji } from '../../utils/icons';
 import { formatDateTime, formatDate } from '../../utils/date';
 import { FuelConsumption, RefuelLog } from '../../types/models';
@@ -17,6 +18,7 @@ interface RecordView {
   amountText: string;
   isFull: boolean;
   isLowFuel: boolean;
+  remark: string;
   seg: { consumption: string; costPerKm: string; mileage: number } | null;
 }
 
@@ -41,9 +43,16 @@ Page({
     carId: '',
     carName: '',
     mileages: 0,
-    avgText: '--',
-    costPerKmText: '--',
-    totalMileageText: '--',
+    // 最近油耗
+    hasLatest: false,
+    latestConsumptionText: '--',
+    latestMileageText: '--',
+    latestCostPerKmText: '--',
+    // 今年统计
+    currentYear: new Date().getFullYear(),
+    yearAvgText: '--',
+    yearExpenseText: '--',
+    yearMileageText: '--',
     records: [] as RecordView[],
     recentCosts: [] as CostView[],
     maintainProgress: [] as MaintainProgressView[],
@@ -62,7 +71,11 @@ Page({
 
     const refuels = listRefuels(storage, car.sourceId);
     const segs = getConsumptions(storage, car.sourceId);
-    const summary = getFuelSummary(storage, car.sourceId);
+    const latest = getLatestConsumption(storage, car.sourceId);
+    const costsAll = listCosts(storage, car.sourceId);
+    const categories = listCategories(storage);
+    const nowYear = new Date().getFullYear();
+    const yearSnap = buildStats({ type: 'year', year: nowYear }, costsAll, refuels, segs, categories, car);
 
     ensureMaintainTemplates(storage, car.sourceId);
     const allProgress = getMaintainProgress(storage, car.sourceId, Date.now());
@@ -80,9 +93,8 @@ Page({
       urgent: p.urgent
     }));
 
-    const categories = listCategories(storage);
     const catMap = new Map(categories.map(c => [c.sourceId, c]));
-    const recentCosts = listCosts(storage, car.sourceId).slice(0, 5).map(c => {
+    const recentCosts = costsAll.slice(0, 5).map(c => {
       const cat = catMap.get(c.categorySourceId);
       return {
         sourceId: c.sourceId,
@@ -97,9 +109,14 @@ Page({
     this.setData({
       carName: car.name,
       mileages: car.mileages,
-      avgText: summary.mileage > 0 ? summary.avgConsumption.toFixed(2) : '--',
-      costPerKmText: summary.mileage > 0 ? summary.costPerKm.toFixed(2) : '--',
-      totalMileageText: summary.mileage > 0 ? `${summary.mileage}` : '--',
+      hasLatest: !!latest,
+      latestConsumptionText: latest ? latest.fuelConsumption.toFixed(2) : '--',
+      latestMileageText: latest ? String(latest.mileage) : '--',
+      latestCostPerKmText: latest ? latest.costPerKm.toFixed(2) : '--',
+      currentYear: nowYear,
+      yearAvgText: yearSnap.mileage.fuelMileage > 0 ? yearSnap.fuel.avgConsumption.toFixed(2) : '--',
+      yearExpenseText: yearSnap.expense.total.toFixed(2),
+      yearMileageText: String(yearSnap.mileage.fuelMileage),
       records: buildRecords(refuels, segs),
       recentCosts,
       maintainProgress,
@@ -128,7 +145,7 @@ Page({
     wx.showModal({
       title: '什么是有效里程',
       content:
-        '有效里程 = 参与油耗统计的行驶里程之和。\n\n只有「本次加满，且上次加满或为低油量补油」的相邻两次加油，才构成一段有效区间，其里程 = 本次加油里程 − 上次加油里程。\n\n未加满的加油不构成完整区间，这段行驶里程不计入，所以有效里程会小于车辆总里程。\n\n平均油耗 = 区间油耗量 ÷ 有效里程。',
+        '有效里程 = 本年度参与油耗统计的行驶里程之和。\n\n只有「本次加满，且上次加满或为低油量补油」的相邻两次加油，才构成一段有效区间，其里程 = 本次加油里程 − 上次加油里程。\n\n未加满的加油不构成完整区间，这段行驶里程不计入，所以有效里程会小于车辆总里程。\n\n年平均油耗 = 本年度区间油耗量 ÷ 本年度有效里程。',
       showCancel: false,
       confirmText: '知道了',
       confirmColor: '#3B6FF6'
@@ -136,6 +153,9 @@ Page({
   },
   onOpenStatistics() {
     wx.navigateTo({ url: `/pages/statistics/index?id=${this.data.carId}` });
+  },
+  onOpenStatisticsYear() {
+    wx.navigateTo({ url: `/pages/statistics/index?id=${this.data.carId}&range=year` });
   },
   onOpenRecords() {
     wx.navigateTo({ url: `/pages/records/index?id=${this.data.carId}` });
@@ -155,6 +175,7 @@ function buildRecords(refuels: RefuelLog[], segs: FuelConsumption[]): RecordView
       amountText: r.actualPayAmount.toFixed(2),
       isFull: r.isFull,
       isLowFuel: r.isLowFuel,
+      remark: r.remark,
       seg: seg
         ? {
             consumption: seg.fuelConsumption.toFixed(2),

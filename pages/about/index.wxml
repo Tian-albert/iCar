@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="header">
+    <image class="logo" src="/assets/logo.png" mode="aspectFill" />
+    <view class="app-name">车记本</view>
+    <view class="app-version">v{{version}}</view>
+  </view>
+
+  <view class="card">
+    <view class="row" bindtap="onOpenPrivacy">
+      <view class="row-label">隐私政策</view>
+      <view class="row-arrow">›</view>
+    </view>
+    <view class="row">
+      <view class="row-label">备案编号</view>
+      <text class="row-value" selectable>{{icp}}</text>
+    </view>
+    <view class="row" bindtap="onCopyBeianUrl">
+      <view class="row-label">工信部备案查询</view>
+      <view class="row-value link">beian.miit.gov.cn ›</view>
+    </view>
+  </view>
+
+  <view class="footer">© 2026 车记本 · 数据仅保存在手机本地</view>
+</view>

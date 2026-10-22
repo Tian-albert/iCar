@@ -36,6 +36,9 @@ Page({
   onOpenDataTransfer() {
     wx.navigateTo({ url: '/pages/data-transfer/index' });
   },
+  onOpenAbout() {
+    wx.navigateTo({ url: '/pages/about/index' });
+  },
   onUpgrade() {
     wx.showToast({ title: '会员功能开发中', icon: 'none' });
   },

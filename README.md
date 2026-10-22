@@ -116,6 +116,7 @@ npm run typecheck    # 小程序代码类型校验
 | 保养阈值 | `pages/maintain-threshold` | 每车提醒阈值 |
 | 类别管理 | `pages/category-manage` | 显示开关、图标、增删改 |
 | 数据导入导出 | `pages/data-transfer` | 导出 JSON / 粘贴导入 / 选文件导入 |
+| 关于 | `pages/about` | 主体资质（备案编号）+ 工信部备案查询入口 |
 
 ## 数据存储
 

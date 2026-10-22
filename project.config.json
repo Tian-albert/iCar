@@ -68,12 +68,13 @@
   },
   "compileType": "miniprogram",
   "libVersion": "2.30.0",
-  "appid": "wx7ba51cee4d14ba2e",
+  "appid": "wx24f09735bdbec1f7",
   "projectname": "iCar",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "simulatorPluginLibVersion": {}
+  "simulatorPluginLibVersion": {},
+  "isGameTourist": false
 }

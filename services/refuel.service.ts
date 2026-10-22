@@ -14,6 +14,8 @@ export interface RefuelForm {
   actualPayAmount: number | null; // null 表示取应付金额
   isFull: boolean;
   isLowFuel: boolean;
+  /** 上次加油是否已记录（仅作记录信息，不参与油耗区间判定） */
+  lastRecorded?: boolean;
   remark?: string;
 }
 
@@ -49,7 +51,7 @@ export function saveRefuel(storage: StorageAdapter, form: RefuelForm): RefuelLog
     actualPayAmount: actualPay,
     isFull: form.isFull,
     isLowFuel: form.isLowFuel,
-    lastRecorded: true,
+    lastRecorded: form.lastRecorded ?? true,
     chargeBeforePercent: 0,
     chargeAfterPercent: 0,
     remark: form.remark ?? '',
@@ -107,6 +109,7 @@ export function updateRefuel(storage: StorageAdapter, sourceId: string, form: Re
   log.actualPayAmount = actualPay;
   log.isFull = form.isFull;
   log.isLowFuel = form.isLowFuel;
+  log.lastRecorded = form.lastRecorded ?? log.lastRecorded;
   log.remark = form.remark ?? '';
   log.updatedAt = Date.now();
   storage.update<RefuelLog>('fuelRecords', log);
@@ -168,4 +171,14 @@ export function getConsumptions(storage: StorageAdapter, carSourceId: string): F
 /** 详情页油耗摘要（平均油耗 / 元每公里，2 位小数口径） */
 export function getFuelSummary(storage: StorageAdapter, carSourceId: string) {
   return summarizeConsumptions(getConsumptions(storage, carSourceId));
+}
+
+/** 最近一次有效区间（用于详情页「最近油耗」卡） */
+export function getLatestConsumption(
+  storage: StorageAdapter,
+  carSourceId: string
+): FuelConsumption | null {
+  const list = getConsumptions(storage, carSourceId);
+  if (!list.length) return null;
+  return [...list].sort((a, b) => b.endDate - a.endDate)[0];
 }

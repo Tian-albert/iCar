@@ -2,7 +2,14 @@
 import { StorageAdapter, StorageLike } from '../repositories/storage.adapter';
 import { seedPresetCategories } from '../repositories/seed';
 import { createCar, getCar } from '../services/car.service';
-import { saveRefuel, listRefuels, getConsumptions, updateRefuel, removeRefuel } from '../services/refuel.service';
+import {
+  saveRefuel,
+  listRefuels,
+  getConsumptions,
+  getLatestConsumption,
+  updateRefuel,
+  removeRefuel
+} from '../services/refuel.service';
 
 function createMemoryStorage(): StorageLike {
   const map = new Map<string, unknown>();
@@ -144,5 +151,78 @@ describe('refuel.service 编辑与删除', () => {
     const cost = adapter.get<any>('costs', log.costSourceId);
     expect(cost.deleted).toBe(true);
     expect(getCar(adapter, car.sourceId)!.mileages).toBe(0);
+  });
+});
+
+describe('refuel.service 备注与「上次加油记了吗」', () => {
+  it('remark 与 lastRecorded 落库，并同步到关联支出', () => {
+    const { adapter, car } = setup();
+    const log = saveRefuel(adapter, {
+      carSourceId: car.sourceId,
+      fuelDate: new Date(2026, 4, 24).getTime(),
+      makeMileages: 100,
+      unitPrice: 7.5,
+      volume: 40,
+      actualPayAmount: null,
+      isFull: true,
+      isLowFuel: false,
+      lastRecorded: false,
+      remark: '中石化 92#'
+    });
+    expect(log.lastRecorded).toBe(false);
+    expect(log.remark).toBe('中石化 92#');
+    const cost = adapter.get<any>('costs', log.costSourceId);
+    expect(cost.remark).toBe('中石化 92#');
+  });
+
+  it('编辑时更新 lastRecorded 与 remark', () => {
+    const { adapter, car } = setup();
+    const log = saveRefuel(adapter, {
+      carSourceId: car.sourceId,
+      fuelDate: new Date(2026, 4, 24).getTime(),
+      makeMileages: 100,
+      unitPrice: 7.5,
+      volume: 40,
+      actualPayAmount: null,
+      isFull: true,
+      isLowFuel: false
+    });
+    expect(log.lastRecorded).toBe(true);
+
+    updateRefuel(adapter, log.sourceId, {
+      carSourceId: car.sourceId,
+      fuelDate: new Date(2026, 4, 24).getTime(),
+      makeMileages: 100,
+      unitPrice: 7.5,
+      volume: 40,
+      actualPayAmount: null,
+      isFull: true,
+      isLowFuel: false,
+      lastRecorded: false,
+      remark: '忘记记上次了'
+    });
+    const updated = listRefuels(adapter, car.sourceId)[0];
+    expect(updated.lastRecorded).toBe(false);
+    expect(updated.remark).toBe('忘记记上次了');
+  });
+});
+
+describe('refuel.service 最近油耗', () => {
+  it('返回按区间终点时间最新的一条', () => {
+    const { adapter, car } = setup();
+    const base = { actualPayAmount: null, isFull: true, isLowFuel: false, remark: '' };
+    saveRefuel(adapter, { ...base, carSourceId: car.sourceId, fuelDate: new Date(2026, 4, 24).getTime(), makeMileages: 16, unitPrice: 7.79, volume: 50 });
+    saveRefuel(adapter, { ...base, carSourceId: car.sourceId, fuelDate: new Date(2026, 5, 13).getTime(), makeMileages: 575, unitPrice: 8.37, volume: 33.65 });
+    saveRefuel(adapter, { ...base, carSourceId: car.sourceId, fuelDate: new Date(2026, 6, 16).getTime(), makeMileages: 861, unitPrice: 7.2, volume: 25.07 });
+
+    const latest = getLatestConsumption(adapter, car.sourceId);
+    expect(latest).not.toBeNull();
+    expect(latest!.endDate).toBe(new Date(2026, 6, 16).getTime());
+    expect(latest!.mileage).toBe(286);
+  });
+
+  it('无区间时返回 null', () => {
+    const { adapter, car } = setup();
+    expect(getLatestConsumption(adapter, car.sourceId)).toBeNull();
   });
 });

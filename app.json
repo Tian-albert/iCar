@@ -14,6 +14,8 @@
     "pages/statistics/index",
     "pages/records/index",
     "pages/data-transfer/index",
+    "pages/about/index",
+    "pages/privacy/index",
     "pages/category-manage/index",
     "pages/vehicle-detail/index"
   ],

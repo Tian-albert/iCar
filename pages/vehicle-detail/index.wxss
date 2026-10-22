@@ -38,6 +38,44 @@
 .header-records-hover {
   opacity: 0.6;
 }
+.latest-card {
+  margin-top: 24rpx;
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  padding: 28rpx 32rpx;
+}
+.latest-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.latest-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.latest-sub {
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
+.latest-body {
+  display: flex;
+  margin-top: 20rpx;
+}
+.latest-col {
+  flex: 1;
+  text-align: center;
+}
+.latest-value {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.latest-label {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
 .stat-card {
   position: relative;
   display: flex;
@@ -264,4 +302,10 @@
 .btn-secondary {
   background: var(--color-primary-light);
   color: var(--color-primary);
+}
+.record-remark {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--color-text-3);
+  line-height: 1.5;
 }
