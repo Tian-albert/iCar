@@ -1,6 +1,7 @@
 // 数据导入导出（.icar JSON 备份/恢复，支持粘贴 + 选文件）
 import { getStorage } from '../../store/index';
 import { exportBundle, importBundle } from '../../services/io.service';
+import { ensurePrivacyAuthorize } from '../../utils/privacy';
 
 Page({
   data: {
@@ -13,7 +14,12 @@ Page({
       success: () => wx.showToast({ title: '已复制到剪贴板，请粘贴保存', icon: 'none' })
     });
   },
-  onChooseFile() {
+  async onChooseFile() {
+    const ok = await ensurePrivacyAuthorize();
+    if (!ok) {
+      wx.showToast({ title: '同意隐私协议后才能选择文件', icon: 'none' });
+      return;
+    }
     wx.chooseMessageFile({
       count: 1,
       type: 'file',
@@ -29,7 +35,8 @@ Page({
           },
           fail: () => wx.showToast({ title: '读取文件失败', icon: 'none' })
         });
-      }
+      },
+      fail: () => wx.showToast({ title: '未选择文件', icon: 'none' })
     });
   },
   onInput(e: WechatMiniprogram.TextareaInput) {

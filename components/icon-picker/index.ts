@@ -1,5 +1,6 @@
 // 图标选择器弹层：预设 emoji + 自定义上传图片
 import { PRESET_ICONS } from '../../utils/icons';
+import { ensurePrivacyAuthorize } from '../../utils/privacy';
 
 Component({
   properties: {
@@ -17,7 +18,12 @@ Component({
       const icon = e.currentTarget.dataset.icon as string;
       this.triggerEvent('select', { icon });
     },
-    onCustom() {
+    async onCustom() {
+      const ok = await ensurePrivacyAuthorize();
+      if (!ok) {
+        wx.showToast({ title: '同意隐私协议后才能选择图片', icon: 'none' });
+        return;
+      }
       wx.chooseMedia({
         count: 1,
         mediaType: ['image'],
@@ -31,7 +37,8 @@ Component({
           } catch (e) {
             this.triggerEvent('select', { icon: temp });
           }
-        }
+        },
+        fail: () => wx.showToast({ title: '未选择图片', icon: 'none' })
       });
     }
   }

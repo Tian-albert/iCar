@@ -21,6 +21,18 @@
       {
         "value": "iCar-export-20261021-170555.icar",
         "type": "folder"
+      },
+      {
+        "value": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "value": "package.json",
+        "type": "file"
+      },
+      {
+        "value": "README.md",
+        "type": "file"
       }
     ],
     "include": []
@@ -58,7 +70,6 @@
   "libVersion": "2.30.0",
   "appid": "wx7ba51cee4d14ba2e",
   "projectname": "iCar",
-  "cloudfunctionRoot": "cloudfunctions/",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",
