@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "添加车辆",
+  "usingComponents": {
+    "icon-picker": "/components/icon-picker/index"
+  }
+}

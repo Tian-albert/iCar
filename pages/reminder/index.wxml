@@ -1,0 +1,39 @@
+<view class="page">
+  <!-- 空态 -->
+  <view wx:if="{{!hasCar}}" class="empty">
+    <view class="empty-icon">🔧</view>
+    <view class="empty-title">还没有车辆</view>
+    <view class="empty-desc">去「车辆」页添加你的爱车，开始保养提醒</view>
+  </view>
+
+  <block wx:else>
+    <!-- 置顶车辆卡片 -->
+    <view class="car-card" bindtap="onOpenDetail">
+      <view class="car-icon">🚙</view>
+      <view class="car-info">
+        <view class="car-name">
+          {{carName}}
+          <text wx:if="{{isPinned}}" class="pin-tag">置顶</text>
+        </view>
+        <view class="car-mileage">当前里程 {{mileages}} km</view>
+      </view>
+      <view class="car-arrow">›</view>
+    </view>
+
+    <!-- 保养事项 -->
+    <view class="section-header">
+      <view class="section-title">即将保养</view>
+      <text class="manage-link" bindtap="onOpenManage">全部 {{allCount}} 项 ›</text>
+    </view>
+    <view class="card" wx:if="{{soonItems.length > 0}}">
+      <view wx:for="{{soonItems}}" wx:key="name" class="mnt-row">
+        <view class="mnt-name">{{item.name}}</view>
+        <view class="mnt-remain">{{item.remainText}}</view>
+        <view class="mnt-bar">
+          <view class="mnt-bar-fill" style="width: {{item.progressPercent}}%;"></view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="card empty-card">暂无快到期的保养项，点右上角查看全部</view>
+  </block>
+</view>

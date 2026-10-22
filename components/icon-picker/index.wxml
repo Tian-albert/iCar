@@ -1,0 +1,10 @@
+<view class="picker-mask" wx:if="{{show}}" bindtap="onClose">
+  <view class="picker-panel" catchtap="noop">
+    <view class="picker-title">选择图标</view>
+    <view class="icon-grid">
+      <view wx:for="{{icons}}" wx:key="*this" class="icon-item" data-icon="{{item}}" bindtap="onSelect">{{item}}</view>
+    </view>
+    <view class="custom-btn" bindtap="onCustom">＋ 自定义图标（上传图片）</view>
+    <view class="close-btn" bindtap="onClose">取消</view>
+  </view>
+</view>

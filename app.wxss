@@ -1,0 +1,41 @@
+/* iCar 设计令牌（对应设计报告 6.1） */
+page {
+  /* 颜色 */
+  --color-primary: #3B6FF6;
+  --color-primary-light: #EEF3FE;
+  --color-bg: #F5F6F8;
+  --color-card: #FFFFFF;
+  --color-text-1: #1F2430;
+  --color-text-2: #5A6272;
+  --color-text-3: #9AA4B2;
+  --color-danger: #F5474F;
+  --color-success: #2BA84A;
+  --color-success-bg: #E8F7EE;
+  --color-warning: #E8912A;
+  --color-warning-bg: #FFF3E0;
+  --color-dark-card: #1E2536;
+
+  /* 图表 */
+  --chart-1: #3B82F6;
+  --chart-2: #22C55E;
+  --chart-3: #F59E0B;
+  --chart-4: #EF4444;
+  --chart-5: #A855F7;
+  --chart-6: #14B8A6;
+  --chart-grid: #EEF0F3;
+  --chart-axis: #9AA4B2;
+
+  /* 圆角与间距 */
+  --radius-card: 16px;
+  --radius-pill: 10px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  background-color: var(--color-bg);
+  color: var(--color-text-1);
+  font-size: 15px;
+}

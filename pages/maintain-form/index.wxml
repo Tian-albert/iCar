@@ -1,0 +1,46 @@
+<view class="page">
+  <view class="card">
+    <view class="group-title">选择保养项目 <text class="required">*</text></view>
+    <view class="tag-wrap">
+      <view
+        wx:for="{{maintains}}"
+        wx:key="sourceId"
+        class="tag {{item.selected ? 'tag-selected' : ''}}"
+        data-index="{{index}}"
+        bindtap="onToggleMaintain">
+        <view class="tag-name">{{item.name}}</view>
+        <view class="tag-cycle">{{item.cycleText}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="group-title">保养信息</view>
+    <view class="form-row">
+      <view class="form-label">里程 (km) <text class="required">*</text></view>
+      <input class="form-input" type="number" value="{{mileages}}" bindinput="onMileageInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">保养日期</view>
+      <picker mode="date" value="{{dateText}}" bindchange="onDateChange">
+        <view class="form-value">{{dateText}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="group-title">支出信息</view>
+    <view class="form-row">
+      <view class="form-label">支出金额 (元)</view>
+      <input class="form-input" type="digit" placeholder="选填，填写后计入支出" value="{{amount}}" bindinput="onAmountInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">备注</view>
+      <input class="form-input" placeholder="选填" value="{{remark}}" bindinput="onRemarkInput" />
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onSave">保存</button>
+  </view>
+</view>

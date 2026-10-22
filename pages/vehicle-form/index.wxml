@@ -1,0 +1,37 @@
+<view class="page">
+  <view class="card">
+    <view class="form-row">
+      <view class="form-label">车辆名称 <text class="required">*</text></view>
+      <input class="form-input" placeholder="如 CRV" value="{{name}}" bindinput="onNameInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">当前里程 (km) <text class="required">*</text></view>
+      <input class="form-input" type="number" placeholder="如 2908" value="{{mileages}}" bindinput="onMileageInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">购车日期</view>
+      <picker mode="date" value="{{initDateText}}" bindchange="onDateChange">
+        <view class="form-value">{{initDateText}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <view class="form-label">能源类型</view>
+      <picker range="{{energyLabels}}" value="{{energyIndex}}" bindchange="onEnergyChange">
+        <view class="form-value">{{energyLabels[energyIndex]}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <view class="form-label">车辆图标</view>
+      <view class="icon-value" bindtap="onPickIcon">
+        <image wx:if="{{isImage}}" class="icon-img" src="{{icon}}" />
+        <text wx:else class="icon-emoji">{{iconText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onSave">保存</button>
+  </view>
+
+  <icon-picker show="{{pickerShow}}" bind:select="onIconSelect" bind:close="onPickerClose" />
+</view>

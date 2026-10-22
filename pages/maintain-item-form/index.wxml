@@ -1,0 +1,42 @@
+<view class="page">
+  <view class="card">
+    <view class="form-row">
+      <view class="form-label">名称 <text class="required">*</text></view>
+      <input class="form-input" placeholder="如 机油机滤" value="{{name}}" bindinput="onNameInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">图标</view>
+      <view class="icon-value" bindtap="onPickIcon">
+        <image wx:if="{{isImage}}" class="icon-img" src="{{icon}}" />
+        <text wx:else class="icon-emoji">{{iconText}}</text>
+      </view>
+    </view>
+    <view class="form-row">
+      <view class="form-label">周期里程 (km)</view>
+      <input class="form-input" type="number" placeholder="如 10000，按里程保养" value="{{cycleMileages}}" bindinput="onMileageInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">按时间周期保养</view>
+      <switch checked="{{timeEnabled}}" color="#3B6FF6" bindchange="onTimeEnabledChange" />
+    </view>
+    <view class="form-row" wx:if="{{timeEnabled}}">
+      <view class="form-label">时间周期</view>
+      <picker
+        mode="multiSelector"
+        range="{{timeRange}}"
+        value="{{timeValue}}"
+        bindcolumnchange="onTimeColumnChange"
+        bindchange="onTimeChange">
+        <view class="form-value">{{timeText}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="tip">周期里程和周期月数至少填一项；两者都填表示"先到为准"。</view>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onSave">保存</button>
+  </view>
+
+  <icon-picker show="{{pickerShow}}" bind:select="onIconSelect" bind:close="onPickerClose" />
+</view>

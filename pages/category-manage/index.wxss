@@ -1,0 +1,69 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+.section-title {
+  margin: 24rpx 0 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  padding: 8rpx 32rpx;
+}
+.row {
+  display: flex;
+  align-items: center;
+  min-height: 108rpx;
+  border-bottom: 1rpx solid #f0f1f4;
+}
+.row:last-child {
+  border-bottom: none;
+}
+.row-icon {
+  font-size: 44rpx;
+  margin-right: 24rpx;
+}
+.row-icon-img {
+  width: 52rpx;
+  height: 52rpx;
+  margin-right: 24rpx;
+  border-radius: 10rpx;
+}
+.row-name {
+  flex: 1;
+  font-size: 28rpx;
+  color: var(--color-text-1);
+}
+.row-actions {
+  display: flex;
+  gap: 32rpx;
+  margin-right: 24rpx;
+}
+.act {
+  font-size: 26rpx;
+}
+.act.edit {
+  color: var(--color-primary);
+}
+.act.delete {
+  color: var(--color-danger);
+}
+.empty {
+  padding: 40rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--color-text-3);
+}
+.footer {
+  margin-top: 40rpx;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-size: 32rpx;
+}

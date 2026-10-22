@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "保养项",
+  "usingComponents": {
+    "icon-picker": "/components/icon-picker/index"
+  }
+}

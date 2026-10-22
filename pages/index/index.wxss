@@ -1,0 +1,92 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx;
+  padding-bottom: 160rpx;
+  box-sizing: border-box;
+}
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 8rpx 24rpx;
+}
+.top-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.empty {
+  padding: 160rpx 40rpx;
+  text-align: center;
+}
+.empty-icon {
+  font-size: 120rpx;
+}
+.empty-title {
+  margin-top: 24rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.empty-desc {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: var(--color-text-3);
+}
+.car-card {
+  display: flex;
+  align-items: center;
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  padding: 32rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+.car-icon {
+  font-size: 64rpx;
+  margin-right: 24rpx;
+}
+.car-info {
+  flex: 1;
+}
+.car-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.car-mileage {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: var(--color-text-3);
+}
+.car-arrow {
+  font-size: 40rpx;
+  color: var(--color-text-3);
+}
+.pin-tag {
+  display: inline-block;
+  margin-left: 12rpx;
+  padding: 2rpx 12rpx;
+  font-size: 20rpx;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border-radius: 8rpx;
+  vertical-align: middle;
+}
+.pin-btn {
+  padding: 12rpx 16rpx;
+  font-size: 34rpx;
+  opacity: 0.55;
+}
+.pin-btn.pin-active {
+  opacity: 1;
+}
+.footer {
+  margin-top: 40rpx;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-size: 32rpx;
+}

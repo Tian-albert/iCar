@@ -1,0 +1,97 @@
+<view class="page">
+  <!-- 维度切换 -->
+  <view class="range-bar">
+    <view class="seg-tabs">
+      <view class="seg {{rangeType === 'month' ? 'seg-active' : ''}}" data-type="month" bindtap="onRangeChange">月</view>
+      <view class="seg {{rangeType === 'year' ? 'seg-active' : ''}}" data-type="year" bindtap="onRangeChange">年</view>
+      <view class="seg {{rangeType === 'all' ? 'seg-active' : ''}}" data-type="all" bindtap="onRangeChange">全部</view>
+    </view>
+    <view class="range-pickers">
+      <picker wx:if="{{rangeType !== 'all'}}" range="{{years}}" value="{{0}}" bindchange="onYearChange">
+        <view class="picker-value">{{year}}年 ▾</view>
+      </picker>
+      <picker wx:if="{{rangeType === 'month'}}" range="{{months}}" value="{{month - 1}}" bindchange="onMonthChange">
+        <view class="picker-value">{{month}}月 ▾</view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 里程数据 -->
+  <view class="metric-card">
+    <view class="metric-col">
+      <view class="metric-value">{{mileageLatest}}</view>
+      <view class="metric-label">最新总里程 (km)</view>
+    </view>
+    <view class="metric-col">
+      <view class="metric-value">{{mileageIncreased}}</view>
+      <view class="metric-label">增加总里程 (km)</view>
+    </view>
+    <view class="metric-col">
+      <view class="metric-value">{{mileageFuel}}</view>
+      <view class="metric-label">加油里程 (km)</view>
+    </view>
+  </view>
+
+  <!-- 油耗数据 -->
+  <view class="metric-card">
+    <view class="metric-col">
+      <view class="metric-value">{{fuelTotalCost}}</view>
+      <view class="metric-label">总油费 (元)</view>
+    </view>
+    <view class="metric-col">
+      <view class="metric-value">{{fuelAvgConsumption}}</view>
+      <view class="metric-label">平均油耗 (L/100km)</view>
+    </view>
+    <view class="metric-col">
+      <view class="metric-value">{{fuelCostPerKm}}</view>
+      <view class="metric-label">平均油耗 (元/km)</view>
+    </view>
+  </view>
+
+  <!-- 支出数据 -->
+  <view class="metric-card">
+    <view class="metric-col">
+      <view class="metric-value">{{expenseTotal}}</view>
+      <view class="metric-label">总支出 (元)</view>
+    </view>
+    <view class="metric-col">
+      <view class="metric-value">{{expensePerKm}}</view>
+      <view class="metric-label">每公里支出 (元/km)</view>
+    </view>
+    <view class="metric-col">
+      <view class="metric-value">{{expensePerKmExFuel}}</view>
+      <view class="metric-label">除掉油费 (元/km)</view>
+    </view>
+  </view>
+
+  <!-- 分类支出 -->
+  <view class="section-title">分类支出</view>
+  <view class="card cat-card">
+    <donut-chart segments="{{categories}}" class="donut" />
+    <view class="cat-list">
+      <view wx:for="{{categories}}" wx:key="name" class="cat-row">
+        <view class="cat-dot" style="background: {{item.color}};"></view>
+        <view class="cat-name">{{item.name}}</view>
+        <view class="cat-amount">¥ {{item.amount}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 油耗趋势 -->
+  <view class="section-title">油耗趋势 (L/100km)</view>
+  <view class="card">
+    <line-chart class="chart" points="{{trend}}" yMax="{{15}}" />
+  </view>
+
+  <!-- 行程 -->
+  <view class="section-title">行程 (km)</view>
+  <view class="card">
+    <bar-chart class="chart" bars="{{monthlyMileage}}" />
+  </view>
+
+  <!-- 费用 -->
+  <view class="section-title">费用 (元)</view>
+  <view class="card">
+    <bar-chart class="chart" bars="{{monthlyCost}}" />
+  </view>
+</view>

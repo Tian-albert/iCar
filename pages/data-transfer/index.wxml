@@ -1,0 +1,15 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">导出数据</view>
+    <view class="tip">将全部记录导出为 JSON 文本，复制后请妥善保存（如粘贴到备忘录或文件）。</view>
+    <button class="btn-primary" bindtap="onExport">导出并复制</button>
+  </view>
+
+  <view class="card">
+    <view class="section-title">导入数据</view>
+    <view class="tip">可粘贴导出的 JSON 文本，或直接从聊天记录中选择 .json 文件导入。</view>
+    <textarea class="json-input" placeholder="在此粘贴导出的 JSON 数据" value="{{jsonText}}" bindinput="onInput" />
+    <button class="btn-secondary" bindtap="onImport">粘贴导入</button>
+    <button class="btn-secondary file-btn" bindtap="onChooseFile">选择文件导入</button>
+  </view>
+</view>

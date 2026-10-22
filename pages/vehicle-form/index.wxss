@@ -1,0 +1,62 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  padding: 8rpx 32rpx;
+}
+.form-row {
+  display: flex;
+  align-items: center;
+  min-height: 104rpx;
+  border-bottom: 1rpx solid #f0f1f4;
+}
+.form-row:last-child {
+  border-bottom: none;
+}
+.form-label {
+  width: 220rpx;
+  font-size: 28rpx;
+  color: var(--color-text-1);
+  flex-shrink: 0;
+}
+.required {
+  color: var(--color-danger);
+}
+.form-input {
+  flex: 1;
+  font-size: 28rpx;
+  text-align: right;
+}
+.form-value {
+  flex: 1;
+  font-size: 28rpx;
+  text-align: right;
+  color: var(--color-text-2);
+}
+.icon-value {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+.icon-emoji {
+  font-size: 48rpx;
+}
+.icon-img {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 10rpx;
+}
+.footer {
+  margin-top: 40rpx;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-size: 32rpx;
+}

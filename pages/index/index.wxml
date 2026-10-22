@@ -1,0 +1,31 @@
+<view class="page">
+  <!-- 顶部 -->
+  <view class="top-bar">
+    <view class="top-title">我的车辆</view>
+  </view>
+
+  <!-- 空态 -->
+  <view wx:if="{{cars.length === 0}}" class="empty">
+    <view class="empty-icon">🚗</view>
+    <view class="empty-title">还没有车辆</view>
+    <view class="empty-desc">先添加你的爱车，开始记录加油、保养与支出</view>
+  </view>
+
+  <!-- 车辆列表 -->
+  <view wx:for="{{cars}}" wx:key="sourceId" class="car-card" data-id="{{item.sourceId}}" bindtap="onTapCar">
+    <view class="car-icon">{{item.icon === 'car' ? '🚙' : '🛵'}}</view>
+    <view class="car-info">
+      <view class="car-name">
+        {{item.name}}
+        <text wx:if="{{item.pinned}}" class="pin-tag">置顶</text>
+      </view>
+      <view class="car-mileage">{{item.mileages}} km</view>
+    </view>
+    <view class="pin-btn {{item.pinned ? 'pin-active' : ''}}" data-id="{{item.sourceId}}" catchtap="onTogglePin">{{item.pinned ? '📌' : '📍'}}</view>
+    <view class="car-arrow">›</view>
+  </view>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onAddCar">＋ 添加车辆</button>
+  </view>
+</view>

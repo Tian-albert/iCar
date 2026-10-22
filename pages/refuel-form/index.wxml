@@ -1,0 +1,55 @@
+<view class="page">
+  <view class="card">
+    <view class="group-title">基本信息</view>
+    <view class="form-row">
+      <view class="form-label">加油日期</view>
+      <picker mode="date" value="{{dateText}}" bindchange="onDateChange">
+        <view class="form-value">{{dateText}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <view class="form-label">加油时里程 (km) <text class="required">*</text></view>
+      <input class="form-input" type="number" value="{{mileages}}" bindinput="onMileageInput" />
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="group-title">油量信息</view>
+    <view class="form-row">
+      <view class="form-label">单价 (元/升) <text class="required">*</text></view>
+      <input class="form-input" type="digit" value="{{unitPrice}}" bindinput="onUnitPriceInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">加油量 (升) <text class="required">*</text></view>
+      <input class="form-input" type="digit" value="{{volume}}" bindinput="onVolumeInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">应付金额 (元)</view>
+      <view class="form-value readonly">{{shouldPayText}}</view>
+    </view>
+    <view class="form-row">
+      <view class="form-label">实付金额 (元)</view>
+      <input class="form-input" type="digit" value="{{actual}}" bindinput="onActualInput" />
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="group-title">加油选项</view>
+    <view class="form-row">
+      <view class="form-label">加满了吗</view>
+      <picker range="{{fullOptions}}" value="{{fullIndex}}" bindchange="onFullChange">
+        <view class="form-value">{{fullOptions[fullIndex]}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <view class="form-label">加油前油量低吗</view>
+      <picker range="{{lowOptions}}" value="{{lowIndex}}" bindchange="onLowChange">
+        <view class="form-value">{{lowOptions[lowIndex]}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onSave">保存</button>
+  </view>
+</view>

@@ -1,0 +1,32 @@
+<view class="page">
+  <view class="section-title">预设分类（点图标可更换）</view>
+  <view class="card">
+    <view wx:for="{{presets}}" wx:key="sourceId" class="row">
+      <image wx:if="{{item.isImage}}" class="row-icon-img" src="{{item.icon}}" data-id="{{item.sourceId}}" bindtap="onPickIcon" />
+      <view wx:else class="row-icon" data-id="{{item.sourceId}}" bindtap="onPickIcon">{{item.emoji}}</view>
+      <view class="row-name">{{item.name}}</view>
+      <switch checked="{{item.visible}}" color="#3B6FF6" data-id="{{item.sourceId}}" bindchange="onToggleVisible" />
+    </view>
+  </view>
+
+  <view class="section-title">自定义分类</view>
+  <view class="card">
+    <view wx:for="{{customs}}" wx:key="sourceId" class="row">
+      <image wx:if="{{item.isImage}}" class="row-icon-img" src="{{item.icon}}" data-id="{{item.sourceId}}" bindtap="onPickIcon" />
+      <view wx:else class="row-icon" data-id="{{item.sourceId}}" bindtap="onPickIcon">{{item.emoji}}</view>
+      <view class="row-name">{{item.name}}</view>
+      <view class="row-actions">
+        <text class="act edit" data-id="{{item.sourceId}}" data-name="{{item.name}}" bindtap="onEdit">编辑</text>
+        <text class="act delete" data-id="{{item.sourceId}}" data-name="{{item.name}}" bindtap="onDelete">删除</text>
+      </view>
+      <switch checked="{{item.visible}}" color="#3B6FF6" data-id="{{item.sourceId}}" bindchange="onToggleVisible" />
+    </view>
+    <view wx:if="{{customs.length === 0}}" class="empty">暂无自定义分类</view>
+  </view>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onAdd">＋ 添加类别</button>
+  </view>
+
+  <icon-picker show="{{pickerShow}}" bind:select="onIconSelect" bind:close="onPickerClose" />
+</view>

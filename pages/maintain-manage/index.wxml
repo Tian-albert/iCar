@@ -1,0 +1,22 @@
+<view class="page">
+  <view class="card">
+    <view wx:for="{{maintains}}" wx:key="sourceId" class="row" data-id="{{item.sourceId}}" bindtap="onEdit">
+      <view class="row-top">
+        <view class="row-name-wrap">
+          <image wx:if="{{item.isImage}}" class="row-icon-img" src="{{item.icon}}" />
+          <text wx:else class="row-icon">{{item.emoji}}</text>
+          <view class="row-name">{{item.name}}</view>
+        </view>
+        <view class="row-remain {{item.urgent ? 'row-urgent' : ''}}">{{item.remainText}}</view>
+      </view>
+      <view class="mnt-bar">
+        <view class="mnt-bar-fill" style="width: {{item.progressPercent}}%;"></view>
+      </view>
+      <view class="row-cycle">周期：{{item.cycleText}}</view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onAdd">＋ 添加保养项</button>
+  </view>
+</view>

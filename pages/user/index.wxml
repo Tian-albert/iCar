@@ -1,0 +1,46 @@
+<view class="page">
+  <!-- 用户信息 -->
+  <view class="user-card">
+    <view class="user-avatar">👤</view>
+    <view class="user-info">
+      <view class="user-name">{{nickname}}</view>
+      <view class="user-member" bindtap="onUpgrade">
+        <text wx:if="{{isPro}}" class="member-pro">Pro 已开通{{expireText ? ' · ' + expireText : ''}}</text>
+        <text wx:else class="member-free">免费版 · 开通 Pro ›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 设置列表 -->
+  <view class="card">
+    <view class="row">
+      <view class="row-label">保养到期提醒</view>
+      <switch checked="{{remindEnabled}}" color="#3B6FF6" bindchange="onRemindChange" />
+    </view>
+    <view class="row" bindtap="onOpenCategory">
+      <view class="row-label">支出类别管理</view>
+      <view class="row-arrow">›</view>
+    </view>
+    <view class="row" bindtap="onOpenDataTransfer">
+      <view class="row-label">数据导入导出</view>
+      <view class="row-arrow">›</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="row" bindtap="onComing">
+      <view class="row-label">常见问题</view>
+      <view class="row-arrow">›</view>
+    </view>
+    <view class="row" bindtap="onComing">
+      <view class="row-label">反馈与建议</view>
+      <view class="row-arrow">›</view>
+    </view>
+    <view class="row" bindtap="onComing">
+      <view class="row-label">更新日志</view>
+      <view class="row-arrow">›</view>
+    </view>
+  </view>
+
+  <view class="version">iCar v0.1.0</view>
+</view>

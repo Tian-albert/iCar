@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "支出类别管理",
+  "usingComponents": {
+    "icon-picker": "/components/icon-picker/index"
+  }
+}

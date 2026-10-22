@@ -1,0 +1,40 @@
+{
+  "pages": [
+    "pages/reminder/index",
+    "pages/index/index",
+    "pages/user/index",
+    "pages/vehicle-form/index",
+    "pages/refuel-form/index",
+    "pages/cost-form/index",
+    "pages/repair-form/index",
+    "pages/maintain-form/index",
+    "pages/maintain-manage/index",
+    "pages/maintain-item-form/index",
+    "pages/maintain-threshold/index",
+    "pages/statistics/index",
+    "pages/records/index",
+    "pages/data-transfer/index",
+    "pages/category-manage/index",
+    "pages/vehicle-detail/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#F5F6F8",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "iCar",
+    "backgroundColor": "#F5F6F8",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#9AA4B2",
+    "selectedColor": "#3B6FF6",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/reminder/index", "text": "保养" },
+      { "pagePath": "pages/index/index", "text": "车辆" },
+      { "pagePath": "pages/user/index", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

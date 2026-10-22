@@ -1,0 +1,9 @@
+{
+  "desc": "iCar sitemap",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

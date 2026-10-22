@@ -1,0 +1,18 @@
+<view class="page">
+  <view class="card">
+    <view class="form-row">
+      <view class="form-label">剩余里程阈值 (km)</view>
+      <input class="form-input" type="number" placeholder="如 500" value="{{mileage}}" bindinput="onMileageInput" />
+    </view>
+    <view class="form-row">
+      <view class="form-label">剩余天数阈值 (天)</view>
+      <input class="form-input" type="number" placeholder="如 15" value="{{days}}" bindinput="onDaysInput" />
+    </view>
+  </view>
+
+  <view class="tip">剩余里程 ≤ 阈值，或剩余天数 ≤ 阈值时，视为「快要保养」，在车辆详情优先展示。</view>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onSave">保存</button>
+  </view>
+</view>

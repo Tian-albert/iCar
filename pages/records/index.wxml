@@ -1,0 +1,103 @@
+<view class="page">
+  <!-- Tab -->
+  <view class="seg-tabs">
+    <view class="seg {{activeTab === 'fuel' ? 'seg-active' : ''}}" data-tab="fuel" bindtap="onTabChange">加油</view>
+    <view class="seg {{activeTab === 'maintain' ? 'seg-active' : ''}}" data-tab="maintain" bindtap="onTabChange">保养</view>
+    <view class="seg {{activeTab === 'repair' ? 'seg-active' : ''}}" data-tab="repair" bindtap="onTabChange">维修</view>
+    <view class="seg {{activeTab === 'cost' ? 'seg-active' : ''}}" data-tab="cost" bindtap="onTabChange">支出</view>
+  </view>
+
+  <!-- 加油 -->
+  <block wx:if="{{activeTab === 'fuel'}}">
+    <view wx:if="{{fuelRecords.length === 0}}" class="empty">暂无加油记录</view>
+    <view wx:for="{{fuelRecords}}" wx:key="sourceId" class="record card">
+      <view class="record-top">
+        <text class="record-date">{{item.dateText}}</text>
+        <text class="record-mileage">{{item.mileage}} km</text>
+      </view>
+      <view class="record-mid">
+        <text class="record-calc">{{item.priceText}} 元/L × {{item.volumeText}} L</text>
+        <text class="record-amount">¥ {{item.amountText}}</text>
+      </view>
+      <view class="record-tags">
+        <text wx:if="{{item.isFull}}" class="tag tag-green">加满</text>
+        <text wx:if="{{item.isLowFuel}}" class="tag tag-orange">油量低</text>
+      </view>
+      <view wx:if="{{item.seg}}" class="record-seg">
+        <view class="seg-col">
+          <view class="seg-value">{{item.seg.consumption}}</view>
+          <view class="seg-label">L/100km</view>
+        </view>
+        <view class="seg-col">
+          <view class="seg-value">{{item.seg.costPerKm}}</view>
+          <view class="seg-label">元/km</view>
+        </view>
+        <view class="seg-col">
+          <view class="seg-value">{{item.seg.mileage}}</view>
+          <view class="seg-label">里程 km</view>
+        </view>
+      </view>
+      <view class="record-actions">
+        <text class="act edit" data-type="fuel" data-id="{{item.sourceId}}" bindtap="onEdit">编辑</text>
+        <text class="act delete" data-type="fuel" data-id="{{item.sourceId}}" bindtap="onDelete">删除</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 保养 -->
+  <block wx:if="{{activeTab === 'maintain'}}">
+    <view wx:if="{{maintainRecords.length === 0}}" class="empty">暂无保养记录</view>
+    <view wx:for="{{maintainRecords}}" wx:key="sourceId" class="record card">
+      <view class="record-top">
+        <text class="record-date">{{item.dateText}}</text>
+        <text class="record-mileage">{{item.mileage}} km</text>
+      </view>
+      <view class="record-mid">
+        <text class="record-calc">{{item.names}}</text>
+        <text class="record-amount">¥ {{item.amountText}}</text>
+      </view>
+      <view class="record-actions">
+        <text class="act edit" data-type="maintain" data-id="{{item.sourceId}}" bindtap="onEdit">编辑</text>
+        <text class="act delete" data-type="maintain" data-id="{{item.sourceId}}" bindtap="onDelete">删除</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 维修 -->
+  <block wx:if="{{activeTab === 'repair'}}">
+    <view wx:if="{{repairRecords.length === 0}}" class="empty">暂无维修记录</view>
+    <view wx:for="{{repairRecords}}" wx:key="sourceId" class="record card">
+      <view class="record-top">
+        <text class="record-date">{{item.dateText}}</text>
+        <text class="record-mileage">{{item.mileage}} km</text>
+      </view>
+      <view class="record-mid">
+        <text class="record-calc">{{item.content}}</text>
+        <text class="record-amount">¥ {{item.amountText}}</text>
+      </view>
+      <view class="record-actions">
+        <text class="act edit" data-type="repair" data-id="{{item.sourceId}}" bindtap="onEdit">编辑</text>
+        <text class="act delete" data-type="repair" data-id="{{item.sourceId}}" bindtap="onDelete">删除</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 支出 -->
+  <block wx:if="{{activeTab === 'cost'}}">
+    <view wx:if="{{costRecords.length === 0}}" class="empty">暂无支出记录</view>
+    <view wx:for="{{costRecords}}" wx:key="sourceId" class="record card">
+      <view class="record-top">
+        <view class="cost-head">
+          <view class="cost-icon">{{item.emoji}}</view>
+          <view class="cost-name">{{item.name}}</view>
+        </view>
+        <view class="cost-amount">¥ {{item.amountText}}</view>
+      </view>
+      <view class="cost-sub">{{item.dateText}} {{item.remark}}</view>
+      <view class="record-actions">
+        <text class="act edit" data-type="cost" data-id="{{item.sourceId}}" bindtap="onEdit">编辑</text>
+        <text class="act delete" data-type="cost" data-id="{{item.sourceId}}" bindtap="onDelete">删除</text>
+      </view>
+    </view>
+  </block>
+</view>

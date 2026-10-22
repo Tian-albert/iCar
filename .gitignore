@@ -1,0 +1,24 @@
+# 依赖
+node_modules/
+miniprogram_npm/
+
+# 构建产物
+dist/
+coverage/
+*.tsbuildinfo
+
+# 日志
+*.log
+npm-debug.log*
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 微信开发者工具私有配置（含本地设置，不入库）
+project.private.config.json
+
+# 临时文件
+*.tmp
