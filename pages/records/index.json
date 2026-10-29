@@ -1,4 +1,6 @@
 {
-  "navigationBarTitleText": "车辆记录",
+  "navigationBarTitleText": "记录",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
   "usingComponents": {}
 }

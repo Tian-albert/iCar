@@ -44,6 +44,8 @@ export interface Category extends BaseEntity {
   presetType: PresetType;
   /** 是否在"记支出"类别选择中显示（用户可在类别管理里开关） */
   visible: boolean;
+  /** 组内排序号（预设与自定义各自从 0 递增，用户可上移/下移调整） */
+  sortOrder: number;
 }
 
 export interface Maintain extends BaseEntity {

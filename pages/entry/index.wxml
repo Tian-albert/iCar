@@ -1,0 +1,198 @@
+<view class="page">
+  <!-- 分段器 -->
+  <view class="seg-tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="seg {{activeTab === item.key ? 'seg-active' : ''}}"
+      data-tab="{{item.key}}"
+      bindtap="onTabChange">{{item.label}}</view>
+  </view>
+
+  <!-- 加油 -->
+  <block wx:if="{{activeTab === 'fuel'}}">
+    <view class="card">
+      <view class="group-title">基本信息</view>
+      <view class="form-row">
+        <view class="form-label">加油日期</view>
+        <picker mode="date" value="{{fuelDateText}}" bindchange="onFuelDateChange">
+          <view class="form-value">{{fuelDateText}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="form-label">加油时里程 (km) <text class="required">*</text></view>
+        <input class="form-input" type="number" value="{{fuelMileages}}" bindinput="onFuelMileageInput" />
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="group-title">油量信息</view>
+      <view class="form-row">
+        <view class="form-label">单价 (元/升) <text class="required">*</text></view>
+        <input class="form-input" type="digit" value="{{fuelUnitPrice}}" bindinput="onFuelUnitPriceInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">加油量 (升) <text class="required">*</text></view>
+        <input class="form-input" type="digit" value="{{fuelVolume}}" bindinput="onFuelVolumeInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">应付金额 (元)</view>
+        <view class="form-value readonly">{{fuelShouldPayText}}</view>
+      </view>
+      <view class="form-row">
+        <view class="form-label">实付金额 (元)</view>
+        <input class="form-input" type="digit" value="{{fuelActual}}" bindinput="onFuelActualInput" />
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="group-title">加油选项</view>
+      <view class="opt-row">
+        <view class="opt-group">
+          <view class="opt-label">加满了吗</view>
+          <view class="seg-control">
+            <view class="seg-opt {{fuelFullIndex === 0 ? 'seg-opt-active' : ''}}" data-field="full" data-index="0" bindtap="onFuelOptionSelect">加满</view>
+            <view class="seg-opt {{fuelFullIndex === 1 ? 'seg-opt-active' : ''}}" data-field="full" data-index="1" bindtap="onFuelOptionSelect">没加满</view>
+          </view>
+        </view>
+        <view class="opt-group">
+          <view class="opt-label">油量低吗</view>
+          <view class="seg-control">
+            <view class="seg-opt {{fuelLowIndex === 0 ? 'seg-opt-active' : ''}}" data-field="low" data-index="0" bindtap="onFuelOptionSelect">低</view>
+            <view class="seg-opt {{fuelLowIndex === 1 ? 'seg-opt-active' : ''}}" data-field="low" data-index="1" bindtap="onFuelOptionSelect">不低</view>
+          </view>
+        </view>
+        <view class="opt-group">
+          <view class="opt-label">上次记了吗</view>
+          <view class="seg-control">
+            <view class="seg-opt {{fuelLastIndex === 0 ? 'seg-opt-active' : ''}}" data-field="last" data-index="0" bindtap="onFuelOptionSelect">记了</view>
+            <view class="seg-opt {{fuelLastIndex === 1 ? 'seg-opt-active' : ''}}" data-field="last" data-index="1" bindtap="onFuelOptionSelect">没记</view>
+          </view>
+        </view>
+      </view>
+      <view class="form-row">
+        <view class="form-label">备注</view>
+        <input class="form-input" placeholder="选填" value="{{fuelRemark}}" bindinput="onFuelRemarkInput" />
+      </view>
+    </view>
+  </block>
+
+  <!-- 保养 -->
+  <block wx:elif="{{activeTab === 'maintain'}}">
+    <view class="card">
+      <view class="cat-header">
+        <view class="group-title">选择保养项目 <text class="required">*</text></view>
+        <text class="manage-link" bindtap="onManageMaintain">管理 ›</text>
+      </view>
+      <view class="tag-wrap" wx:if="{{maintains.length > 0}}">
+        <view
+          wx:for="{{maintains}}"
+          wx:key="sourceId"
+          class="tag {{item.selected ? 'tag-selected' : ''}}"
+          data-index="{{index}}"
+          bindtap="onMaintainToggle">
+          <view class="tag-name">{{item.name}}</view>
+          <view class="tag-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
+        </view>
+      </view>
+      <view wx:else class="tip">暂无保养项，点右上角「管理 ›」添加</view>
+    </view>
+
+    <view class="card">
+      <view class="group-title">保养信息</view>
+      <view class="form-row">
+        <view class="form-label">里程 (km) <text class="required">*</text></view>
+        <input class="form-input" type="number" value="{{maintainMileages}}" bindinput="onMaintainMileageInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">保养日期</view>
+        <picker mode="date" value="{{maintainDateText}}" bindchange="onMaintainDateChange">
+          <view class="form-value">{{maintainDateText}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="group-title">支出信息</view>
+      <view class="form-row">
+        <view class="form-label">支出金额 (元)</view>
+        <input class="form-input" type="digit" placeholder="选填，填写后计入支出" value="{{maintainAmount}}" bindinput="onMaintainAmountInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">备注</view>
+        <input class="form-input" placeholder="选填" value="{{maintainRemark}}" bindinput="onMaintainRemarkInput" />
+      </view>
+    </view>
+  </block>
+
+  <!-- 维修 -->
+  <block wx:elif="{{activeTab === 'repair'}}">
+    <view class="card">
+      <view class="form-row">
+        <view class="form-label">维修内容 <text class="required">*</text></view>
+        <input class="form-input" placeholder="如 更换刹车片" value="{{repairContent}}" bindinput="onRepairContentInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">里程 (km) <text class="required">*</text></view>
+        <input class="form-input" type="number" value="{{repairMileages}}" bindinput="onRepairMileageInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">维修日期</view>
+        <picker mode="date" value="{{repairDateText}}" bindchange="onRepairDateChange">
+          <view class="form-value">{{repairDateText}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="form-label">支出金额 (元)</view>
+        <input class="form-input" type="digit" placeholder="选填，填写后计入支出" value="{{repairAmount}}" bindinput="onRepairAmountInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">备注</view>
+        <input class="form-input" placeholder="选填" value="{{repairRemark}}" bindinput="onRepairRemarkInput" />
+      </view>
+    </view>
+  </block>
+
+  <!-- 支出 -->
+  <block wx:else>
+    <view class="card">
+      <view class="cat-header">
+        <view class="group-title">支出类别</view>
+        <text class="manage-link" bindtap="onManageCategory">管理 ›</text>
+      </view>
+      <scroll-view scroll-x class="cat-scroll" wx:if="{{categories.length > 0}}">
+        <view
+          wx:for="{{categories}}"
+          wx:key="sourceId"
+          class="cat-item {{index === selectedCategoryIndex ? 'cat-active' : ''}}"
+          data-index="{{index}}"
+          bindtap="onCostCategorySelect">
+          <view class="cat-emoji">{{item.emoji}}</view>
+          <view class="cat-name">{{item.name}}</view>
+        </view>
+      </scroll-view>
+      <view wx:else class="tip">暂无可用类别，点右上角「管理 ›」添加</view>
+    </view>
+
+    <view class="card">
+      <view class="form-row">
+        <view class="form-label">金额 (元) <text class="required">*</text></view>
+        <input class="form-input" type="digit" placeholder="0.00" value="{{costAmount}}" bindinput="onCostAmountInput" />
+      </view>
+      <view class="form-row">
+        <view class="form-label">支出日期</view>
+        <picker mode="date" value="{{costDateText}}" bindchange="onCostDateChange">
+          <view class="form-value">{{costDateText}}</view>
+        </picker>
+      </view>
+      <view class="form-row">
+        <view class="form-label">备注</view>
+        <input class="form-input" placeholder="如 高速路费" value="{{costRemark}}" bindinput="onCostRemarkInput" />
+      </view>
+    </view>
+  </block>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onSave">保存</button>
+  </view>
+</view>

@@ -66,18 +66,36 @@
   border-radius: var(--radius-card);
   padding: 24rpx;
 }
-.cat-card {
+.cat-header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 32rpx 0 16rpx;
 }
-.donut {
-  width: 220rpx;
-  height: 220rpx;
-  flex-shrink: 0;
+.cat-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.cat-total {
+  font-size: 24rpx;
+  color: var(--color-text-2);
+}
+.cat-total-num {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.cat-card {
+  padding: 24rpx;
+}
+.donut-chart {
+  display: block;
+  width: 100%;
+  height: 500rpx;
 }
 .cat-list {
-  flex: 1;
-  margin-left: 24rpx;
+  margin-top: 8rpx;
 }
 .cat-row {
   display: flex;

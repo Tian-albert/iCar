@@ -1,7 +1,8 @@
 // 支出服务单测：记支出 + 类别管理（预设只读、有流水不可删）
 import { StorageAdapter, StorageLike } from '../repositories/storage.adapter';
-import { seedPresetCategories } from '../repositories/seed';
+import { seedPresetCategories, dedupePresetCategories } from '../repositories/seed';
 import { createCar } from '../services/car.service';
+import { Category } from '../types/models';
 import {
   saveCost,
   listCosts,
@@ -9,7 +10,8 @@ import {
   listSpendCategories,
   addCategory,
   removeCategory,
-  setCategoryVisible
+  setCategoryVisible,
+  moveCategory
 } from '../services/cost.service';
 
 function createMemoryStorage(): StorageLike {
@@ -93,5 +95,84 @@ describe('cost.service 类别管理', () => {
     const names = listSpendCategories(adapter).map(c => c.name);
     expect(names).not.toContain('加油');
     expect(names).toContain('保养');
+  });
+});
+
+describe('cost.service 类别排序', () => {
+  it('自定义类别 sortOrder 递增，下移/上移可调整顺序', () => {
+    const { adapter } = setup();
+    const a = addCategory(adapter, '停车费', 'p');
+    const b = addCategory(adapter, '过路费', 'ticket');
+    expect(a.sortOrder).toBe(0);
+    expect(b.sortOrder).toBe(1);
+
+    moveCategory(adapter, a.sourceId, 'down');
+    let names = listCategories(adapter)
+      .filter(c => !c.isPreset)
+      .map(c => c.name);
+    expect(names).toEqual(['过路费', '停车费']);
+
+    moveCategory(adapter, a.sourceId, 'up');
+    names = listCategories(adapter)
+      .filter(c => !c.isPreset)
+      .map(c => c.name);
+    expect(names).toEqual(['停车费', '过路费']);
+  });
+
+  it('首项上移 / 末项下移无效果，预设组不受自定义排序影响', () => {
+    const { adapter } = setup();
+    const a = addCategory(adapter, '停车费', 'p');
+    addCategory(adapter, '过路费', 'ticket');
+
+    moveCategory(adapter, a.sourceId, 'up'); // 已是首项
+    const customs = listCategories(adapter).filter(c => !c.isPreset);
+    expect(customs[0].name).toBe('停车费');
+
+    // 预设组仍保持 4 个且在前
+    const all = listCategories(adapter);
+    expect(all.slice(0, 4).every(c => c.isPreset)).toBe(true);
+  });
+});
+
+describe('seed 同名预设去重', () => {
+  it('同名预设合并为一条，支出迁移到保留项', () => {
+    const { adapter, car } = setup();
+    // 模拟历史数据 / 导入备份产生的重复"加油"预设（sourceId 与固定 id 不同）
+    const dup: Category = {
+      sourceId: 'mp:category:dup-fuel',
+      sourcePlatform: 'mp',
+      name: '加油',
+      icon: 'oil',
+      isPreset: true,
+      presetType: 'refuel',
+      visible: true,
+      sortOrder: 9,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      deleted: false
+    };
+    adapter.insert<Category>('categories', dup);
+
+    expect(listCategories(adapter).filter(c => c.name === '加油' && c.isPreset).length).toBe(2);
+
+    // 在重复项上记一笔支出
+    saveCost(adapter, {
+      carSourceId: car.sourceId,
+      categorySourceId: dup.sourceId,
+      amount: 66,
+      costDate: Date.now(),
+      remark: '停车费'
+    });
+
+    dedupePresetCategories(adapter);
+
+    const fuels = listCategories(adapter).filter(c => c.name === '加油' && c.isPreset);
+    expect(fuels.length).toBe(1);
+    expect(fuels[0].sourceId).toBe('mp:category:加油');
+
+    // 支出已迁移到保留项
+    const costs = listCosts(adapter, car.sourceId);
+    expect(costs.length).toBe(1);
+    expect(costs[0].categorySourceId).toBe('mp:category:加油');
   });
 });

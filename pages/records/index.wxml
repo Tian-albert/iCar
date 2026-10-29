@@ -43,6 +43,7 @@
         <text class="act delete" data-type="fuel" data-id="{{item.sourceId}}" bindtap="onDelete">删除</text>
       </view>
     </view>
+    <view wx:if="{{fuelRecords.length > 0}}" class="load-more">{{hasMore ? '上拉加载更多' : '没有更多了'}}</view>
   </block>
 
   <!-- 保养 -->
@@ -62,6 +63,7 @@
         <text class="act delete" data-type="maintain" data-id="{{item.sourceId}}" bindtap="onDelete">删除</text>
       </view>
     </view>
+    <view wx:if="{{maintainRecords.length > 0}}" class="load-more">{{hasMore ? '上拉加载更多' : '没有更多了'}}</view>
   </block>
 
   <!-- 维修 -->
@@ -81,6 +83,7 @@
         <text class="act delete" data-type="repair" data-id="{{item.sourceId}}" bindtap="onDelete">删除</text>
       </view>
     </view>
+    <view wx:if="{{repairRecords.length > 0}}" class="load-more">{{hasMore ? '上拉加载更多' : '没有更多了'}}</view>
   </block>
 
   <!-- 支出 -->
@@ -100,5 +103,6 @@
         <text class="act delete" data-type="cost" data-id="{{item.sourceId}}" bindtap="onDelete">删除</text>
       </view>
     </view>
+    <view wx:if="{{costRecords.length > 0}}" class="load-more">{{hasMore ? '上拉加载更多' : '没有更多了'}}</view>
   </block>
 </view>

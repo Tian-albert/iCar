@@ -1,6 +1,9 @@
 <view class="page">
   <view class="card">
-    <view class="group-title">选择保养项目 <text class="required">*</text></view>
+    <view class="cat-header">
+      <view class="group-title">选择保养项目 <text class="required">*</text></view>
+      <text class="manage-link" bindtap="onManageMaintain">管理 ›</text>
+    </view>
     <view class="tag-wrap">
       <view
         wx:for="{{maintains}}"
@@ -9,7 +12,7 @@
         data-index="{{index}}"
         bindtap="onToggleMaintain">
         <view class="tag-name">{{item.name}}</view>
-        <view class="tag-cycle">{{item.cycleText}}</view>
+        <view class="tag-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
       </view>
     </view>
   </view>

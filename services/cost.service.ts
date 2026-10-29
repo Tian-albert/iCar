@@ -58,7 +58,14 @@ export function listCosts(storage: StorageAdapter, carSourceId?: string): Cost[]
 
 // ---------- 类别 ----------
 export function listCategories(storage: StorageAdapter): Category[] {
-  return storage.list<Category>('categories').filter(c => !c.deleted);
+  return storage
+    .list<Category>('categories')
+    .filter(c => !c.deleted)
+    .sort((a, b) => {
+      // 预设组在前，组内按 sortOrder 升序
+      if (a.isPreset !== b.isPreset) return a.isPreset ? -1 : 1;
+      return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    });
 }
 
 /**
@@ -76,6 +83,8 @@ export function getCategory(storage: StorageAdapter, sourceId: string): Category
 
 export function addCategory(storage: StorageAdapter, name: string, icon: string): Category {
   const now = Date.now();
+  const siblings = listCategories(storage).filter(c => !c.isPreset);
+  const sortOrder = siblings.length ? Math.max(...siblings.map(c => c.sortOrder ?? 0)) + 1 : 0;
   const cat: Category = {
     sourceId: genId('category'),
     sourcePlatform: 'mp',
@@ -84,11 +93,40 @@ export function addCategory(storage: StorageAdapter, name: string, icon: string)
     isPreset: false,
     presetType: '',
     visible: true,
+    sortOrder,
     createdAt: now,
     updatedAt: now,
     deleted: false
   };
   return storage.insert<Category>('categories', cat);
+}
+
+/**
+ * 类别排序：在同组（预设 / 自定义）内上移或下移一位。
+ * 交换后按新顺序重写整组 sortOrder，保证连续且唯一。
+ */
+export function moveCategory(storage: StorageAdapter, sourceId: string, direction: 'up' | 'down'): boolean {
+  const cat = getCategory(storage, sourceId);
+  if (!cat) return false;
+  const siblings = listCategories(storage).filter(c => c.isPreset === cat.isPreset);
+  const idx = siblings.findIndex(c => c.sourceId === sourceId);
+  const target = direction === 'up' ? idx - 1 : idx + 1;
+  if (idx < 0 || target < 0 || target >= siblings.length) return false;
+
+  const arr = [...siblings];
+  const tmp = arr[idx];
+  arr[idx] = arr[target];
+  arr[target] = tmp;
+
+  const now = Date.now();
+  arr.forEach((c, i) => {
+    if (c.sortOrder !== i) {
+      c.sortOrder = i;
+      c.updatedAt = now;
+      storage.update('categories', c);
+    }
+  });
+  return true;
 }
 
 export function updateCategory(storage: StorageAdapter, sourceId: string, name: string, icon: string): void {

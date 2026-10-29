@@ -1,6 +1,8 @@
 .page {
   min-height: 100vh;
   padding: 24rpx;
+  /* 给右下角悬浮按钮留出空间，避免遮挡最后一条记录 */
+  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 .card {
@@ -283,25 +285,62 @@
   background: var(--color-primary);
   border-radius: 6rpx;
 }
-.footer-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20rpx;
-  margin-top: 40rpx;
+/* 查看全部记录入口 */
+.more-row {
+  margin-top: 8rpx;
+  padding: 28rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--color-primary);
 }
-.btn-primary,
-.btn-secondary {
-  flex: 1 1 40%;
+/* 右下角悬浮「记一笔」 */
+.fab-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.06);
+}
+.fab-wrap {
+  position: fixed;
+  right: 32rpx;
+  bottom: calc(60rpx + env(safe-area-inset-bottom));
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.fab-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+.fab-item {
+  padding: 18rpx 40rpx;
+  background: #fff;
   border-radius: var(--radius-pill);
   font-size: 28rpx;
+  color: var(--color-text-1);
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.12);
 }
-.btn-primary {
+.fab {
+  width: 112rpx;
+  height: 112rpx;
+  line-height: 108rpx;
+  text-align: center;
+  border-radius: 50%;
   background: var(--color-primary);
   color: #fff;
+  font-size: 56rpx;
+  box-shadow: 0 10rpx 28rpx rgba(59, 111, 246, 0.4);
+  transition: transform 0.2s ease;
 }
-.btn-secondary {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
+.fab.fab-active {
+  transform: rotate(45deg);
 }
 .record-remark {
   margin-top: 8rpx;

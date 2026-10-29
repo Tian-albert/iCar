@@ -1,0 +1,191 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+/* 分段器 */
+.seg-tabs {
+  display: flex;
+  background: #eef0f3;
+  border-radius: var(--radius-pill);
+  padding: 6rpx;
+  margin-bottom: 24rpx;
+}
+.seg {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: 26rpx;
+  color: var(--color-text-2);
+  border-radius: var(--radius-pill);
+}
+.seg-active {
+  background: #fff;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+/* 卡片与表单 */
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  padding: 8rpx 32rpx;
+  margin-bottom: 24rpx;
+}
+.group-title {
+  padding: 24rpx 0 8rpx;
+  font-size: 26rpx;
+  color: var(--color-text-3);
+}
+.form-row {
+  display: flex;
+  align-items: center;
+  min-height: 104rpx;
+  border-bottom: 1rpx solid #f0f1f4;
+}
+.form-row:last-child {
+  border-bottom: none;
+}
+.form-label {
+  width: 300rpx;
+  font-size: 28rpx;
+  color: var(--color-text-1);
+}
+.form-input {
+  flex: 1;
+  font-size: 28rpx;
+  text-align: right;
+}
+.form-value {
+  flex: 1;
+  font-size: 28rpx;
+  text-align: right;
+  color: var(--color-text-2);
+}
+.form-value.readonly {
+  color: var(--color-text-3);
+}
+.required {
+  color: var(--color-danger);
+}
+/* 加油选项：三组两段式开关同排 */
+.opt-row {
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 0 24rpx;
+}
+.opt-group {
+  flex: 1;
+  min-width: 0;
+}
+.opt-label {
+  margin-bottom: 10rpx;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+  text-align: center;
+}
+.seg-control {
+  display: flex;
+  background: #f2f3f5;
+  border-radius: 10rpx;
+  padding: 4rpx;
+}
+.seg-opt {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx 0;
+  font-size: 24rpx;
+  color: var(--color-text-2);
+  border-radius: 8rpx;
+}
+.seg-opt-active {
+  background: #fff;
+  color: var(--color-primary);
+  font-weight: 600;
+  box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.08);
+}
+/* 保养项标签 */
+.tag-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding: 16rpx 0 24rpx;
+}
+.tag {
+  padding: 16rpx 28rpx;
+  border-radius: var(--radius-card);
+  background: #f2f3f5;
+  text-align: center;
+  min-width: 140rpx;
+}
+.tag-selected {
+  background: var(--color-primary-light);
+  border: 2rpx solid var(--color-primary);
+}
+.tag-name {
+  font-size: 28rpx;
+  color: var(--color-text-2);
+}
+.tag-selected .tag-name {
+  color: var(--color-primary);
+}
+.tag-cycle {
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  color: var(--color-text-3);
+}
+.tag-selected .tag-cycle {
+  color: var(--color-primary);
+  opacity: 0.8;
+}
+/* 支出类别 */
+.cat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.manage-link {
+  font-size: 26rpx;
+  color: var(--color-primary);
+}
+.cat-scroll {
+  white-space: nowrap;
+  padding: 8rpx 0 24rpx;
+}
+.cat-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  margin-right: 12rpx;
+  border-radius: var(--radius-card);
+  background: #f5f6f8;
+}
+.cat-active {
+  background: var(--color-primary-light);
+  border: 2rpx solid var(--color-primary);
+}
+.cat-emoji {
+  font-size: 36rpx;
+}
+.cat-name {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--color-text-2);
+}
+.cat-active .cat-name {
+  color: var(--color-primary);
+}
+.tip {
+  padding: 24rpx 0;
+  font-size: 24rpx;
+  color: var(--color-text-3);
+}
+.footer {
+  margin-top: 8rpx;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-size: 32rpx;
+}

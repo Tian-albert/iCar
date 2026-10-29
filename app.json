@@ -4,6 +4,7 @@
     "pages/index/index",
     "pages/user/index",
     "pages/vehicle-form/index",
+    "pages/entry/index",
     "pages/refuel-form/index",
     "pages/cost-form/index",
     "pages/repair-form/index",

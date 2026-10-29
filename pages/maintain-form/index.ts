@@ -65,6 +65,29 @@ Page({
     this.setData(patch);
     wx.setNavigationBarTitle({ title: options.recordId ? '编辑保养' : '记保养' });
   },
+  onShow() {
+    if (!this.data.carId) return;
+    this.refreshMaintains();
+  },
+  /** 刷新保养项列表（周期可能刚被编辑过），保留已勾选状态 */
+  refreshMaintains() {
+    const selectedIds = new Set(this.data.maintains.filter(m => m.selected).map(m => m.sourceId));
+    const list = listMaintains(getStorage(), this.data.carId).map(m => ({
+      sourceId: m.sourceId,
+      name: m.name,
+      cycleText: formatCycle(m),
+      selected: selectedIds.has(m.sourceId)
+    }));
+    this.setData({ maintains: list });
+  },
+  onManageMaintain() {
+    wx.navigateTo({ url: `/pages/maintain-manage/index?id=${this.data.carId}` });
+  },
+  /** 记录保养时直接编辑该保养项的周期 */
+  onEditCycle(e: WechatMiniprogram.TouchEvent) {
+    const id = e.currentTarget.dataset.id as string;
+    wx.navigateTo({ url: `/pages/maintain-item-form/index?carId=${this.data.carId}&id=${id}` });
+  },
   onToggleMaintain(e: WechatMiniprogram.TouchEvent) {
     const index = Number(e.currentTarget.dataset.index);
     const key = `maintains[${index}].selected`;

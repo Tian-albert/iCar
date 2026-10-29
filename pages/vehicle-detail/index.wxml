@@ -84,9 +84,9 @@
   </view>
   <view wx:else class="empty" bindtap="onManageMaintain">暂无快到期的保养项目，点此查看全部 ›</view>
 
-  <!-- 记录列表 -->
+  <!-- 加油记录（仅最新 3 条） -->
   <view class="section-title">加油记录</view>
-  <view wx:if="{{records.length === 0}}" class="empty">还没有加油记录，点下方按钮记一笔</view>
+  <view wx:if="{{recordsTotal === 0}}" class="empty">还没有加油记录，点右下角「＋」记一笔</view>
 
   <view wx:for="{{records}}" wx:key="sourceId" class="record card">
     <view class="record-top">
@@ -118,10 +118,21 @@
     </view>
   </view>
 
-  <view class="footer-actions">
-    <button class="btn-primary" bindtap="onAddRefuel">＋ 加油</button>
-    <button class="btn-secondary" bindtap="onAddMaintain">＋ 保养</button>
-    <button class="btn-secondary" bindtap="onAddCost">＋ 支出</button>
-    <button class="btn-secondary" bindtap="onAddRepair">＋ 维修</button>
+  <view wx:if="{{recordsTotal > records.length}}" class="more-row" bindtap="onMoreRecords">
+    查看全部 {{recordsTotal}} 条加油记录 ›
+  </view>
+
+  <!-- 遮罩 -->
+  <view wx:if="{{fabOpen}}" class="fab-mask" bindtap="onCloseFab"></view>
+
+  <!-- 右下角悬浮「记一笔」 -->
+  <view class="fab-wrap">
+    <view class="fab-menu" wx:if="{{fabOpen}}">
+      <view class="fab-item" data-tab="fuel" bindtap="onAddEntry">加油</view>
+      <view class="fab-item" data-tab="maintain" bindtap="onAddEntry">保养</view>
+      <view class="fab-item" data-tab="repair" bindtap="onAddEntry">维修</view>
+      <view class="fab-item" data-tab="cost" bindtap="onAddEntry">支出</view>
+    </view>
+    <view class="fab {{fabOpen ? 'fab-active' : ''}}" bindtap="onToggleFab">＋</view>
   </view>
 </view>

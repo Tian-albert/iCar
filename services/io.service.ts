@@ -3,6 +3,7 @@ import { StorageAdapter } from '../repositories/storage.adapter';
 import { Car } from '../types/models';
 import { rebuildConsumptionsForCar } from './refuel.service';
 import { syncMileages } from './car.service';
+import { dedupePresetCategories } from '../repositories/seed';
 
 /** 业务表（fuelConsumptions 为派生数据，导入时不 Upsert，由 rebuild 重算） */
 const BUSINESS_TABLES = [
@@ -31,7 +32,7 @@ export function exportBundle(storage: StorageAdapter): string {
   const manifest = {
     format: 'icar-export',
     version: 1,
-    source: { platform: 'mp', appVersion: '0.1.0', exportedAt: Date.now() },
+    source: { platform: 'mp', appVersion: '1.0.0', exportedAt: Date.now() },
     options: { amountUnit: 'yuan', timeUnit: 'ms', imageMode: 'file', package: 'json' },
     warnings: [] as string[],
     data
@@ -100,6 +101,9 @@ export function importBundle(storage: StorageAdapter, json: string): ImportResul
       updated++;
     }
   }
+
+  // 导入可能带入同名预设（sourceId 与本地不同），合并去重后再重建派生数据
+  dedupePresetCategories(storage);
 
   // 重建派生数据：区间 + 里程
   const cars = storage.list<Car>('cars').filter(c => !c.deleted);

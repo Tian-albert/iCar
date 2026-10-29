@@ -1,1 +1,1 @@
-<canvas type="2d" id="donut" class="canvas"></canvas>
+<canvas type="2d" id="donut" class="canvas" bindtouchstart="onTap"></canvas>

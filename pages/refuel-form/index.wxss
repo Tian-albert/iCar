@@ -32,6 +32,42 @@
 .required {
   color: var(--color-danger);
 }
+/* 加油选项：三组两段式开关同排 */
+.opt-row {
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 0 24rpx;
+}
+.opt-group {
+  flex: 1;
+  min-width: 0;
+}
+.opt-label {
+  margin-bottom: 10rpx;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+  text-align: center;
+}
+.seg-control {
+  display: flex;
+  background: #f2f3f5;
+  border-radius: 10rpx;
+  padding: 4rpx;
+}
+.seg-opt {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx 0;
+  font-size: 24rpx;
+  color: var(--color-text-2);
+  border-radius: 8rpx;
+}
+.seg-opt-active {
+  background: #fff;
+  color: var(--color-primary);
+  font-weight: 600;
+  box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.08);
+}
 .form-input {
   flex: 1;
   font-size: 28rpx;

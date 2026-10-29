@@ -9,6 +9,9 @@ import { iconEmoji } from '../../utils/icons';
 import { formatDateTime, formatDate } from '../../utils/date';
 import { FuelConsumption, RefuelLog } from '../../types/models';
 
+/** 详情页最多展示的加油记录条数（其余进「查看全部」） */
+const RECENT_RECORD_LIMIT = 3;
+
 interface RecordView {
   sourceId: string;
   dateText: string;
@@ -54,9 +57,11 @@ Page({
     yearExpenseText: '--',
     yearMileageText: '--',
     records: [] as RecordView[],
+    recordsTotal: 0,
     recentCosts: [] as CostView[],
     maintainProgress: [] as MaintainProgressView[],
-    maintainTotal: 0
+    maintainTotal: 0,
+    fabOpen: false
   },
   onLoad(options: Record<string, string>) {
     this.setData({ carId: options.id });
@@ -106,6 +111,8 @@ Page({
       };
     });
 
+    const allRecords = buildRecords(refuels, segs);
+
     this.setData({
       carName: car.name,
       mileages: car.mileages,
@@ -117,23 +124,25 @@ Page({
       yearAvgText: yearSnap.mileage.fuelMileage > 0 ? yearSnap.fuel.avgConsumption.toFixed(2) : '--',
       yearExpenseText: yearSnap.expense.total.toFixed(2),
       yearMileageText: String(yearSnap.mileage.fuelMileage),
-      records: buildRecords(refuels, segs),
+      records: allRecords.slice(0, RECENT_RECORD_LIMIT),
+      recordsTotal: allRecords.length,
       recentCosts,
       maintainProgress,
       maintainTotal: allProgress.length
     });
   },
-  onAddRefuel() {
-    wx.navigateTo({ url: `/pages/refuel-form/index?carId=${this.data.carId}` });
+  /** 展开 / 收起悬浮菜单 */
+  onToggleFab() {
+    this.setData({ fabOpen: !this.data.fabOpen });
   },
-  onAddCost() {
-    wx.navigateTo({ url: `/pages/cost-form/index?carId=${this.data.carId}` });
+  onCloseFab() {
+    this.setData({ fabOpen: false });
   },
-  onAddRepair() {
-    wx.navigateTo({ url: `/pages/repair-form/index?carId=${this.data.carId}` });
-  },
-  onAddMaintain() {
-    wx.navigateTo({ url: `/pages/maintain-form/index?carId=${this.data.carId}` });
+  /** 记一笔统一入口（按点击的按钮定位到对应分段） */
+  onAddEntry(e: WechatMiniprogram.TouchEvent) {
+    const tab = (e.currentTarget.dataset.tab as string) || 'fuel';
+    this.setData({ fabOpen: false });
+    wx.navigateTo({ url: `/pages/entry/index?carId=${this.data.carId}&tab=${tab}` });
   },
   onManageMaintain() {
     wx.navigateTo({ url: `/pages/maintain-manage/index?id=${this.data.carId}` });
@@ -158,7 +167,11 @@ Page({
     wx.navigateTo({ url: `/pages/statistics/index?id=${this.data.carId}&range=year` });
   },
   onOpenRecords() {
-    wx.navigateTo({ url: `/pages/records/index?id=${this.data.carId}` });
+    wx.navigateTo({ url: `/pages/records/index?id=${this.data.carId}&tab=fuel` });
+  },
+  /** 查看全部加油记录（记录页支持分页加载） */
+  onMoreRecords() {
+    wx.navigateTo({ url: `/pages/records/index?id=${this.data.carId}&tab=fuel` });
   }
 });
 

@@ -35,23 +35,28 @@
 
   <view class="card">
     <view class="group-title">加油选项</view>
-    <view class="form-row">
-      <view class="form-label">加满了吗</view>
-      <picker range="{{fullOptions}}" value="{{fullIndex}}" bindchange="onFullChange">
-        <view class="form-value">{{fullOptions[fullIndex]}}</view>
-      </picker>
-    </view>
-    <view class="form-row">
-      <view class="form-label">加油前油量低吗</view>
-      <picker range="{{lowOptions}}" value="{{lowIndex}}" bindchange="onLowChange">
-        <view class="form-value">{{lowOptions[lowIndex]}}</view>
-      </picker>
-    </view>
-    <view class="form-row">
-      <view class="form-label">上次加油记了吗</view>
-      <picker range="{{lastOptions}}" value="{{lastIndex}}" bindchange="onLastChange">
-        <view class="form-value">{{lastOptions[lastIndex]}}</view>
-      </picker>
+    <view class="opt-row">
+      <view class="opt-group">
+        <view class="opt-label">加满了吗</view>
+        <view class="seg-control">
+          <view class="seg-opt {{fullIndex === 0 ? 'seg-opt-active' : ''}}" data-field="full" data-index="0" bindtap="onOptionSelect">加满</view>
+          <view class="seg-opt {{fullIndex === 1 ? 'seg-opt-active' : ''}}" data-field="full" data-index="1" bindtap="onOptionSelect">没加满</view>
+        </view>
+      </view>
+      <view class="opt-group">
+        <view class="opt-label">油量低吗</view>
+        <view class="seg-control">
+          <view class="seg-opt {{lowIndex === 0 ? 'seg-opt-active' : ''}}" data-field="low" data-index="0" bindtap="onOptionSelect">低</view>
+          <view class="seg-opt {{lowIndex === 1 ? 'seg-opt-active' : ''}}" data-field="low" data-index="1" bindtap="onOptionSelect">不低</view>
+        </view>
+      </view>
+      <view class="opt-group">
+        <view class="opt-label">上次记了吗</view>
+        <view class="seg-control">
+          <view class="seg-opt {{lastIndex === 0 ? 'seg-opt-active' : ''}}" data-field="last" data-index="0" bindtap="onOptionSelect">记了</view>
+          <view class="seg-opt {{lastIndex === 1 ? 'seg-opt-active' : ''}}" data-field="last" data-index="1" bindtap="onOptionSelect">没记</view>
+        </view>
+      </view>
     </view>
     <view class="form-row">
       <view class="form-label">备注</view>

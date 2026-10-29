@@ -21,11 +21,8 @@ Page({
     actual: '',
     actualTouched: false,
     fullIndex: 0,
-    fullOptions: ['加满', '没加满'],
     lowIndex: 1,
-    lowOptions: ['低', '不低'],
     lastIndex: 0,
-    lastOptions: ['记了', '没记'],
     remark: ''
   },
   onLoad(options: Record<string, string>) {
@@ -86,14 +83,13 @@ Page({
     if (!this.data.actualTouched) patch.actual = shouldPay.toFixed(2);
     this.setData(patch);
   },
-  onFullChange(e: WechatMiniprogram.PickerChange) {
-    this.setData({ fullIndex: Number(e.detail.value) });
-  },
-  onLowChange(e: WechatMiniprogram.PickerChange) {
-    this.setData({ lowIndex: Number(e.detail.value) });
-  },
-  onLastChange(e: WechatMiniprogram.PickerChange) {
-    this.setData({ lastIndex: Number(e.detail.value) });
+  /** 加油选项：三个两段式开关，点击选择 */
+  onOptionSelect(e: WechatMiniprogram.TouchEvent) {
+    const field = e.currentTarget.dataset.field as string;
+    const index = Number(e.currentTarget.dataset.index);
+    if (field === 'full') this.setData({ fullIndex: index });
+    else if (field === 'low') this.setData({ lowIndex: index });
+    else if (field === 'last') this.setData({ lastIndex: index });
   },
   onRemarkInput(e: WechatMiniprogram.Input) {
     this.setData({ remark: e.detail.value });

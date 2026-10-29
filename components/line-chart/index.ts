@@ -37,7 +37,7 @@ Component({
           const yMax = this.data.yMax || 15;
           const padL = 28;
           const padR = 12;
-          const padT = 14;
+          const padT = 24; // 顶部留出数值标注空间
           const padB = 24;
           const plotW = w - padL - padR;
           const plotH = h - padT - padB;
@@ -65,12 +65,30 @@ Component({
           ctx.lineWidth = 2;
           ctx.stroke();
 
-          // 数据点
+          // 数据点 + 数值标注
+          const spacing = plotW / Math.max(1, pts.length - 1);
+          const dense = spacing < 36; // 点距过近时上下交错，减少标签重叠
+          ctx.font = '10px sans-serif';
+          ctx.textAlign = 'center';
+
           pts.forEach((p, i) => {
+            const px = x(i);
+            const py = y(p.value);
+
             ctx.beginPath();
-            ctx.arc(x(i), y(p.value), 3, 0, Math.PI * 2);
+            ctx.arc(px, py, 3, 0, Math.PI * 2);
             ctx.fillStyle = '#3B6FF6';
             ctx.fill();
+
+            // 默认标在点上方；顶部空间不足或标签过密时改到点下方
+            let ty = py - 9;
+            if (ty < padT + 9) ty = py + 17;
+            else if (dense && i % 2 === 1) ty = py + 17;
+            // 下方空间不足时回退到点上方，避免压到 X 轴标签
+            if (ty > h - padB - 2) ty = py - 9;
+
+            ctx.fillStyle = '#3B6FF6';
+            ctx.fillText(p.value.toFixed(2), px, ty);
           });
 
           // X 轴标签（最多 6 个）

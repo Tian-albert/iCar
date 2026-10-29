@@ -14,6 +14,27 @@ Page({
       success: () => wx.showToast({ title: '已复制到剪贴板，请粘贴保存', icon: 'none' })
     });
   },
+  /** 导出为 .json 文件：写入用户目录后通过文件分享消息发出 */
+  onExportFile() {
+    const json = exportBundle(getStorage());
+    const d = new Date();
+    const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
+    const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+    const fileName = `iCar-backup-${stamp}.json`;
+    const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`;
+    try {
+      wx.getFileSystemManager().writeFileSync(filePath, json, 'utf-8');
+    } catch (e) {
+      wx.showToast({ title: '生成文件失败', icon: 'none' });
+      return;
+    }
+    wx.shareFileMessage({
+      filePath,
+      fileName,
+      success: () => wx.showToast({ title: '已生成，请选择会话发送', icon: 'none' }),
+      fail: () => wx.showToast({ title: '分享失败，请改用复制方式', icon: 'none' })
+    });
+  },
   async onChooseFile() {
     const ok = await ensurePrivacyAuthorize();
     if (!ok) {

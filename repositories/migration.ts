@@ -1,5 +1,5 @@
 // Schema 迁移（设计报告 4.6）：按 meta.schemaVersion 逐版本执行
-import { Car, User } from '../types/models';
+import { Car, Category, User } from '../types/models';
 import { StorageAdapter } from './storage.adapter';
 
 type UserSeed = Omit<User, 'sourceId' | 'sourcePlatform' | 'createdAt' | 'updatedAt' | 'deleted'>;
@@ -75,11 +75,28 @@ function migrate_v13_to_v14(adapter: StorageAdapter): void {
   }
 }
 
+/** v1.4 -> v1.5：Category 回填 sortOrder（预设/自定义各自按现有顺序编号） */
+function migrate_v14_to_v15(adapter: StorageAdapter): void {
+  const cats = adapter.list<Category>('categories').filter(c => !c.deleted);
+  const groups = [cats.filter(c => c.isPreset), cats.filter(c => !c.isPreset)];
+  const now = Date.now();
+  for (const group of groups) {
+    group.forEach((c, i) => {
+      if (c.sortOrder === undefined || c.sortOrder === null) {
+        c.sortOrder = i;
+        c.updatedAt = now;
+        adapter.update('categories', c);
+      }
+    });
+  }
+}
+
 const MIGRATIONS: Array<(adapter: StorageAdapter) => void> = [
   migrate_v1_to_v11,
   migrate_v11_to_v12,
   migrate_v12_to_v13,
-  migrate_v13_to_v14
+  migrate_v13_to_v14,
+  migrate_v14_to_v15
 ];
 
 /** 启动时执行全部待迁移版本；返回迁移到的目标版本号 */

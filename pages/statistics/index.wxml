@@ -65,9 +65,12 @@
   </view>
 
   <!-- 分类支出 -->
-  <view class="section-title">分类支出</view>
+  <view class="cat-header">
+    <view class="cat-title">分类支出</view>
+    <view class="cat-total">总支出 <text class="cat-total-num">¥{{expenseTotal}}</text></view>
+  </view>
   <view class="card cat-card">
-    <donut-chart segments="{{categories}}" class="donut" />
+    <donut-chart segments="{{categories}}" total="{{expenseTotal}}" class="donut-chart" />
     <view class="cat-list">
       <view wx:for="{{categories}}" wx:key="name" class="cat-row">
         <view class="cat-dot" style="background: {{item.color}};"></view>

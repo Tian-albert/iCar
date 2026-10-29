@@ -3,7 +3,7 @@ Page({
   data: {
     version: '1.0.0',
     // TODO: 备案通过后，替换为工信部核发的实际备案号，例如「粤ICP备2026xxxxxx号-2X」
-    icp: '粤ICP备XXXXXXXX号-XX',
+    icp: '粤ICP备2026165445号-1X',
     beianUrl: 'http://beian.miit.gov.cn'
   },
   onCopyBeianUrl() {

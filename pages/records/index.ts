@@ -1,4 +1,4 @@
-// 车辆记录统一流水页（加油 / 保养 / 维修 / 支出）
+// 车辆记录统一流水页（加油 / 保养 / 维修 / 支出），支持分页与下拉刷新
 import { getStorage } from '../../store/index';
 import { listRefuels, getConsumptions, removeRefuel } from '../../services/refuel.service';
 import { listMaintains, listMaintainHandles, listMaintainLogs, removeMaintainHandle } from '../../services/maintain-record.service';
@@ -8,6 +8,17 @@ import { iconEmoji } from '../../utils/icons';
 import { formatDateTime } from '../../utils/date';
 import { Cost, FuelConsumption, RefuelLog } from '../../types/models';
 
+type TabKey = 'fuel' | 'maintain' | 'repair' | 'cost';
+
+const PAGE_SIZE = 20;
+
+const TAB_FIELD: Record<TabKey, string> = {
+  fuel: 'fuelRecords',
+  maintain: 'maintainRecords',
+  repair: 'repairRecords',
+  cost: 'costRecords'
+};
+
 Page({
   data: {
     carId: '',
@@ -15,16 +26,49 @@ Page({
     fuelRecords: [] as any[],
     maintainRecords: [] as any[],
     repairRecords: [] as any[],
-    costRecords: [] as any[]
+    costRecords: [] as any[],
+    hasMore: false,
+    total: 0
   },
   onLoad(options: Record<string, string>) {
-    this.setData({ carId: options.id });
+    const tab = (['fuel', 'maintain', 'repair', 'cost'] as string[]).includes(options.tab)
+      ? options.tab
+      : 'fuel';
+    this.setData({ carId: options.id, activeTab: tab });
   },
   onShow() {
     this.load();
   },
   onTabChange(e: WechatMiniprogram.TouchEvent) {
-    this.setData({ activeTab: e.currentTarget.dataset.tab as string });
+    const tab = e.currentTarget.dataset.tab as TabKey;
+    this.setData({ activeTab: tab });
+    this.renderTab(tab);
+  },
+  /** 触底加载下一页（仅当前 Tab） */
+  onReachBottom() {
+    const tab = this.data.activeTab as TabKey;
+    const self = this as any;
+    const all: any[] = self.allRecords?.[tab] ?? [];
+    if ((self.shownCount?.[tab] ?? 0) >= all.length) return;
+    self.shownCount[tab] = Math.min(self.shownCount[tab] + PAGE_SIZE, all.length);
+    this.renderTab(tab);
+  },
+  /** 下拉刷新：重新读取全量并回到第一页 */
+  onPullDownRefresh() {
+    this.load();
+    wx.stopPullDownRefresh();
+  },
+  /** 渲染指定 Tab 的已加载切片 */
+  renderTab(tab: TabKey) {
+    const self = this as any;
+    const all: any[] = self.allRecords?.[tab] ?? [];
+    const shown = self.shownCount?.[tab] ?? 0;
+    const patch: Record<string, any> = {
+      [TAB_FIELD[tab]]: all.slice(0, shown),
+      hasMore: shown < all.length,
+      total: all.length
+    };
+    this.setData(patch);
   },
   onEdit(e: WechatMiniprogram.TouchEvent) {
     const type = e.currentTarget.dataset.type as string;
@@ -104,7 +148,17 @@ Page({
         amountText: c.amount.toFixed(2)
       }));
 
-    this.setData({ fuelRecords, maintainRecords, repairRecords, costRecords });
+    // 全量缓存到实例（不进 data，避免视图层传输大量数据）
+    const self = this as any;
+    self.allRecords = { fuel: fuelRecords, maintain: maintainRecords, repair: repairRecords, cost: costRecords };
+    self.shownCount = {
+      fuel: Math.min(PAGE_SIZE, fuelRecords.length),
+      maintain: Math.min(PAGE_SIZE, maintainRecords.length),
+      repair: Math.min(PAGE_SIZE, repairRecords.length),
+      cost: Math.min(PAGE_SIZE, costRecords.length)
+    };
+
+    this.renderTab(this.data.activeTab as TabKey);
   }
 });
 
