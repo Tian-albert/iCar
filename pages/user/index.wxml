@@ -4,10 +4,6 @@
     <view class="user-avatar">👤</view>
     <view class="user-info">
       <view class="user-name">{{nickname}}</view>
-      <view class="user-member" bindtap="onUpgrade">
-        <text wx:if="{{isPro}}" class="member-pro">Pro 已开通{{expireText ? ' · ' + expireText : ''}}</text>
-        <text wx:else class="member-free">免费版 · 开通 Pro ›</text>
-      </view>
     </view>
   </view>
 
@@ -46,5 +42,5 @@
     </view>
   </view>
 
-  <view class="version">车记本 v1.0.0</view>
+  <view class="version">车记本 v1.0.2</view>
 </view>

@@ -28,20 +28,4 @@ export function setPinnedCarId(storage: StorageAdapter, carId: string): void {
   storage.setUser(user);
 }
 
-export interface MemberView {
-  level: 'free' | 'pro';
-  expireText: string; // '' 表示未开通
-}
 
-export function getMemberView(storage: StorageAdapter): MemberView {
-  const user = storage.getUser();
-  if (!user || user.memberLevel !== 'pro') return { level: 'free', expireText: '' };
-  const expired = user.memberExpireAt > 0 && user.memberExpireAt < Date.now();
-  if (expired) return { level: 'free', expireText: '' };
-  const d = new Date(user.memberExpireAt);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return {
-    level: 'pro',
-    expireText: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} 到期`
-  };
-}

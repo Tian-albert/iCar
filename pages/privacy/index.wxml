@@ -1,29 +1,47 @@
 <view class="page">
   <view class="title">隐私政策</view>
-  <view class="date">更新日期：2026-10-22</view>
+  <view class="date">更新日期：2026-10-29</view>
 
   <view class="section">
-    <view class="h">一、我们收集的信息</view>
-    <view class="p">「车记本」是一款纯本地工具应用，我们不收集、不存储、不上传你的任何个人身份信息。你记录的所有数据（车辆、加油、保养、维修、支出等）仅保存在你的手机本地。</view>
+    <view class="p">车记iCar 小程序开发者（以下简称「开发者」）为处理你的个人信息制定本指引。开发者仅处理实现小程序功能所必要的信息。</view>
   </view>
 
   <view class="section">
-    <view class="h">二、使用的权限</view>
-    <view class="p">相册 / 摄像头：仅在你主动选择图片作为车辆、保养项或支出类别的图标时使用；文件选择：仅在你主动导入数据备份时使用。所选图片与文件均保存在你的手机本地。</view>
+    <view class="h">一、开发者处理的信息</view>
+    <view class="p">· 剪切板：用于复制你导出的数据备份文本，以及复制工信部备案查询链接。</view>
+    <view class="p">· 选中的文件：用于导入你自行导出的数据备份文件，实现换机或恢复数据。</view>
+    <view class="p">· 照片：用于选择照片作为车辆、保养项、支出类别的图标（仅图片，不涉及视频）。</view>
+    <view class="p">除上述信息外，本小程序不收集你的任何个人身份信息（如姓名、手机号、位置、通讯录等）。</view>
   </view>
 
   <view class="section">
-    <view class="h">三、数据存储</view>
-    <view class="p">所有数据存储在你的设备本地（微信小程序本地存储），我们无法访问、无法同步你的任何数据。</view>
+    <view class="h">二、信息的存储</view>
+    <view class="p">你的全部数据仅保存在设备本地（微信小程序本地存储），开发者服务器不存储、不上传你的任何信息；保存期限为实现处理目的所必要的最短时间。</view>
   </view>
 
   <view class="section">
-    <view class="h">四、数据导出</view>
-    <view class="p">你可以随时在「我的 → 数据导入导出」将数据导出为文件，自行备份或迁移到新设备。</view>
+    <view class="h">三、信息的使用规则</view>
+    <view class="p">开发者仅在本指引明示的用途内使用收集的信息；如超出本指引目的或合理范围，将在变更前再次以小程序内弹窗方式告知并征得你的明示同意。</view>
   </view>
 
   <view class="section">
-    <view class="h">五、联系我们</view>
-    <view class="p">如有任何疑问或建议，请通过小程序内「我的 → 反馈与建议」与我们联系。</view>
+    <view class="h">四、信息对外提供</view>
+    <view class="p">开发者不会主动共享、转让你的信息至任何第三方，也不会对外公开披露你的信息。</view>
+  </view>
+
+  <view class="section">
+    <view class="h">五、未成年人保护</view>
+    <view class="p">若你是 14 周岁以下的未成年人，请和监护人共同仔细阅读本指引，并在征得监护人明示同意后继续使用小程序服务。</view>
+  </view>
+
+  <view class="section">
+    <view class="h">六、你的权益</view>
+    <view class="p">你可以通过以下邮箱联系我们，行使查阅、复制、更正、删除等法定权利：</view>
+    <view class="p">邮箱：<text selectable>2536988717@qq.com</text></view>
+  </view>
+
+  <view class="section">
+    <view class="h">七、投诉建议</view>
+    <view class="p">如认为开发者未遵守本指引，或有其他投诉建议、未成年人信息保护相关问题，可通过邮箱 2536988717@qq.com 联系我们，或向微信进行投诉。</view>
   </view>
 </view>

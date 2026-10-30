@@ -1,6 +1,6 @@
 {
   "name": "icar-miniprogram",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "iCar 车辆管理小程序（原生 + 云开发）",
   "private": true,
   "scripts": {

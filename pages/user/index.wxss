@@ -24,16 +24,6 @@
   font-weight: 600;
   color: #fff;
 }
-.user-member {
-  margin-top: 8rpx;
-  font-size: 24rpx;
-}
-.member-pro {
-  color: #ffd166;
-}
-.member-free {
-  color: #8a93a6;
-}
 .card {
   background: var(--color-card);
   border-radius: var(--radius-card);

@@ -32,7 +32,7 @@ export function exportBundle(storage: StorageAdapter): string {
   const manifest = {
     format: 'icar-export',
     version: 1,
-    source: { platform: 'mp', appVersion: '1.0.0', exportedAt: Date.now() },
+    source: { platform: 'mp', appVersion: '1.0.2', exportedAt: Date.now() },
     options: { amountUnit: 'yuan', timeUnit: 'ms', imageMode: 'file', package: 'json' },
     warnings: [] as string[],
     data
