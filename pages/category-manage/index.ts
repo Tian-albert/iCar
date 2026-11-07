@@ -7,7 +7,7 @@ import {
   removeCategory,
   setCategoryVisible,
   setCategoryIcon,
-  moveCategory,
+  moveCategoryBy,
   hasCategoryName
 } from '../../services/cost.service';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
@@ -99,14 +99,8 @@ Page({
     const steps = Math.round((e.touches[0].clientY - startY) / rowH);
     if (steps === 0) return;
 
-    const dir: 'up' | 'down' = steps > 0 ? 'down' : 'up';
-    const id = this.data.dragId;
-    let moved = false;
-    for (let i = 0; i < Math.abs(steps); i++) {
-      if (moveCategory(getStorage(), id, dir)) moved = true;
-    }
-    // 仅在真正移动后推进基准，避免拖到顶/底时基准漂移
-    if (moved) {
+    // 一次批量换位：整组 sortOrder 只重写一次、只重排一次列表（R-12）
+    if (moveCategoryBy(getStorage(), this.data.dragId, steps)) {
       self.dragStartY = startY + steps * rowH;
       this.load();
     }

@@ -29,19 +29,14 @@ export function computeShouldPay(unitPrice: number, volume: number): number {
  * 区间成立条件：E.isFull === true 且（S.isFull === true 或 S.isLowFuel === true）。
  * 区间油耗量 / 区间金额：S.isFull ? 取 E : 取 S。
  */
-export function buildConsumption(
+/** 组装一条区间实体（相邻配对与跨段累积共用） */
+function makeSegment(
   start: RefuelLog,
-  end: RefuelLog
-): FuelConsumption | null {
-  const valid = end.isFull && (start.isFull || start.isLowFuel);
-  if (!valid) return null;
-
-  const mileage = end.makeMileages - start.makeMileages;
-  if (mileage <= 0) return null;
-
-  const fuelAmount = start.isFull ? end.volume : start.volume;
-  const cost = start.isFull ? end.actualPayAmount : start.actualPayAmount;
-
+  end: RefuelLog,
+  mileage: number,
+  fuelAmount: number,
+  cost: number
+): FuelConsumption {
   return {
     sourceId: `mp:fuel-consumption:${start.sourceId}:${end.sourceId}`,
     sourcePlatform: 'mp',
@@ -63,17 +58,60 @@ export function buildConsumption(
   };
 }
 
+/** 相邻两条的区间判定（BR-5.2 口径，保留供单点校验与既有测试使用） */
+export function buildConsumption(
+  start: RefuelLog,
+  end: RefuelLog
+): FuelConsumption | null {
+  const valid = end.isFull && (start.isFull || start.isLowFuel);
+  if (!valid) return null;
+
+  const mileage = end.makeMileages - start.makeMileages;
+  if (mileage <= 0) return null;
+
+  const fuelAmount = start.isFull ? end.volume : start.volume;
+  const cost = start.isFull ? end.actualPayAmount : start.actualPayAmount;
+  return makeSegment(start, end, mileage, fuelAmount, cost);
+}
+
 /**
- * 重建某车的全部油耗区间（BR-25）。
- * 任何加油记录新增/编辑/删除后调用，入参为"软删除过滤后"的现存记录，
- * 删除中间记录后相邻关系自然重排，无需额外处理。
+ * 重建某车的全部油耗区间（BR-25，R-04 修订口径）。
+ *
+ * 1. 稳定排序：fuelDate → makeMileages → sourceId，同日多次加油也有确定先后。
+ * 2. 锚点 = 最近一次「加满」或「低油量补油」；此后所有加油量/金额累积，
+ *    直到遇到下一条「加满」记录才结算为一段区间。这样中间的「未加满」
+ *    不再打断整段，其有效里程与油耗不会丢失。
+ * 3. 区间里程 = 终点里程 − 锚点里程；区间油量/金额 = 锚点之后到终点（含）之和。
+ *
+ * 入参为软删过滤后的现存记录；任何增删改后全量重算。
  */
 export function rebuildConsumptions(logs: RefuelLog[]): FuelConsumption[] {
-  const sorted = [...logs].sort((a, b) => a.fuelDate - b.fuelDate);
+  const sorted = [...logs].sort(
+    (a, b) =>
+      a.fuelDate - b.fuelDate ||
+      a.makeMileages - b.makeMileages ||
+      a.sourceId.localeCompare(b.sourceId)
+  );
   const result: FuelConsumption[] = [];
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const c = buildConsumption(sorted[i], sorted[i + 1]);
-    if (c) result.push(c);
+  let anchor: RefuelLog | null = null;
+  let fuelAmount = 0;
+  let cost = 0;
+
+  for (const cur of sorted) {
+    if (!anchor) {
+      if (cur.isFull || cur.isLowFuel) anchor = cur;
+      continue;
+    }
+    const mileage = cur.makeMileages - anchor.makeMileages;
+    if (mileage <= 0) continue; // 里程倒退/重复记录不参与统计
+    fuelAmount += cur.volume;
+    cost += cur.actualPayAmount;
+    if (cur.isFull) {
+      result.push(makeSegment(anchor, cur, mileage, fuelAmount, cost));
+      anchor = cur;
+      fuelAmount = 0;
+      cost = 0;
+    }
   }
   return result;
 }

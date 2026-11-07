@@ -3,6 +3,7 @@ import { StorageAdapter } from '../repositories/storage.adapter';
 import { createWxStorageLike } from '../repositories/wx-storage';
 import { runMigrations } from '../repositories/migration';
 import { seedPresetCategories } from '../repositories/seed';
+import { purgeExpired } from '../services/recycle.service';
 
 let adapter: StorageAdapter | null = null;
 
@@ -12,6 +13,8 @@ export function getStorage(): StorageAdapter {
     runMigrations(adapter);
     seedPresetCategories(adapter);
     adapter.rebuildIndex();
+    // 软删记录保留 30 天，启动即清理过期项（R-03）
+    purgeExpired(adapter);
   }
   return adapter;
 }

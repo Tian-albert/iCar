@@ -13,6 +13,7 @@ import {
   removeCategory,
   setCategoryVisible,
   moveCategory,
+  moveCategoryBy,
   resolveCategorySelection,
   hasCategoryName
 } from '../services/cost.service';
@@ -218,6 +219,30 @@ describe('F-02 隐藏类别编辑不串类', () => {
     const after = listCosts(adapter, car.sourceId)[0];
     expect(after.categorySourceId).toBe(fuel.sourceId);
     expect(after.amount).toBe(120);
+  });
+});
+
+describe('cost.service 批量拖动换位（R-12）', () => {
+  it('一次跨 2 行换位后顺序正确且 sortOrder 连续', () => {
+    const { adapter } = setup();
+    const a = addCategory(adapter, 'A', 'p');
+    addCategory(adapter, 'B', 'p');
+    addCategory(adapter, 'C', 'p');
+
+    expect(moveCategoryBy(adapter, a.sourceId, 2)).toBe(true);
+    const customs = listCategories(adapter).filter(c => !c.isPreset);
+    expect(customs.map(c => c.name)).toEqual(['B', 'C', 'A']);
+    expect(customs.map(c => c.sortOrder)).toEqual([0, 1, 2]);
+  });
+
+  it('拖到边界外只移动到端点，不产生越界', () => {
+    const { adapter } = setup();
+    const a = addCategory(adapter, 'A', 'p');
+    addCategory(adapter, 'B', 'p');
+    expect(moveCategoryBy(adapter, a.sourceId, 99)).toBe(true);
+    expect(listCategories(adapter).filter(c => !c.isPreset).map(c => c.name)).toEqual(['B', 'A']);
+    expect(moveCategoryBy(adapter, a.sourceId, -99)).toBe(true);
+    expect(listCategories(adapter).filter(c => !c.isPreset).map(c => c.name)).toEqual(['A', 'B']);
   });
 });
 

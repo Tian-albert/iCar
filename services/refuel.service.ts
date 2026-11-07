@@ -147,8 +147,10 @@ export function removeRefuel(storage: StorageAdapter, sourceId: string): void {
   const log = storage.get<RefuelLog>('fuelRecords', sourceId);
   if (!log || log.deleted) return;
   const carSourceId = log.carSourceId;
-  storage.softDelete('fuelRecords', sourceId);
-  if (log.costSourceId) storage.softDelete('costs', log.costSourceId);
+  // 记录与关联支出共用删除批次，回收站可一次撤销
+  const batch = genId('del');
+  storage.softDelete('fuelRecords', sourceId, batch);
+  if (log.costSourceId) storage.softDelete('costs', log.costSourceId, batch);
   rebuildConsumptionsForCar(storage, carSourceId);
   syncMileages(storage, carSourceId, true);
 }

@@ -14,16 +14,16 @@ describe('stats.service buildStats（维度=全部，样本数据）', () => {
     sampleCar
   );
 
-  it('里程：2908 / 2892 / 1791', () => {
+  it('里程：2908 / 2892 / 2892', () => {
     expect(snap.mileage.latest).toBe(2908);
     expect(snap.mileage.increased).toBe(2892);
-    expect(snap.mileage.fuelMileage).toBe(1791);
+    expect(snap.mileage.fuelMileage).toBe(2892);
   });
 
-  it('油耗：2359.22 / 8.13 / 1.317', () => {
+  it('油耗：2359.22 / 8.46 / 0.816', () => {
     expect(snap.fuel.totalCost).toBeCloseTo(2359.22, 2);
-    expect(snap.fuel.avgConsumption).toBeCloseTo(8.13, 2);
-    expect(snap.fuel.costPerKm).toBeCloseTo(1.317, 3);
+    expect(snap.fuel.avgConsumption).toBeCloseTo(8.46, 2);
+    expect(snap.fuel.costPerKm).toBeCloseTo(0.816, 3);
   });
 
   it('支出：3529.90 / 1.221 / 0.405', () => {
@@ -42,12 +42,13 @@ describe('stats.service buildStats（维度=全部，样本数据）', () => {
     expect(fuel!.percent).toBeCloseTo(66.84, 2);
   });
 
-  it('月度行程：7月769 / 8月456 / 9月378 / 10月188', () => {
+  it('月度行程：6月559 / 7月769 / 8月456 / 9月378 / 10月730', () => {
     expect(snap.monthlyMileage).toEqual([
+      { label: '6月', value: 559 },
       { label: '7月', value: 769 },
       { label: '8月', value: 456 },
       { label: '9月', value: 378 },
-      { label: '10月', value: 188 }
+      { label: '10月', value: 730 }
     ]);
   });
 

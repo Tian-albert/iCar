@@ -33,6 +33,9 @@ Page({
   onOpenDataTransfer() {
     wx.navigateTo({ url: '/pages/data-transfer/index' });
   },
+  onOpenRecycleBin() {
+    wx.navigateTo({ url: '/pages/recycle-bin/index' });
+  },
   onOpenAbout() {
     wx.navigateTo({ url: '/pages/about/index' });
   },

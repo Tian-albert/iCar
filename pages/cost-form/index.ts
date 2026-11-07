@@ -1,5 +1,6 @@
 // 记一笔支出（支持新建 / 编辑）
 import { getStorage } from '../../store/index';
+import { guardSave } from '../../utils/save-guard';
 import {
   saveCost,
   updateCost,
@@ -131,11 +132,14 @@ Page({
       remark: this.data.remark
     };
     const storage = getStorage();
-    if (this.data.recordId) {
-      updateCost(storage, this.data.recordId, form);
-    } else {
-      saveCost(storage, form);
-    }
+    const ok = guardSave(() => {
+      if (this.data.recordId) {
+        updateCost(storage, this.data.recordId, form);
+      } else {
+        saveCost(storage, form);
+      }
+    });
+    if (!ok) return;
     wx.showToast({ title: '已保存', icon: 'success' });
     setTimeout(() => wx.navigateBack(), 600);
   }

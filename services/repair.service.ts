@@ -127,8 +127,9 @@ export function updateRepair(storage: StorageAdapter, sourceId: string, form: Re
 export function removeRepair(storage: StorageAdapter, sourceId: string): void {
   const record = storage.get<RepairRecord>('repairRecords', sourceId);
   if (!record || record.deleted) return;
-  storage.softDelete('repairRecords', sourceId);
-  if (record.costSourceId) storage.softDelete('costs', record.costSourceId);
+  const batch = genId('del');
+  storage.softDelete('repairRecords', sourceId, batch);
+  if (record.costSourceId) storage.softDelete('costs', record.costSourceId, batch);
   syncMileages(storage, record.carSourceId, true);
 }
 

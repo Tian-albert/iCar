@@ -1,9 +1,11 @@
 // 车辆表单（新建 / 编辑；首版仅支持燃油车）
 import { getStorage } from '../../store/index';
+import { guardSave } from '../../utils/save-guard';
 import { createCar, updateCar, getCar } from '../../services/car.service';
 import { formatDate } from '../../utils/date';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
 import { Car } from '../../types/models';
+import { deleteCarCascade } from '../../services/recycle.service';
 
 Page({
   data: {
@@ -84,28 +86,44 @@ Page({
       return;
     }
     const storage = getStorage();
-    if (isEdit) {
-      const updated = updateCar(storage, carId, {
-        name,
-        initMileages: mileageNum,
-        initDate,
-        icon
-      });
-      if (!updated) {
-        wx.showToast({ title: '车辆不存在', icon: 'none' });
-        return;
+    const ok = guardSave(() => {
+      if (isEdit) {
+        const updated = updateCar(storage, carId, {
+          name,
+          initMileages: mileageNum,
+          initDate,
+          icon
+        });
+        if (!updated) throw new Error('车辆不存在');
+      } else {
+        createCar(storage, {
+          name,
+          mileages: mileageNum,
+          initDate,
+          energyType: 'fuel',
+          icon
+        });
       }
-      wx.showToast({ title: '已保存', icon: 'success' });
-    } else {
-      createCar(storage, {
-        name,
-        mileages: mileageNum,
-        initDate,
-        energyType: 'fuel',
-        icon
-      });
-      wx.showToast({ title: '已添加', icon: 'success' });
-    }
+    });
+    if (!ok) return;
+    wx.showToast({ title: isEdit ? '已保存' : '已添加', icon: 'success' });
     setTimeout(() => wx.navigateBack(), 600);
+  },
+  /** 删除车辆：连带名下全部记录，30 天内可在回收站整批撤销 */
+  onDeleteCar() {
+    wx.showModal({
+      title: '删除车辆',
+      content: '将同时删除该车名下的全部记录，可在「我的 → 回收站」中撤销（保留 30 天）。确定删除吗？',
+      confirmColor: '#F5474F',
+      success: res => {
+        if (!res.confirm) return;
+        if (!deleteCarCascade(getStorage(), this.data.carId)) {
+          wx.showToast({ title: '车辆不存在', icon: 'none' });
+          return;
+        }
+        wx.showToast({ title: '已删除', icon: 'none' });
+        setTimeout(() => wx.navigateBack(), 600);
+      }
+    });
   }
 });

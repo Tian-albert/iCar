@@ -1,5 +1,6 @@
 // 记一笔统一入口：加油 / 保养 / 维修 / 支出 四类分段，切换不清空已填内容
 import { getStorage } from '../../store/index';
+import { guardSave } from '../../utils/save-guard';
 import { getCar } from '../../services/car.service';
 import { saveRefuel } from '../../services/refuel.service';
 import {
@@ -307,7 +308,8 @@ Page({
       return;
     }
 
-    saveRefuel(getStorage(), {
+    if (!guardSave(() => {
+      saveRefuel(getStorage(), {
       carSourceId: carId,
       fuelDate,
       makeMileages: mileageNum,
@@ -318,7 +320,8 @@ Page({
       isLowFuel: this.data.fuelLowIndex === 0,
       lastRecorded: this.data.fuelLastIndex === 0,
       remark: this.data.fuelRemark
-    });
+      });
+    })) return;
     this.done();
   },
   saveMaintain() {
@@ -336,14 +339,16 @@ Page({
     const amountNum = amountStr ? Number(amountStr) : NaN;
     const amount = !amountStr || isNaN(amountNum) || amountNum <= 0 ? null : round2(amountNum);
 
-    saveMaintainHandle(getStorage(), {
+    if (!guardSave(() => {
+      saveMaintainHandle(getStorage(), {
       carSourceId: this.data.carId,
       maintainSourceIds: selectedIds,
       makeDate: this.data.maintainDateValue,
       makeMileages: mileageNum,
       amount,
       remark: this.data.maintainRemark
-    });
+      });
+    })) return;
     this.done();
   },
   saveRepair() {
@@ -360,14 +365,16 @@ Page({
     const amountNum = amountStr ? Number(amountStr) : NaN;
     const amount = !amountStr || isNaN(amountNum) || amountNum <= 0 ? null : round2(amountNum);
 
-    saveRepair(getStorage(), {
+    if (!guardSave(() => {
+      saveRepair(getStorage(), {
       carSourceId: this.data.carId,
       content: this.data.repairContent,
       mileage: mileageNum,
       repairDate: this.data.repairDateValue,
       amount,
       remark: this.data.repairRemark
-    });
+      });
+    })) return;
     this.done();
   },
   saveCost() {
@@ -381,13 +388,15 @@ Page({
       wx.showToast({ title: '请输入金额', icon: 'none' });
       return;
     }
-    saveCost(getStorage(), {
+    if (!guardSave(() => {
+      saveCost(getStorage(), {
       carSourceId: this.data.carId,
       categorySourceId: cat.sourceId,
       amount: round2(amountNum),
       costDate: this.data.costDateValue,
       remark: this.data.costRemark
-    });
+      });
+    })) return;
     this.done();
   },
   done() {

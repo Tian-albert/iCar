@@ -162,6 +162,38 @@ export function moveCategory(storage: StorageAdapter, sourceId: string, directio
   return true;
 }
 
+/**
+ * 一次拖动跨越 N 行的批量换位（R-12）：整组 sortOrder 只重写一次，
+ * 避免手指快速滑动时连续 N 次写库 + N 次列表重排导致触摸序列中断。
+ */
+export function moveCategoryBy(
+  storage: StorageAdapter,
+  sourceId: string,
+  steps: number
+): boolean {
+  if (!steps) return false;
+  const cat = getCategory(storage, sourceId);
+  if (!cat) return false;
+  const siblings = listCategories(storage).filter(c => c.isPreset === cat.isPreset);
+  const idx = siblings.findIndex(c => c.sourceId === sourceId);
+  if (idx < 0) return false;
+  const target = Math.min(siblings.length - 1, Math.max(0, idx + steps));
+  if (target === idx) return false;
+
+  const arr = [...siblings];
+  const [item] = arr.splice(idx, 1);
+  arr.splice(target, 0, item);
+  const now = Date.now();
+  arr.forEach((c, i) => {
+    if (c.sortOrder !== i) {
+      c.sortOrder = i;
+      c.updatedAt = now;
+      storage.update('categories', c);
+    }
+  });
+  return true;
+}
+
 export function updateCategory(storage: StorageAdapter, sourceId: string, name: string, icon: string): void {
   const cat = getCategory(storage, sourceId);
   if (!cat || cat.isPreset) return;

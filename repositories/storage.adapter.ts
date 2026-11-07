@@ -90,10 +90,26 @@ export class StorageAdapter {
     return entity;
   }
 
-  softDelete(table: string, id: string): void {
+  /** 软删并记录时间/批次；未指定批次时以自身 id 为批次（单条删除） */
+  softDelete(table: string, id: string, batch?: string): void {
     const e = this.get<BaseEntity>(table, id);
     if (e) {
+      const now = Date.now();
       e.deleted = true;
+      e.deletedAt = now;
+      e.deleteBatch = batch || id;
+      e.updatedAt = now;
+      this.storage.set(tableKey(table, id), e);
+    }
+  }
+
+  /** 撤销软删（R-03）：清除删除标记，使记录重新进入所有 list 查询 */
+  restore(table: string, id: string): void {
+    const e = this.get<BaseEntity>(table, id);
+    if (e && e.deleted) {
+      e.deleted = false;
+      delete e.deletedAt;
+      delete e.deleteBatch;
       e.updatedAt = Date.now();
       this.storage.set(tableKey(table, id), e);
     }

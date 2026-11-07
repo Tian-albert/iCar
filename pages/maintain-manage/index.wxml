@@ -13,6 +13,9 @@
         <view class="mnt-bar-fill" style="width: {{item.progressPercent}}%;"></view>
       </view>
       <view class="row-cycle">周期：{{item.cycleText}}</view>
+      <view class="row-tools">
+        <view class="tool-link" data-id="{{item.sourceId}}" catchtap="onDelete">删除</view>
+      </view>
     </view>
   </view>
 

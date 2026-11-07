@@ -1,6 +1,11 @@
 // 保养项目全量视图（名称 + 剩余量 + 进度条 + 周期），点击进入编辑
 import { getStorage } from '../../store/index';
-import { ensureMaintainTemplates, getMaintainProgress, formatCycle } from '../../services/maintain-record.service';
+import {
+  ensureMaintainTemplates,
+  getMaintainProgress,
+  formatCycle,
+  removeMaintain
+} from '../../services/maintain-record.service';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
 import { getCar } from '../../services/car.service';
 
@@ -57,6 +62,20 @@ Page({
       urgent: p.urgent
     }));
     this.setData({ maintains });
+  },
+  onDelete(e: WechatMiniprogram.TouchEvent) {
+    const id = e.currentTarget.dataset.id as string;
+    wx.showModal({
+      title: '删除保养项',
+      content: '将同时移除该保养项的历史记录，可在「我的 → 回收站」中撤销（保留 30 天）。',
+      confirmColor: '#F5474F',
+      success: res => {
+        if (!res.confirm) return;
+        removeMaintain(getStorage(), id);
+        wx.showToast({ title: '已删除', icon: 'none' });
+        this.load();
+      }
+    });
   },
   onEdit(e: WechatMiniprogram.TouchEvent) {
     const id = e.currentTarget.dataset.id as string;

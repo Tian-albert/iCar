@@ -19,24 +19,24 @@ describe('fuel.service 油耗区间（样本 10 条）', () => {
   const logs = [...sample.fuelRecords].sort((a, b) => a.fuelDate - b.fuelDate);
   const segs = rebuildConsumptions(logs);
 
-  it('生成 6 个区间', () => {
-    expect(segs.length).toBe(6);
+  it('R-04 跨未加满累积后生成 7 个区间', () => {
+    expect(segs.length).toBe(7);
   });
 
-  it('Σ区间里程 = 1791，Σ油耗量 = 145.68，平均油耗 8.13', () => {
+  it('Σ区间里程 = 2892，Σ油耗量 = 244.56，平均油耗 8.46', () => {
     const s = summarizeConsumptions(segs);
-    expect(s.mileage).toBe(1791);
-    expect(s.fuelAmount).toBeCloseTo(145.68, 2);
-    expect(s.avgConsumption).toBeCloseTo(8.13, 2);
-    expect(s.costPerKm).toBeCloseTo(0.63, 2);
+    expect(s.mileage).toBe(2892);
+    expect(s.fuelAmount).toBeCloseTo(244.56, 2);
+    expect(s.avgConsumption).toBeCloseTo(8.46, 2);
+    expect(s.costPerKm).toBeCloseTo(0.68, 2);
   });
 
-  it('最近区间 = 3.06 L/100km / 188km / 0.26 元/km', () => {
+  it('最近区间 = 7.23 L/100km / 730km / 0.62 元/km', () => {
     const last = segs[segs.length - 1];
-    expect(last.mileage).toBe(188);
-    expect(last.fuelConsumption).toBeCloseTo(3.06, 2);
-    expect(last.cost).toBeCloseTo(49.62, 2);
-    expect(last.costPerKm).toBeCloseTo(0.26, 2);
+    expect(last.mileage).toBe(730);
+    expect(last.fuelConsumption).toBeCloseTo(7.23, 2);
+    expect(last.cost).toBeCloseTo(455.4, 2);
+    expect(last.costPerKm).toBeCloseTo(0.62, 2);
   });
 
   it('S 加满 + E 未加满 → 区间不成立', () => {
@@ -51,11 +51,11 @@ describe('fuel.service 油耗区间（样本 10 条）', () => {
     expect(buildConsumption(s, e)).toBeNull();
   });
 
-  it('删除中间一条（2026-08-23）后重新配对：区间数变 5，且 (07-31→08-28)=456km/15L', () => {
+  it('删除中间一条（2026-08-23）后重新配对：区间数变 6，且 (07-31→08-28)=456km/15L', () => {
     const deleted = 'mp:refuel-log:6a8a85685d732f70fce60cda'; // 08-23, 1620km
     const remaining = logs.filter(l => l.sourceId !== deleted) as RefuelLog[];
     const segs2 = rebuildConsumptions(remaining);
-    expect(segs2.length).toBe(5);
+    expect(segs2.length).toBe(6);
 
     const pair = segs2.find(
       c => c.startFuelRecordSourceId === 'mp:refuel-log:6a7428cc5b66f43e592dd0da' && // 07-31
@@ -98,7 +98,58 @@ describe('fuel.service 异常油耗收敛（F-07）', () => {
     );
     expect(segs.every(s => s.fuelConsumption <= MAX_FUEL_CONSUMPTION)).toBe(true);
     const last = segs[segs.length - 1];
-    expect(last.fuelConsumption).toBeCloseTo(3.06, 2);
+    expect(last.fuelConsumption).toBeCloseTo(7.23, 2);
+  });
+});
+
+describe('fuel.service 区间规则修订（R-04）', () => {
+  const mk = (
+    id: string,
+    date: number,
+    km: number,
+    vol: number,
+    full: boolean,
+    low = false
+  ): RefuelLog =>
+    ({
+      ...sample.fuelRecords[0],
+      sourceId: id,
+      fuelDate: date,
+      makeMileages: km,
+      volume: vol,
+      shouldPayAmount: vol * 7,
+      actualPayAmount: vol * 7,
+      isFull: full,
+      isLowFuel: low
+    } as RefuelLog);
+
+  it('加满 → 未加满 → 加满 合并为一段，里程与油量不丢失', () => {
+    const d = new Date(2026, 4, 1).getTime();
+    const logs = [
+      mk('a', d, 100, 40, true),
+      mk('b', d + 86400000, 300, 10, false),
+      mk('c', d + 172800000, 600, 35, true)
+    ];
+    const segs = rebuildConsumptions(logs);
+    expect(segs.length).toBe(1);
+    expect(segs[0].mileage).toBe(500);
+    expect(segs[0].fuelAmount).toBe(45); // 中间未加满的 10L + 终点 35L
+    expect(segs[0].cost).toBeCloseTo(45 * 7, 2);
+    expect(segs[0].fuelConsumption).toBeCloseTo(9, 2);
+  });
+
+  it('同日多次加油按里程稳定排序，不产生负里程区间', () => {
+    const d = new Date(2026, 4, 1).getTime();
+    const logs = [
+      mk('z', d, 500, 30, true),
+      mk('a', d, 100, 40, true),
+      mk('m', d, 300, 20, true)
+    ];
+    const segs = rebuildConsumptions(logs);
+    expect(segs.length).toBe(2);
+    expect(segs.every(s => s.mileage > 0)).toBe(true);
+    expect(segs[0].mileage).toBe(200);
+    expect(segs[1].mileage).toBe(200);
   });
 });
 

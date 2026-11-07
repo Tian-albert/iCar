@@ -14,6 +14,10 @@ export interface BaseEntity {
   createdAt: number;
   updatedAt: number;
   deleted: boolean;
+  /** 软删时间（R-03）：回收站保留 30 天后物理清理 */
+  deletedAt?: number;
+  /** 删除批次（R-02/R-03）：同批记录一起撤销，车辆删除时名下记录共用一批 */
+  deleteBatch?: string;
 }
 
 export interface Car extends BaseEntity {

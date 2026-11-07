@@ -58,6 +58,16 @@
   background: var(--color-primary);
   border-radius: 6rpx;
 }
+.row-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12rpx;
+}
+.tool-link {
+  padding: 6rpx 20rpx;
+  font-size: 24rpx;
+  color: var(--color-danger);
+}
 .row-cycle {
   margin-top: 10rpx;
   font-size: 22rpx;

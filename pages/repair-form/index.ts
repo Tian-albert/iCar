@@ -1,5 +1,6 @@
 // 记一笔维修（支持新建 / 编辑）
 import { getStorage } from '../../store/index';
+import { guardSave } from '../../utils/save-guard';
 import { saveRepair, updateRepair } from '../../services/repair.service';
 import { getCar } from '../../services/car.service';
 import { formatDate } from '../../utils/date';
@@ -85,11 +86,14 @@ Page({
       remark: this.data.remark
     };
     const storage = getStorage();
-    if (this.data.recordId) {
-      updateRepair(storage, this.data.recordId, form);
-    } else {
-      saveRepair(storage, form);
-    }
+    const ok = guardSave(() => {
+      if (this.data.recordId) {
+        updateRepair(storage, this.data.recordId, form);
+      } else {
+        saveRepair(storage, form);
+      }
+    });
+    if (!ok) return;
 
     wx.showToast({ title: '已保存', icon: 'success' });
     setTimeout(() => wx.navigateBack(), 600);

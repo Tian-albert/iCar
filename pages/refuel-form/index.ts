@@ -1,5 +1,6 @@
 // 记一笔加油（支持新建 / 编辑）
 import { getStorage } from '../../store/index';
+import { guardSave } from '../../utils/save-guard';
 import { saveRefuel, updateRefuel } from '../../services/refuel.service';
 import { getCar } from '../../services/car.service';
 import { formatDate } from '../../utils/date';
@@ -145,11 +146,14 @@ Page({
     };
 
     const storage = getStorage();
-    if (this.data.recordId) {
-      updateRefuel(storage, this.data.recordId, form);
-    } else {
-      saveRefuel(storage, form);
-    }
+    const ok = guardSave(() => {
+      if (this.data.recordId) {
+        updateRefuel(storage, this.data.recordId, form);
+      } else {
+        saveRefuel(storage, form);
+      }
+    });
+    if (!ok) return;
 
     wx.showToast({ title: '已保存', icon: 'success' });
     setTimeout(() => wx.navigateBack(), 600);

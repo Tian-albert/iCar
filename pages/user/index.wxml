@@ -21,6 +21,10 @@
       <view class="row-label">数据导入导出</view>
       <view class="row-arrow">›</view>
     </view>
+    <view class="row" bindtap="onOpenRecycleBin">
+      <view class="row-label">回收站</view>
+      <view class="row-arrow">›</view>
+    </view>
   </view>
 
   <view class="card">

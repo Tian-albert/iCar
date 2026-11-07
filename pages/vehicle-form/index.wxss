@@ -60,6 +60,13 @@
 .footer {
   margin-top: 40rpx;
 }
+.danger-btn {
+  margin-top: 40rpx;
+  padding: 24rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--color-danger);
+}
 .btn-primary {
   background: var(--color-primary);
   color: #fff;

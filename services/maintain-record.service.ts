@@ -237,13 +237,27 @@ export function updateMaintainHandle(storage: StorageAdapter, sourceId: string, 
 export function removeMaintainHandle(storage: StorageAdapter, sourceId: string): void {
   const handle = storage.get<MaintainHandle>('maintainHandles', sourceId);
   if (!handle || handle.deleted) return;
-  storage.softDelete('maintainHandles', sourceId);
+  const batch = genId('del');
+  storage.softDelete('maintainHandles', sourceId, batch);
   const logs = storage
     .list<MaintainLog>('maintainLogs')
     .filter(l => l.handleSourceId === sourceId && !l.deleted);
-  for (const l of logs) storage.softDelete('maintainLogs', l.sourceId);
-  if (handle.costSourceId) storage.softDelete('costs', handle.costSourceId);
+  for (const l of logs) storage.softDelete('maintainLogs', l.sourceId, batch);
+  if (handle.costSourceId) storage.softDelete('costs', handle.costSourceId, batch);
   syncMileages(storage, handle.carSourceId, true);
+}
+
+/** 删除保养项模板：连带软删其历史日志，30 天内可在回收站撤销（R-02） */
+export function removeMaintain(storage: StorageAdapter, sourceId: string): void {
+  const m = storage.get<Maintain>('maintains', sourceId);
+  if (!m || m.deleted) return;
+  const batch = genId('del');
+  storage.softDelete('maintains', sourceId, batch);
+  for (const l of storage.list<MaintainLog>('maintainLogs')) {
+    if (l.maintainSourceId === sourceId && !l.deleted) {
+      storage.softDelete('maintainLogs', l.sourceId, batch);
+    }
+  }
 }
 
 /** 读取某车的保养提醒阈值（缺失时回退默认值） */

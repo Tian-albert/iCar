@@ -18,6 +18,7 @@
     "pages/about/index",
     "pages/privacy/index",
     "pages/category-manage/index",
+    "pages/recycle-bin/index",
     "pages/vehicle-detail/index"
   ],
   "window": {
