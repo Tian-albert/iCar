@@ -94,13 +94,13 @@
   <view class="section-title">行程 (km)</view>
   <view class="card">
     <view wx:if="{{monthlyMileage.length === 0}}" class="chart-empty">暂无行程数据</view>
-    <bar-chart wx:else class="chart" bars="{{monthlyMileage}}" />
+    <bar-chart wx:else class="chart" bars="{{monthlyMileage}}" unit="km" />
   </view>
 
   <!-- 费用 -->
   <view class="section-title">费用 (元)</view>
   <view class="card">
     <view wx:if="{{monthlyCost.length === 0}}" class="chart-empty">暂无费用数据</view>
-    <bar-chart wx:else class="chart" bars="{{monthlyCost}}" />
+    <bar-chart wx:else class="chart" bars="{{monthlyCost}}" unit="元" />
   </view>
 </view>

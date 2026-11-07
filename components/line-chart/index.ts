@@ -1,13 +1,19 @@
-// 折线图组件（油耗趋势）
+// 折线图组件（油耗趋势）：点击数据点高亮并显示数值气泡（R-06）
 import { MAX_FUEL_CONSUMPTION } from '../../domain/fuel.service';
+import { hitLineIndex, toCanvasPoint } from '../../utils/chart-math';
+import { drawBubble } from '../../utils/chart-draw';
 
 Component({
   properties: {
     points: { type: Array, value: [] }, // [{ label, value }]
     yMax: { type: Number, value: 15 }
   },
+  data: {
+    activeIndex: -1
+  },
   observers: {
     points() {
+      this.setData({ activeIndex: -1 });
       this.draw();
     }
   },
@@ -17,10 +23,22 @@ Component({
     }
   },
   methods: {
+    onTap(e: WechatMiniprogram.TouchEvent) {
+      const t = e.touches && e.touches[0];
+      const lay = (this as any)._layout;
+      if (!t || !lay) return;
+      const p = toCanvasPoint(t as any, { left: lay.left, top: lay.top });
+      if (!p) return;
+      const pts = (this.data.points || []) as Array<{ label: string; value: number }>;
+      const hit = hitLineIndex(p.x, pts.length, lay.padL, lay.plotW);
+      const next = this.data.activeIndex === hit ? -1 : hit;
+      this.setData({ activeIndex: next });
+      this.draw();
+    },
     draw() {
       this.createSelectorQuery()
         .select('#line')
-        .fields({ node: true, size: true })
+        .fields({ node: true, size: true, rect: true })
         .exec((res: any) => {
           if (!res || !res[0] || !res[0].node) return;
           const canvas = res[0].node;
@@ -36,8 +54,7 @@ Component({
           const pts = (this.data.points || []) as Array<{ label: string; value: number }>;
           if (pts.length === 0) return;
 
-          // yMax 随实际数据抬高（取 5 的倍数），上限与领域层油耗上限一致；
-          // 绘制时把值 clamp 到 [0, yMax]，避免异常值把点画到画布外
+          // yMax 随实际数据抬高（取 5 的倍数），上限与领域层油耗上限一致
           const maxValue = Math.max(...pts.map(p => Number(p.value) || 0));
           const baseYMax = this.data.yMax || 15;
           const yMax = Math.min(
@@ -46,11 +63,18 @@ Component({
           );
           const padL = 28;
           const padR = 12;
-          const padT = 24; // 顶部留出数值标注空间
+          const padT = 24;
           const padB = 24;
           const plotW = w - padL - padR;
           const plotH = h - padT - padB;
-          // 单点时居中绘制，避免除以 (length - 1) = 0
+          // 缓存布局供触摸命中复用（含画布在视口中的偏移）
+          (this as any)._layout = {
+            left: res[0].left || 0,
+            top: res[0].top || 0,
+            padL,
+            plotW
+          };
+
           const x = (i: number) =>
             pts.length === 1 ? padL + plotW / 2 : padL + (plotW * i) / (pts.length - 1);
           const y = (v: number) => {
@@ -83,7 +107,7 @@ Component({
 
           // 数据点 + 数值标注
           const spacing = plotW / Math.max(1, pts.length - 1);
-          const dense = spacing < 36; // 点距过近时上下交错，减少标签重叠
+          const dense = spacing < 36;
           ctx.font = '10px sans-serif';
           ctx.textAlign = 'center';
 
@@ -96,11 +120,9 @@ Component({
             ctx.fillStyle = '#3B6FF6';
             ctx.fill();
 
-            // 默认标在点上方；顶部空间不足或标签过密时改到点下方
             let ty = py - 9;
             if (ty < padT + 9) ty = py + 17;
             else if (dense && i % 2 === 1) ty = py + 17;
-            // 下方空间不足时回退到点上方，避免压到 X 轴标签
             if (ty > h - padB - 2) ty = py - 9;
 
             ctx.fillStyle = '#3B6FF6';
@@ -116,6 +138,30 @@ Component({
             if (i % step !== 0 && i !== pts.length - 1) return;
             ctx.fillText(p.label, x(i), h - 6);
           });
+
+          // 选中点高亮 + 数值气泡
+          const active = this.data.activeIndex as number;
+          if (active >= 0 && active < pts.length) {
+            const p = pts[active];
+            const px = x(active);
+            const py = y(p.value);
+            ctx.beginPath();
+            ctx.arc(px, py, 7, 0, Math.PI * 2);
+            ctx.strokeStyle = '#3B6FF6';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            drawBubble(ctx, {
+              text: `${p.label} · ${p.value.toFixed(2)} L/100km`,
+              x: px,
+              y: py - 26,
+              w,
+              h
+            });
+          }
         });
     }
   }
