@@ -36,7 +36,11 @@ Page({
   onLoad(options: Record<string, string>) {
     const storage = getStorage();
     const car = getCar(storage, options.carId);
-    if (!car) return;
+    if (!car) {
+      wx.showToast({ title: '车辆不存在', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 600);
+      return;
+    }
 
     const patch: Record<string, any> = { carId: car.sourceId };
     if (options.recordId) {
@@ -102,6 +106,10 @@ Page({
     this.setData({ remark: e.detail.value });
   },
   onSave() {
+    if (!this.data.carId) {
+      wx.showToast({ title: '车辆信息无效', icon: 'none' });
+      return;
+    }
     const cat = this.data.categories[this.data.selectedIndex];
     // 锁定态（原类别已软删/异常）保留原 categorySourceId，绝不回退到第一项
     const categorySourceId =

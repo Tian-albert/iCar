@@ -5,7 +5,7 @@ import { listRefuels, getConsumptions, getLatestConsumption } from '../../servic
 import { listCosts, listCategories } from '../../services/cost.service';
 import { getMaintainProgress, ensureMaintainTemplates } from '../../services/maintain-record.service';
 import { buildStats } from '../../domain/stats.service';
-import { iconEmoji } from '../../utils/icons';
+import { iconEmoji, displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDateTime, formatDate } from '../../utils/date';
 import { FuelConsumption, RefuelLog } from '../../types/models';
 
@@ -45,6 +45,8 @@ Page({
   data: {
     carId: '',
     carName: '',
+    carIcon: '🚗',
+    carIsImage: false,
     mileages: 0,
     // 最近油耗
     hasLatest: false,
@@ -72,7 +74,11 @@ Page({
   load() {
     const storage = getStorage();
     const car = getCar(storage, this.data.carId);
-    if (!car) return;
+    if (!car) {
+      wx.showToast({ title: '车辆不存在', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 600);
+      return;
+    }
 
     const refuels = listRefuels(storage, car.sourceId);
     const segs = getConsumptions(storage, car.sourceId);
@@ -115,6 +121,8 @@ Page({
 
     this.setData({
       carName: car.name,
+      carIcon: displayIcon(car.icon || 'car'),
+      carIsImage: isImageIcon(car.icon || ''),
       mileages: car.mileages,
       hasLatest: !!latest,
       latestConsumptionText: latest ? latest.fuelConsumption.toFixed(2) : '--',

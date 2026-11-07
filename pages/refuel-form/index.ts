@@ -3,7 +3,7 @@ import { getStorage } from '../../store/index';
 import { saveRefuel, updateRefuel } from '../../services/refuel.service';
 import { getCar } from '../../services/car.service';
 import { formatDate } from '../../utils/date';
-import { round2, parseAmountInput } from '../../utils/number';
+import { round2, parseAmountInput, AMOUNT_INPUT_ERROR } from '../../utils/number';
 import { RefuelLog } from '../../types/models';
 
 Page({
@@ -28,7 +28,11 @@ Page({
   onLoad(options: Record<string, string>) {
     const storage = getStorage();
     const car = getCar(storage, options.carId);
-    if (!car) return;
+    if (!car) {
+      wx.showToast({ title: '车辆不存在', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 600);
+      return;
+    }
     const patch: Record<string, any> = {
       carId: car.sourceId,
       carName: car.name,
@@ -95,6 +99,10 @@ Page({
     this.setData({ remark: e.detail.value });
   },
   onSave() {
+    if (!this.data.carId) {
+      wx.showToast({ title: '车辆信息无效', icon: 'none' });
+      return;
+    }
     const { carId, mileages, unitPrice, volume, actual } = this.data;
     const mileageNum = Number(mileages);
     const priceNum = Number(unitPrice);
@@ -114,7 +122,7 @@ Page({
       return;
     }
     if (!parsedActual.ok) {
-      wx.showToast({ title: '实付金额无效，留空按应付金额', icon: 'none' });
+      wx.showToast({ title: AMOUNT_INPUT_ERROR, icon: 'none' });
       return;
     }
 

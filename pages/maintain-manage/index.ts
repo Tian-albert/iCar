@@ -2,6 +2,7 @@
 import { getStorage } from '../../store/index';
 import { ensureMaintainTemplates, getMaintainProgress, formatCycle } from '../../services/maintain-record.service';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
+import { getCar } from '../../services/car.service';
 
 interface MaintainView {
   sourceId: string;
@@ -21,10 +22,17 @@ Page({
     maintains: [] as MaintainView[]
   },
   onLoad(options: Record<string, string>) {
-    this.setData({ carId: options.id });
+    const carId = options.id;
+    // 无效参数不得继续 seed，否则会生成 carSourceId='' 的幽灵保养项
+    if (!carId || !getCar(getStorage(), carId)) {
+      wx.showToast({ title: '车辆不存在', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 600);
+      return;
+    }
+    this.setData({ carId });
   },
   onShow() {
-    this.load();
+    if (this.data.carId) this.load();
   },
   load() {
     const storage = getStorage();

@@ -70,31 +70,37 @@
     <view class="cat-total">总支出 <text class="cat-total-num">¥{{expenseTotal}}</text></view>
   </view>
   <view class="card cat-card">
-    <donut-chart segments="{{categories}}" total="{{expenseTotal}}" class="donut-chart" />
-    <view class="cat-list">
-      <view wx:for="{{categories}}" wx:key="name" class="cat-row">
-        <view class="cat-dot" style="background: {{item.color}};"></view>
-        <view class="cat-name">{{item.name}}</view>
-        <view class="cat-amount">¥ {{item.amount}}</view>
+    <view wx:if="{{!hasData || categories.length === 0}}" class="chart-empty">暂无支出数据，记一笔后即可查看分类占比</view>
+    <block wx:else>
+      <donut-chart segments="{{categories}}" total="{{expenseTotal}}" class="donut-chart" />
+      <view class="cat-list">
+        <view wx:for="{{categories}}" wx:key="name" class="cat-row">
+          <view class="cat-dot" style="background: {{item.color}};"></view>
+          <view class="cat-name">{{item.name}}</view>
+          <view class="cat-amount">¥ {{item.amount}}</view>
+        </view>
       </view>
-    </view>
+    </block>
   </view>
 
   <!-- 油耗趋势 -->
   <view class="section-title">油耗趋势 (L/100km)</view>
   <view class="card">
-    <line-chart class="chart" points="{{trend}}" yMax="{{15}}" />
+    <view wx:if="{{trend.length === 0}}" class="chart-empty">暂无有效油耗区间，记录两次加满加油后生成趋势</view>
+    <line-chart wx:else class="chart" points="{{trend}}" yMax="{{15}}" />
   </view>
 
   <!-- 行程 -->
   <view class="section-title">行程 (km)</view>
   <view class="card">
-    <bar-chart class="chart" bars="{{monthlyMileage}}" />
+    <view wx:if="{{monthlyMileage.length === 0}}" class="chart-empty">暂无行程数据</view>
+    <bar-chart wx:else class="chart" bars="{{monthlyMileage}}" />
   </view>
 
   <!-- 费用 -->
   <view class="section-title">费用 (元)</view>
   <view class="card">
-    <bar-chart class="chart" bars="{{monthlyCost}}" />
+    <view wx:if="{{monthlyCost.length === 0}}" class="chart-empty">暂无费用数据</view>
+    <bar-chart wx:else class="chart" bars="{{monthlyCost}}" />
   </view>
 </view>

@@ -13,7 +13,8 @@ import {
   removeCategory,
   setCategoryVisible,
   moveCategory,
-  resolveCategorySelection
+  resolveCategorySelection,
+  hasCategoryName
 } from '../services/cost.service';
 
 function createMemoryStorage(): StorageLike {
@@ -217,5 +218,19 @@ describe('F-02 隐藏类别编辑不串类', () => {
     const after = listCosts(adapter, car.sourceId)[0];
     expect(after.categorySourceId).toBe(fuel.sourceId);
     expect(after.amount).toBe(120);
+  });
+});
+
+describe('cost.service 同名类别校验（R-10）', () => {
+  it('忽略大小写与首尾空格，编辑时排除自身', () => {
+    const { adapter } = setup();
+    const a = addCategory(adapter, '停车费', 'p');
+    addCategory(adapter, 'Parking', 'p');
+
+    expect(hasCategoryName(adapter, '停车费')).toBe(true);
+    expect(hasCategoryName(adapter, ' 停车费 ')).toBe(true);
+    expect(hasCategoryName(adapter, 'parking')).toBe(true);
+    expect(hasCategoryName(adapter, '停车费', a.sourceId)).toBe(false);
+    expect(hasCategoryName(adapter, '洗车')).toBe(false);
   });
 });

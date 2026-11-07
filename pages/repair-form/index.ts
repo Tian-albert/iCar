@@ -20,7 +20,11 @@ Page({
   onLoad(options: Record<string, string>) {
     const storage = getStorage();
     const car = getCar(storage, options.carId);
-    if (!car) return;
+    if (!car) {
+      wx.showToast({ title: '车辆不存在', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 600);
+      return;
+    }
     const patch: Record<string, any> = { carId: car.sourceId, mileages: String(car.mileages) };
     if (options.recordId) {
       const r = storage.get<RepairRecord>('repairRecords', options.recordId);
@@ -55,6 +59,10 @@ Page({
     this.setData({ remark: e.detail.value });
   },
   onSave() {
+    if (!this.data.carId) {
+      wx.showToast({ title: '车辆信息无效', icon: 'none' });
+      return;
+    }
     if (!this.data.content.trim()) {
       wx.showToast({ title: '请输入维修内容', icon: 'none' });
       return;

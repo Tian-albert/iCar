@@ -13,7 +13,8 @@
 
   <!-- 车辆列表 -->
   <view wx:for="{{cars}}" wx:key="sourceId" class="car-card" data-id="{{item.sourceId}}" bindtap="onTapCar">
-    <view class="car-icon">{{item.icon === 'car' ? '🚙' : '🛵'}}</view>
+    <image wx:if="{{item.isImage}}" class="car-icon-img" src="{{item.icon}}" />
+    <text wx:else class="car-icon">{{item.emoji}}</text>
     <view class="car-info">
       <view class="car-name">
         {{item.name}}

@@ -33,7 +33,11 @@ Page({
   onLoad(options: Record<string, string>) {
     const storage = getStorage();
     const car = getCar(storage, options.carId);
-    if (!car) return;
+    if (!car) {
+      wx.showToast({ title: '车辆不存在', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 600);
+      return;
+    }
     ensureMaintainTemplates(storage, car.sourceId);
 
     let selectedIds: string[] = [];
@@ -108,6 +112,10 @@ Page({
     this.setData({ remark: e.detail.value });
   },
   onSave() {
+    if (!this.data.carId) {
+      wx.showToast({ title: '车辆信息无效', icon: 'none' });
+      return;
+    }
     const selectedIds = this.data.maintains.filter(m => m.selected).map(m => m.sourceId);
     if (selectedIds.length === 0) {
       wx.showToast({ title: '请至少选择一个保养项', icon: 'none' });

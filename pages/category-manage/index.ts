@@ -7,7 +7,8 @@ import {
   removeCategory,
   setCategoryVisible,
   setCategoryIcon,
-  moveCategory
+  moveCategory,
+  hasCategoryName
 } from '../../services/cost.service';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
 
@@ -122,7 +123,12 @@ Page({
       placeholderText: '类别名称',
       success: res => {
         if (res.confirm && res.content && res.content.trim()) {
-          addCategory(getStorage(), res.content.trim(), '🧾');
+          const name = res.content.trim();
+          if (hasCategoryName(getStorage(), name)) {
+            wx.showToast({ title: '已有同名类别', icon: 'none' });
+            return;
+          }
+          addCategory(getStorage(), name, '🧾');
           this.load();
         }
       }
@@ -137,7 +143,12 @@ Page({
       content: name,
       success: res => {
         if (res.confirm && res.content && res.content.trim()) {
-          updateCategory(getStorage(), id, res.content.trim(), '🧾');
+          const name = res.content.trim();
+          if (hasCategoryName(getStorage(), name, id)) {
+            wx.showToast({ title: '已有同名类别', icon: 'none' });
+            return;
+          }
+          updateCategory(getStorage(), id, name, '🧾');
           this.load();
         }
       }

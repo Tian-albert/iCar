@@ -1,12 +1,13 @@
 // 用户中心
 import { getStorage } from '../../store/index';
 import { getUser, setRemindEnabled } from '../../services/user.service';
+import { FEEDBACK_EMAIL } from '../../utils/app-config';
 
 Page({
   data: {
     nickname: '微信用户',
     remindEnabled: true,
-    feedbackEmail: '2536988717@qq.com'
+    feedbackEmail: FEEDBACK_EMAIL
   },
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {

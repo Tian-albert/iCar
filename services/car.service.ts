@@ -1,7 +1,7 @@
 // 车辆服务：档案 CRUD + 里程回写（BR-12）
 import { Car, EnergyType } from '../types/models';
 import { StorageAdapter } from '../repositories/storage.adapter';
-import { RefuelLog } from '../types/models';
+import { RefuelLog, MaintainHandle, RepairRecord } from '../types/models';
 import { genId } from '../utils/id';
 
 export interface CarForm {
@@ -13,13 +13,14 @@ export interface CarForm {
   icon?: string;
 }
 
-/** 首版可编辑的车辆字段（不含能量类型；当前里程由加油记录回写） */
-export interface CarEditForm {
-  name: string;
+/**
+ * 首版可编辑的车辆字段（不含能量类型；当前里程由加油记录回写）。
+ * 复用 CarForm 的字段定义，避免两处同义字段各自声明。
+ */
+export type CarEditForm = Required<Pick<CarForm, 'name' | 'initDate' | 'icon'>> & {
+  /** 编辑态必填（CarForm 中为可选） */
   initMileages: number;
-  initDate: number;
-  icon: string;
-}
+};
 
 export function createCar(storage: StorageAdapter, form: CarForm): Car {
   const now = Date.now();
@@ -83,16 +84,37 @@ export function updateCar(
   return car;
 }
 
-/** 车辆总里程 = 现存加油记录的最大里程（软删过滤后） */
-export function syncMileages(storage: StorageAdapter, carSourceId: string): void {
+/**
+ * 车辆总里程 = 现存记录中的最大里程（加油 / 保养执行 / 维修，均过滤软删）。
+ * R-01：保养与维修同样携带里程，纳入回写，避免只按加油记录推进。
+ */
+export function syncMileages(
+  storage: StorageAdapter,
+  carSourceId: string,
+  allowDecrease = false
+): void {
   const car = getCar(storage, carSourceId);
   if (!car) return;
-  const records = storage
+
+  const fuel = storage
     .list<RefuelLog>('fuelRecords')
-    .filter(r => r.carSourceId === carSourceId && !r.deleted);
-  const max = records.length ? Math.max(...records.map(r => r.makeMileages)) : car.initMileages;
-  if (car.mileages !== max) {
-    car.mileages = max;
+    .filter(r => r.carSourceId === carSourceId && !r.deleted)
+    .map(r => r.makeMileages);
+  const handles = storage
+    .list<MaintainHandle>('maintainHandles')
+    .filter(r => r.carSourceId === carSourceId && !r.deleted)
+    .map(r => r.makeMileages);
+  const repairs = storage
+    .list<RepairRecord>('repairRecords')
+    .filter(r => r.carSourceId === carSourceId && !r.deleted)
+    .map(r => r.mileage);
+
+  const all = [...fuel, ...handles, ...repairs].filter(n => isFinite(n) && n >= 0);
+  const derived = all.length ? Math.max(...all) : car.initMileages;
+  // 补录历史里程（小于当前里程）不应让车辆里程倒退；仅删除记录时允许回退
+  const next = allowDecrease ? derived : Math.max(car.mileages, derived);
+  if (car.mileages !== next) {
+    car.mileages = next;
     car.updatedAt = Date.now();
     storage.update('cars', car);
   }

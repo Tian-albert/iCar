@@ -83,8 +83,20 @@ export function listSpendCategories(storage: StorageAdapter): Category[] {
  *   由调用方保留原 categorySourceId，绝不回退到第一项而串改类别
  * - 新建态默认选第一项
  */
-export function resolveCategorySelection<T extends { sourceId: string }>(
-  cats: T[],
+/** 是否已有同名类别（大小写不敏感；excludeId 用于编辑时排除自身） */
+export function hasCategoryName(
+  storage: StorageAdapter,
+  name: string,
+  excludeId?: string
+): boolean {
+  const target = name.trim().toLowerCase();
+  return listCategories(storage).some(
+    c => c.sourceId !== excludeId && c.name.trim().toLowerCase() === target
+  );
+}
+
+export function resolveCategorySelection(
+  cats: Array<{ sourceId: string }>,
   originalId: string,
   editing: boolean
 ): { selectedIndex: number; locked: boolean } {

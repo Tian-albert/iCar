@@ -46,6 +46,13 @@
   font-size: 64rpx;
   margin-right: 24rpx;
 }
+.car-icon-img {
+  width: 64rpx;
+  height: 64rpx;
+  margin-right: 24rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
 .car-info {
   flex: 1;
 }

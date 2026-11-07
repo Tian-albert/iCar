@@ -3,7 +3,7 @@ import { Category, Cost, FuelConsumption, RefuelLog } from '../types/models';
 import { StorageAdapter } from '../repositories/storage.adapter';
 import { computeShouldPay, rebuildConsumptions, summarizeConsumptions } from '../domain/fuel.service';
 import { genId } from '../utils/id';
-import { round2 } from '../utils/number';
+import { round2, isValidAmount } from '../utils/number';
 import { syncMileages } from './car.service';
 
 export interface RefuelForm {
@@ -26,7 +26,7 @@ export interface RefuelForm {
  */
 function resolveActualPay(raw: number | null | undefined, shouldPay: number): number {
   if (raw === null || raw === undefined) return shouldPay;
-  if (typeof raw !== 'number' || !isFinite(raw) || raw < 0) return shouldPay;
+  if (typeof raw !== 'number' || !isValidAmount(raw)) return shouldPay;
   return round2(raw);
 }
 
@@ -150,7 +150,7 @@ export function removeRefuel(storage: StorageAdapter, sourceId: string): void {
   storage.softDelete('fuelRecords', sourceId);
   if (log.costSourceId) storage.softDelete('costs', log.costSourceId);
   rebuildConsumptionsForCar(storage, carSourceId);
-  syncMileages(storage, carSourceId);
+  syncMileages(storage, carSourceId, true);
 }
 
 /** 全量重建某车油耗区间：物理清除旧区间，写入新派生区间 */

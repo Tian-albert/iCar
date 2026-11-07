@@ -37,11 +37,11 @@
   <view class="section">
     <view class="h">六、你的权益</view>
     <view class="p">你可以通过以下邮箱联系我们，行使查阅、复制、更正、删除等法定权利：</view>
-    <view class="p">邮箱：<text selectable>2536988717@qq.com</text></view>
+    <view class="p">邮箱：<text selectable>{{feedbackEmail}}</text></view>
   </view>
 
   <view class="section">
     <view class="h">七、投诉建议</view>
-    <view class="p">如认为开发者未遵守本指引，或有其他投诉建议、未成年人信息保护相关问题，可通过邮箱 2536988717@qq.com 联系我们，或向微信进行投诉。</view>
+    <view class="p">如认为开发者未遵守本指引，或有其他投诉建议、未成年人信息保护相关问题，可通过邮箱 {{feedbackEmail}} 联系我们，或向微信进行投诉。</view>
   </view>
 </view>

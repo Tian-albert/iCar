@@ -2,6 +2,7 @@
 import { Category, Cost, RepairRecord } from '../types/models';
 import { StorageAdapter } from '../repositories/storage.adapter';
 import { genId } from '../utils/id';
+import { syncMileages } from './car.service';
 
 export interface RepairForm {
   carSourceId: string;
@@ -63,6 +64,7 @@ export function saveRepair(storage: StorageAdapter, form: RepairForm): RepairRec
     }
   }
 
+  syncMileages(storage, form.carSourceId);
   return record;
 }
 
@@ -117,6 +119,7 @@ export function updateRepair(storage: StorageAdapter, sourceId: string, form: Re
   }
 
   storage.update<RepairRecord>('repairRecords', record);
+  syncMileages(storage, record.carSourceId);
   return record;
 }
 
@@ -126,6 +129,7 @@ export function removeRepair(storage: StorageAdapter, sourceId: string): void {
   if (!record || record.deleted) return;
   storage.softDelete('repairRecords', sourceId);
   if (record.costSourceId) storage.softDelete('costs', record.costSourceId);
+  syncMileages(storage, record.carSourceId, true);
 }
 
 export function listRepairs(storage: StorageAdapter, carSourceId: string): RepairRecord[] {

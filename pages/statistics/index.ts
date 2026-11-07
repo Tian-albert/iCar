@@ -17,6 +17,7 @@ Page({
   data: {
     carId: '',
     rangeType: 'all',
+    hasData: false,
     year: 0,
     month: 1,
     years: [] as number[],
@@ -60,7 +61,11 @@ Page({
   load() {
     const storage = getStorage();
     const car = getCar(storage, this.data.carId);
-    if (!car) return;
+    if (!car) {
+      wx.showToast({ title: '车辆不存在', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 600);
+      return;
+    }
 
     const costs = listCosts(storage, car.sourceId);
     const refuels = listRefuels(storage, car.sourceId);
@@ -78,18 +83,21 @@ Page({
     for (let y = nowYear; y >= minYear; y--) years.push(y);
 
     const snap = buildStats(this.buildRange(), costs, refuels, segs, categories, car);
+    const hasData = costs.length > 0 || refuels.length > 0;
 
     this.setData({
       years,
+      hasData,
       mileageLatest: snap.mileage.latest,
       mileageIncreased: snap.mileage.increased,
       mileageFuel: snap.mileage.fuelMileage,
-      fuelTotalCost: snap.fuel.totalCost.toFixed(2),
-      fuelAvgConsumption: snap.fuel.avgConsumption.toFixed(2),
-      fuelCostPerKm: snap.fuel.costPerKm.toFixed(3),
-      expenseTotal: snap.expense.total.toFixed(2),
-      expensePerKm: snap.expense.perKm.toFixed(3),
-      expensePerKmExFuel: snap.expense.perKmExFuel.toFixed(3),
+      // 无数据时显示占位符，避免把「没数据」呈现成 0.00
+      fuelTotalCost: hasData ? snap.fuel.totalCost.toFixed(2) : '--',
+      fuelAvgConsumption: hasData ? snap.fuel.avgConsumption.toFixed(2) : '--',
+      fuelCostPerKm: hasData ? snap.fuel.costPerKm.toFixed(3) : '--',
+      expenseTotal: hasData ? snap.expense.total.toFixed(2) : '--',
+      expensePerKm: hasData ? snap.expense.perKm.toFixed(3) : '--',
+      expensePerKmExFuel: hasData ? snap.expense.perKmExFuel.toFixed(3) : '--',
       categories: snap.categories.map(c => ({
         name: c.name,
         amount: c.amount.toFixed(2),

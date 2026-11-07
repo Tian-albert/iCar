@@ -1,6 +1,6 @@
 // 记加油保存流程单测：验证 RefuelLog + Cost + 区间重算 + 里程回写（BR-25/26）
 import { StorageAdapter, StorageLike } from '../repositories/storage.adapter';
-import { parseAmountInput } from '../utils/number';
+import { parseAmountInput, isValidAmount } from '../utils/number';
 import { seedPresetCategories } from '../repositories/seed';
 import { createCar, getCar } from '../services/car.service';
 import {
@@ -235,6 +235,14 @@ describe('F-01 实付金额校验', () => {
     expect(parseAmountInput('-1')).toEqual({ ok: false, value: null });
     expect(parseAmountInput('abc')).toEqual({ ok: false, value: null });
     expect(parseAmountInput('88.888')).toEqual({ ok: true, value: 88.89 });
+  });
+
+  it('isValidAmount 是表单与 service 共用的唯一口径', () => {
+    expect(isValidAmount(0)).toBe(true);
+    expect(isValidAmount(12.5)).toBe(true);
+    expect(isValidAmount(-1)).toBe(false);
+    expect(isValidAmount(NaN)).toBe(false);
+    expect(isValidAmount(Infinity)).toBe(false);
   });
 
   it('saveRefuel / updateRefuel 兜底：负数、NaN、空值都回退应付金额', () => {

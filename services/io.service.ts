@@ -138,7 +138,8 @@ export function importBundle(storage: StorageAdapter, json: string): ImportResul
     const cars = storage.list<Car>('cars').filter(c => !c.deleted);
     for (const car of cars) {
       rebuildConsumptionsForCar(storage, car.sourceId);
-      syncMileages(storage, car.sourceId);
+      // 导入是全量重算，允许按导入后的记录回退里程
+      syncMileages(storage, car.sourceId, true);
     }
   } catch {
     // 本地 Storage 无事务：失败时如实告知，不伪装成功

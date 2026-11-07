@@ -3,9 +3,12 @@ import { getStorage } from '../../store/index';
 import { listCars } from '../../services/car.service';
 import { getPinnedCarId, setPinnedCarId } from '../../services/user.service';
 import { Car } from '../../types/models';
+import { displayIcon, isImageIcon } from '../../utils/icons';
 
 interface CarView extends Car {
   pinned: boolean;
+  emoji: string;
+  isImage: boolean;
 }
 
 Page({
@@ -21,7 +24,12 @@ Page({
   load() {
     const storage = getStorage();
     const pinnedId = getPinnedCarId(storage);
-    const cars = listCars(storage).map(c => ({ ...c, pinned: c.sourceId === pinnedId }));
+    const cars = listCars(storage).map(c => ({
+      ...c,
+      pinned: c.sourceId === pinnedId,
+      emoji: displayIcon(c.icon || 'car'),
+      isImage: isImageIcon(c.icon || '')
+    }));
     this.setData({ cars });
   },
   onAddCar() {

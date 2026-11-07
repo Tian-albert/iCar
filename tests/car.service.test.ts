@@ -1,6 +1,6 @@
 // 车辆服务单测：新建 + 编辑（F-05）
 import { StorageAdapter, StorageLike } from '../repositories/storage.adapter';
-import { createCar, updateCar, getCar } from '../services/car.service';
+import { createCar, updateCar, getCar, syncMileages } from '../services/car.service';
 
 function createMemoryStorage(): StorageLike {
   const map = new Map<string, unknown>();
@@ -51,5 +51,54 @@ describe('car.service 车辆编辑', () => {
         icon: 'car'
       })
     ).toBeNull();
+  });
+});
+
+describe('car.service 里程回写（R-01）', () => {
+  const mkHandle = (id: string, carId: string, mileage: number) =>
+    ({ sourceId: id, carSourceId: carId, makeMileages: mileage, deleted: false } as any);
+  const mkRepair = (id: string, carId: string, mileage: number) =>
+    ({ sourceId: id, carSourceId: carId, mileage, deleted: false } as any);
+  const setupCar = () => {
+    const adapter = new StorageAdapter(createMemoryStorage());
+    const car = createCar(adapter, {
+      name: 'CRV',
+      mileages: 100,
+      initDate: Date.now(),
+      energyType: 'fuel'
+    });
+    return { adapter, car };
+  };
+
+  it('保养执行 / 维修里程纳入当前里程', () => {
+    const { adapter, car } = setupCar();
+    adapter.insert('maintainHandles', mkHandle('h1', car.sourceId, 800));
+    adapter.insert('repairRecords', mkRepair('r1', car.sourceId, 500));
+    syncMileages(adapter, car.sourceId);
+    expect(getCar(adapter, car.sourceId)!.mileages).toBe(800);
+  });
+
+  it('补录历史里程（小于当前）不让里程倒退', () => {
+    const adapter = new StorageAdapter(createMemoryStorage());
+    const car = createCar(adapter, {
+      name: 'CRV',
+      mileages: 2908,
+      initDate: Date.now(),
+      energyType: 'fuel'
+    });
+    adapter.insert('maintainHandles', mkHandle('h1', car.sourceId, 1534));
+    syncMileages(adapter, car.sourceId);
+    expect(getCar(adapter, car.sourceId)!.mileages).toBe(2908);
+  });
+
+  it('删除记录时允许回退到建档里程', () => {
+    const { adapter, car } = setupCar();
+    adapter.insert('repairRecords', mkRepair('r1', car.sourceId, 500));
+    syncMileages(adapter, car.sourceId);
+    expect(getCar(adapter, car.sourceId)!.mileages).toBe(500);
+
+    adapter.softDelete('repairRecords', 'r1');
+    syncMileages(adapter, car.sourceId, true);
+    expect(getCar(adapter, car.sourceId)!.mileages).toBe(100);
   });
 });

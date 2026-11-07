@@ -3,6 +3,7 @@ import { Car, Category, Cost, Maintain, MaintainHandle, MaintainLog } from '../t
 import { StorageAdapter } from '../repositories/storage.adapter';
 import { calcRemaining, findLastHandle, MaintainThresholds, DEFAULT_MAINTAIN_THRESHOLDS } from '../domain/maintain.service';
 import { genId } from '../utils/id';
+import { syncMileages } from './car.service';
 
 /** 默认保养项模板（设计报告 4.2.3 CRV 模板） */
 const DEFAULT_TEMPLATES: Array<Pick<Maintain, 'name' | 'cycleMileages' | 'cycleDays' | 'cycleMonths' | 'cycleUnit' | 'cycleValue'>> = [
@@ -149,6 +150,7 @@ export function saveMaintainHandle(storage: StorageAdapter, form: MaintainForm):
     }
   }
 
+  syncMileages(storage, form.carSourceId);
   return handle;
 }
 
@@ -227,6 +229,7 @@ export function updateMaintainHandle(storage: StorageAdapter, sourceId: string, 
   }
 
   storage.update<MaintainHandle>('maintainHandles', handle);
+  syncMileages(storage, handle.carSourceId);
   return handle;
 }
 
@@ -240,6 +243,7 @@ export function removeMaintainHandle(storage: StorageAdapter, sourceId: string):
     .filter(l => l.handleSourceId === sourceId && !l.deleted);
   for (const l of logs) storage.softDelete('maintainLogs', l.sourceId);
   if (handle.costSourceId) storage.softDelete('costs', handle.costSourceId);
+  syncMileages(storage, handle.carSourceId, true);
 }
 
 /** 读取某车的保养提醒阈值（缺失时回退默认值） */

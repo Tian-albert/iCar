@@ -15,6 +15,14 @@ export function clamp01(n: number): number {
   return Math.min(1, Math.max(0, n));
 }
 
+/** 金额合法性：有限数且非负（表单输入与 service 兜底共用同一口径） */
+export function isValidAmount(n: number): boolean {
+  return isFinite(n) && n >= 0;
+}
+
+/** 金额输入非法时的统一提示（两处加油表单共用） */
+export const AMOUNT_INPUT_ERROR = '实付金额无效，留空按应付金额';
+
 /**
  * 解析「可留空」的金额输入（如加油的实付金额）。
  * - 空串：ok=true, value=null，由调用方回退默认值（应付金额）
@@ -25,6 +33,6 @@ export function parseAmountInput(raw: string): { ok: boolean; value: number | nu
   const text = (raw || '').trim();
   if (!text) return { ok: true, value: null };
   const n = Number(text);
-  if (!isFinite(n) || n < 0) return { ok: false, value: null };
+  if (!isValidAmount(n)) return { ok: false, value: null };
   return { ok: true, value: round2(n) };
 }

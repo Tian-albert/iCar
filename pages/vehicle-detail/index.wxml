@@ -1,7 +1,8 @@
 <view class="page">
   <!-- 车辆头部 -->
   <view class="header card">
-    <view class="header-car">🚙</view>
+    <image wx:if="{{carIsImage}}" class="header-car-img" src="{{carIcon}}" />
+    <text wx:else class="header-car">{{carIcon}}</text>
     <view class="header-info">
       <view class="header-name">{{carName}}</view>
       <view class="header-mileage">当前里程 {{mileages}} km</view>

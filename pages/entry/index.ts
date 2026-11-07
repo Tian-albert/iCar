@@ -12,7 +12,7 @@ import { saveRepair } from '../../services/repair.service';
 import { saveCost, listSpendCategories } from '../../services/cost.service';
 import { iconEmoji } from '../../utils/icons';
 import { formatDate } from '../../utils/date';
-import { round2, parseAmountInput } from '../../utils/number';
+import { round2, parseAmountInput, AMOUNT_INPUT_ERROR } from '../../utils/number';
 
 interface TabItem {
   key: string;
@@ -303,7 +303,7 @@ Page({
     ).getTime();
     const parsedActual = parseAmountInput(fuelActual);
     if (!parsedActual.ok) {
-      wx.showToast({ title: '实付金额无效，留空按应付金额', icon: 'none' });
+      wx.showToast({ title: AMOUNT_INPUT_ERROR, icon: 'none' });
       return;
     }
 

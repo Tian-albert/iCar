@@ -18,6 +18,13 @@
   font-size: 72rpx;
   margin-right: 24rpx;
 }
+.header-car-img {
+  width: 72rpx;
+  height: 72rpx;
+  margin-right: 24rpx;
+  border-radius: 14rpx;
+  flex-shrink: 0;
+}
 .header-info {
   flex: 1;
 }
