@@ -3,7 +3,7 @@ import { getStorage } from '../../store/index';
 import { saveRefuel, updateRefuel } from '../../services/refuel.service';
 import { getCar } from '../../services/car.service';
 import { formatDate } from '../../utils/date';
-import { round2 } from '../../utils/number';
+import { round2, parseAmountInput } from '../../utils/number';
 import { RefuelLog } from '../../types/models';
 
 Page({
@@ -99,7 +99,7 @@ Page({
     const mileageNum = Number(mileages);
     const priceNum = Number(unitPrice);
     const volumeNum = Number(volume);
-    const actualNum = Number(actual);
+    const parsedActual = parseAmountInput(actual);
 
     if (!mileages || isNaN(mileageNum) || mileageNum < 0) {
       wx.showToast({ title: '请输入有效里程', icon: 'none' });
@@ -111,6 +111,10 @@ Page({
     }
     if (!volume || isNaN(volumeNum) || volumeNum <= 0) {
       wx.showToast({ title: '请输入加油量', icon: 'none' });
+      return;
+    }
+    if (!parsedActual.ok) {
+      wx.showToast({ title: '实付金额无效，留空按应付金额', icon: 'none' });
       return;
     }
 
@@ -125,7 +129,7 @@ Page({
       makeMileages: mileageNum,
       unitPrice: priceNum,
       volume: volumeNum,
-      actualPayAmount: isNaN(actualNum) ? null : actualNum,
+      actualPayAmount: parsedActual.value,
       isFull: this.data.fullIndex === 0,
       isLowFuel: this.data.lowIndex === 0,
       lastRecorded: this.data.lastIndex === 0,

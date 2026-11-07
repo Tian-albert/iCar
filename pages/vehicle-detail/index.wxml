@@ -6,7 +6,10 @@
       <view class="header-name">{{carName}}</view>
       <view class="header-mileage">当前里程 {{mileages}} km</view>
     </view>
-    <view class="header-records" hover-class="header-records-hover" bindtap="onOpenRecords">记录 ›</view>
+    <view class="header-actions">
+      <view class="header-link" hover-class="header-link-hover" bindtap="onEditCar">编辑 ›</view>
+      <view class="header-link" hover-class="header-link-hover" bindtap="onOpenRecords">记录 ›</view>
+    </view>
   </view>
 
   <!-- 最近油耗 -->

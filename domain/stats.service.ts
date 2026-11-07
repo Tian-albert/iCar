@@ -2,6 +2,7 @@
 import { Car, Category, Cost, FuelConsumption, RefuelLog } from '../types/models';
 import { round2, round3 } from '../utils/number';
 import { monthLabel, startOfDay } from '../utils/date';
+import { clampFuelConsumption } from './fuel.service';
 
 export type StatsRange =
   | { type: 'month'; year: number; month: number }
@@ -104,7 +105,9 @@ export function buildStats(
   const sumFuelAmount = segList.reduce((s, c) => s + c.fuelAmount, 0);
   const totalCost = round2(costList.reduce((s, c) => s + c.amount, 0));
 
-  const avgConsumption = fuelMileage > 0 ? (sumFuelAmount / fuelMileage) * 100 : 0;
+  const avgConsumption = fuelMileage > 0
+    ? clampFuelConsumption((sumFuelAmount / fuelMileage) * 100)
+    : 0;
   const fuelCostPerKm = fuelMileage > 0 ? totalFuelCost / fuelMileage : 0;
   const expensePerKm = increased > 0 ? totalCost / increased : 0;
   const expensePerKmExFuel = increased > 0 ? (totalCost - totalFuelCost) / increased : 0;

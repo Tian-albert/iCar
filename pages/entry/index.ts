@@ -12,7 +12,7 @@ import { saveRepair } from '../../services/repair.service';
 import { saveCost, listSpendCategories } from '../../services/cost.service';
 import { iconEmoji } from '../../utils/icons';
 import { formatDate } from '../../utils/date';
-import { round2 } from '../../utils/number';
+import { round2, parseAmountInput } from '../../utils/number';
 
 interface TabItem {
   key: string;
@@ -301,7 +301,11 @@ Page({
       now.getHours(),
       now.getMinutes()
     ).getTime();
-    const actualNum = Number(fuelActual);
+    const parsedActual = parseAmountInput(fuelActual);
+    if (!parsedActual.ok) {
+      wx.showToast({ title: '实付金额无效，留空按应付金额', icon: 'none' });
+      return;
+    }
 
     saveRefuel(getStorage(), {
       carSourceId: carId,
@@ -309,7 +313,7 @@ Page({
       makeMileages: mileageNum,
       unitPrice: priceNum,
       volume: volumeNum,
-      actualPayAmount: !fuelActual || isNaN(actualNum) ? null : actualNum,
+      actualPayAmount: parsedActual.value,
       isFull: this.data.fuelFullIndex === 0,
       isLowFuel: this.data.fuelLowIndex === 0,
       lastRecorded: this.data.fuelLastIndex === 0,

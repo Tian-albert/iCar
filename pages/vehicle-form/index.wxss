@@ -51,6 +51,12 @@
   height: 56rpx;
   border-radius: 10rpx;
 }
+.tip {
+  margin: 20rpx 8rpx 0;
+  font-size: 24rpx;
+  color: var(--color-text-3);
+  line-height: 1.5;
+}
 .footer {
   margin-top: 40rpx;
 }

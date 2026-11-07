@@ -14,3 +14,17 @@ export function round3(n: number): number {
 export function clamp01(n: number): number {
   return Math.min(1, Math.max(0, n));
 }
+
+/**
+ * 解析「可留空」的金额输入（如加油的实付金额）。
+ * - 空串：ok=true, value=null，由调用方回退默认值（应付金额）
+ * - 非数字 / 负数 / Infinity：ok=false，调用方应提示并中止保存
+ * - 其余：四舍五入到 2 位
+ */
+export function parseAmountInput(raw: string): { ok: boolean; value: number | null } {
+  const text = (raw || '').trim();
+  if (!text) return { ok: true, value: null };
+  const n = Number(text);
+  if (!isFinite(n) || n < 0) return { ok: false, value: null };
+  return { ok: true, value: round2(n) };
+}

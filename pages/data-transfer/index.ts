@@ -78,7 +78,13 @@ Page({
       confirmColor: '#3B6FF6',
       success: res => {
         if (!res.confirm) return;
-        const result = importBundle(getStorage(), text);
+        let result: ReturnType<typeof importBundle>;
+        try {
+          result = importBundle(getStorage(), text);
+        } catch {
+          wx.showToast({ title: '导入失败，数据格式异常', icon: 'none' });
+          return;
+        }
         if (result.ok) {
           wx.showToast({
             title: `导入成功：新增${result.added} 更新${result.updated} 跳过${result.skipped}`,

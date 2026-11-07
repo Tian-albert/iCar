@@ -1,8 +1,7 @@
 // 关于页：展示主体资质（备案编号）并提供工信部备案查询入口
 Page({
   data: {
-    version: '1.0.2',
-    // TODO: 备案通过后，替换为工信部核发的实际备案号，例如「粤ICP备2026xxxxxx号-2X」
+    version: '1.0.3',
     icp: '粤ICP备2026165445号-1X',
     beianUrl: 'http://beian.miit.gov.cn'
   },

@@ -5,7 +5,7 @@
       <input class="form-input" placeholder="如 CRV" value="{{name}}" bindinput="onNameInput" />
     </view>
     <view class="form-row">
-      <view class="form-label">当前里程 (km) <text class="required">*</text></view>
+      <view class="form-label">{{mileageLabel}} <text class="required">*</text></view>
       <input class="form-input" type="number" placeholder="如 2908" value="{{mileages}}" bindinput="onMileageInput" />
     </view>
     <view class="form-row">
@@ -16,9 +16,7 @@
     </view>
     <view class="form-row">
       <view class="form-label">能源类型</view>
-      <picker range="{{energyLabels}}" value="{{energyIndex}}" bindchange="onEnergyChange">
-        <view class="form-value">{{energyLabels[energyIndex]}}</view>
-      </picker>
+      <view class="form-value">燃油</view>
     </view>
     <view class="form-row">
       <view class="form-label">车辆图标</view>
@@ -29,8 +27,10 @@
     </view>
   </view>
 
+  <view class="tip">首版仅支持燃油车；纯电 / 混动的记录与统计将在后续版本提供。</view>
+
   <view class="footer">
-    <button class="btn-primary" bindtap="onSave">保存</button>
+    <button class="btn-primary" bindtap="onSave">{{isEdit ? '保存' : '添加车辆'}}</button>
   </view>
 
   <icon-picker show="{{pickerShow}}" bind:select="onIconSelect" bind:close="onPickerClose" />

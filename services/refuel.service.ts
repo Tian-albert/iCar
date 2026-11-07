@@ -3,6 +3,7 @@ import { Category, Cost, FuelConsumption, RefuelLog } from '../types/models';
 import { StorageAdapter } from '../repositories/storage.adapter';
 import { computeShouldPay, rebuildConsumptions, summarizeConsumptions } from '../domain/fuel.service';
 import { genId } from '../utils/id';
+import { round2 } from '../utils/number';
 import { syncMileages } from './car.service';
 
 export interface RefuelForm {
@@ -17,6 +18,16 @@ export interface RefuelForm {
   /** 上次加油是否已记录（仅作记录信息，不参与油耗区间判定） */
   lastRecorded?: boolean;
   remark?: string;
+}
+
+/**
+ * 实付金额兜底：null/undefined 取应付金额；
+ * 负数、NaN、Infinity、非数值一律回退应付金额，绝不把 0 或负数写进账本。
+ */
+function resolveActualPay(raw: number | null | undefined, shouldPay: number): number {
+  if (raw === null || raw === undefined) return shouldPay;
+  if (typeof raw !== 'number' || !isFinite(raw) || raw < 0) return shouldPay;
+  return round2(raw);
 }
 
 export function getFuelCategory(storage: StorageAdapter): Category | null {
@@ -34,7 +45,7 @@ export function saveRefuel(storage: StorageAdapter, form: RefuelForm): RefuelLog
 
   const now = Date.now();
   const shouldPay = computeShouldPay(form.unitPrice, form.volume);
-  const actualPay = form.actualPayAmount === null ? shouldPay : form.actualPayAmount;
+  const actualPay = resolveActualPay(form.actualPayAmount, shouldPay);
 
   const log: RefuelLog = {
     sourceId: genId('refuel-log'),
@@ -99,7 +110,7 @@ export function updateRefuel(storage: StorageAdapter, sourceId: string, form: Re
   if (!log || log.deleted) throw new Error('记录不存在');
 
   const shouldPay = computeShouldPay(form.unitPrice, form.volume);
-  const actualPay = form.actualPayAmount === null ? shouldPay : form.actualPayAmount;
+  const actualPay = resolveActualPay(form.actualPayAmount, shouldPay);
 
   log.fuelDate = form.fuelDate;
   log.makeMileages = form.makeMileages;

@@ -5,7 +5,8 @@ import { getUser, setRemindEnabled } from '../../services/user.service';
 Page({
   data: {
     nickname: '微信用户',
-    remindEnabled: true
+    remindEnabled: true,
+    feedbackEmail: '2536988717@qq.com'
   },
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
@@ -34,7 +35,10 @@ Page({
   onOpenAbout() {
     wx.navigateTo({ url: '/pages/about/index' });
   },
-  onComing() {
-    wx.showToast({ title: '开发中', icon: 'none' });
+  onFeedback() {
+    wx.setClipboardData({
+      data: this.data.feedbackEmail,
+      success: () => wx.showToast({ title: '反馈邮箱已复制', icon: 'none' })
+    });
   }
 });

@@ -1,4 +1,10 @@
-import { computeShouldPay, rebuildConsumptions, summarizeConsumptions, buildConsumption } from '../domain/fuel.service';
+import {
+  computeShouldPay,
+  rebuildConsumptions,
+  summarizeConsumptions,
+  buildConsumption,
+  MAX_FUEL_CONSUMPTION
+} from '../domain/fuel.service';
 import { sample } from './fixtures/sample';
 import { RefuelLog } from '../types/models';
 
@@ -58,5 +64,64 @@ describe('fuel.service 油耗区间（样本 10 条）', () => {
     expect(pair).toBeDefined();
     expect(pair!.mileage).toBe(456);
     expect(pair!.fuelAmount).toBeCloseTo(15, 3);
+  });
+});
+
+describe('fuel.service 异常油耗收敛（F-07）', () => {
+  it('1km 区间的荒谬油耗被限制在 MAX_FUEL_CONSUMPTION', () => {
+    const start = {
+      ...sample.fuelRecords[0],
+      makeMileages: 100,
+      isFull: true,
+      isLowFuel: false,
+      volume: 50,
+      actualPayAmount: 300
+    } as RefuelLog;
+    const end = {
+      ...sample.fuelRecords[1],
+      makeMileages: 101,
+      isFull: true,
+      isLowFuel: false,
+      volume: 50,
+      actualPayAmount: 300
+    } as RefuelLog;
+
+    const seg = buildConsumption(start, end);
+    expect(seg).not.toBeNull();
+    expect(seg!.mileage).toBe(1);
+    expect(seg!.fuelConsumption).toBe(MAX_FUEL_CONSUMPTION);
+  });
+
+  it('正常区间油耗不受收敛影响', () => {
+    const segs = rebuildConsumptions(
+      [...sample.fuelRecords].sort((a, b) => a.fuelDate - b.fuelDate)
+    );
+    expect(segs.every(s => s.fuelConsumption <= MAX_FUEL_CONSUMPTION)).toBe(true);
+    const last = segs[segs.length - 1];
+    expect(last.fuelConsumption).toBeCloseTo(3.06, 2);
+  });
+});
+
+describe('fuel.service 汇总口径一致性（审查发现）', () => {
+  const mkLog = (mileage: number, volume: number): RefuelLog =>
+    ({
+      ...sample.fuelRecords[0],
+      sourceId: `mp:refuel-log:review-${mileage}-${volume}`,
+      makeMileages: mileage,
+      volume,
+      isFull: true,
+      isLowFuel: false,
+      actualPayAmount: 300
+    } as RefuelLog);
+
+  it('异常区间不把汇总平均油耗拉到上限之外', () => {
+    const normal = buildConsumption(mkLog(0, 20), mkLog(200, 20))!;
+    const abnormal = buildConsumption(mkLog(200, 1), mkLog(201, 50))!;
+    expect(normal.fuelConsumption).toBeCloseTo(10, 2);
+    expect(abnormal.fuelConsumption).toBe(MAX_FUEL_CONSUMPTION);
+
+    // 汇总按 (Σ油耗量 / Σ里程) 独立重算，也必须遵守同一上限
+    const summary = summarizeConsumptions([normal, abnormal]);
+    expect(summary.avgConsumption).toBeLessThanOrEqual(MAX_FUEL_CONSUMPTION);
   });
 });

@@ -3,6 +3,19 @@ import { RefuelLog, FuelConsumption } from '../types/models';
 import { round2 } from '../utils/number';
 
 /**
+ * 单车油耗合理上限（L/100km）。
+ * 极小里程区间（如 1km）会因录入误差算出数千的荒谬数值，统一收敛到该上限，
+ * 避免污染统计指标并把图表点画到画布外；录入数据修正后重算即恢复真值。
+ */
+export const MAX_FUEL_CONSUMPTION = 30;
+
+/** 统一收敛所有对外展示的油耗值（区间值、汇总平均、统计页平均），保证口径一致 */
+export function clampFuelConsumption(value: number): number {
+  if (!isFinite(value)) return 0;
+  return Math.max(0, Math.min(value, MAX_FUEL_CONSUMPTION));
+}
+
+/**
  * 金额联动：应付金额 = 单价 × 加油量（四舍五入 2 位）
  * 实付金额默认取应付金额（用户可改，由调用方决定）
  */
@@ -41,7 +54,7 @@ export function buildConsumption(
     fuelDate: end.fuelDate,
     mileage,
     fuelAmount,
-    fuelConsumption: (fuelAmount / mileage) * 100,
+    fuelConsumption: clampFuelConsumption((fuelAmount / mileage) * 100),
     cost,
     costPerKm: cost / mileage,
     createdAt: Date.now(),
@@ -77,7 +90,7 @@ export function summarizeConsumptions(list: FuelConsumption[]) {
     mileage,
     fuelAmount,
     cost,
-    avgConsumption: mileage > 0 ? round2((fuelAmount / mileage) * 100) : 0,
+    avgConsumption: mileage > 0 ? round2(clampFuelConsumption((fuelAmount / mileage) * 100)) : 0,
     costPerKm: mileage > 0 ? round2(cost / mileage) : 0
   };
 }

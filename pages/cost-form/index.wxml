@@ -15,6 +15,7 @@
         <view class="cat-name">{{item.name}}</view>
       </view>
     </scroll-view>
+    <view wx:if="{{categoryLocked}}" class="cat-locked">原类别已不可用，保存时将保留原类别不变</view>
   </view>
 
   <view class="card">

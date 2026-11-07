@@ -166,6 +166,9 @@ Page({
   onOpenStatisticsYear() {
     wx.navigateTo({ url: `/pages/statistics/index?id=${this.data.carId}&range=year` });
   },
+  onEditCar() {
+    wx.navigateTo({ url: `/pages/vehicle-form/index?id=${this.data.carId}` });
+  },
   onOpenRecords() {
     wx.navigateTo({ url: `/pages/records/index?id=${this.data.carId}&tab=fuel` });
   },

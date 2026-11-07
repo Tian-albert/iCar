@@ -58,3 +58,38 @@ describe('io.service 导出导入', () => {
     expect(importBundle(b, '{"format":"other"}').ok).toBe(false);
   });
 });
+
+describe('F-03 导入校验与异常兜底', () => {
+  const manifest = (data: Record<string, unknown>) =>
+    JSON.stringify({ format: 'icar-export', version: 1, data });
+
+  it('非数组表 / 缺 data / 非对象根 一律返回失败', () => {
+    const b = new StorageAdapter(createMemoryStorage());
+    expect(importBundle(b, manifest({ cars: 'oops' })).ok).toBe(false);
+    expect(importBundle(b, manifest({ cars: { a: 1 } })).ok).toBe(false);
+    expect(importBundle(b, '{"format":"icar-export"}').ok).toBe(false);
+    expect(importBundle(b, '[]').ok).toBe(false);
+    expect(importBundle(b, 'null').ok).toBe(false);
+  });
+
+  it('deleted:true 与非法条目被跳过，不抛异常', () => {
+    const b = new StorageAdapter(createMemoryStorage());
+    seedPresetCategories(b);
+    const json = manifest({
+      repairRecords: [
+        { sourceId: 'mp:repair:good', content: '换刹车片', deleted: false, updatedAt: 1 },
+        { sourceId: 'mp:repair:gone', content: '已删', deleted: true, updatedAt: 99 },
+        null,
+        'bad',
+        { content: '无 id' }
+      ],
+      costs: null
+    });
+    const result = importBundle(b, json);
+    expect(result.ok).toBe(true);
+    expect(result.added).toBe(1);
+    expect(result.skipped).toBe(4);
+    expect(b.get<any>('repairRecords', 'mp:repair:good')).not.toBeNull();
+    expect(b.get<any>('repairRecords', 'mp:repair:gone')).toBeNull();
+  });
+});

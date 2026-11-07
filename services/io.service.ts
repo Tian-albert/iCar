@@ -32,7 +32,7 @@ export function exportBundle(storage: StorageAdapter): string {
   const manifest = {
     format: 'icar-export',
     version: 1,
-    source: { platform: 'mp', appVersion: '1.0.2', exportedAt: Date.now() },
+    source: { platform: 'mp', appVersion: '1.0.3', exportedAt: Date.now() },
     options: { amountUnit: 'yuan', timeUnit: 'ms', imageMode: 'file', package: 'json' },
     warnings: [] as string[],
     data
@@ -49,67 +49,100 @@ export interface ImportResult {
 }
 
 export function importBundle(storage: StorageAdapter, json: string): ImportResult {
+  const fail = (message: string): ImportResult => ({
+    ok: false,
+    added: 0,
+    updated: 0,
+    skipped: 0,
+    message
+  });
+
   let manifest: any;
   try {
     manifest = JSON.parse(json);
   } catch {
-    return { ok: false, added: 0, updated: 0, skipped: 0, message: 'JSON 解析失败' };
+    return fail('JSON 解析失败');
   }
-  if (!manifest || manifest.format !== 'icar-export') {
-    return { ok: false, added: 0, updated: 0, skipped: 0, message: '不是有效的 iCar 导出数据' };
+  if (!manifest || typeof manifest !== 'object' || manifest.format !== 'icar-export') {
+    return fail('不是有效的 iCar 导出数据');
   }
-  const data = (manifest.data || {}) as Record<string, any[]>;
+  const data = manifest.data;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return fail('备份数据格式错误（缺少 data）');
+  }
+  // 各业务表必须是数组；缺失视为空表（只做结构校验，不逐字段深校验）
+  for (const table of BUSINESS_TABLES) {
+    const value = data[table];
+    if (value !== undefined && value !== null && !Array.isArray(value)) {
+      return fail(`数据表 ${table} 格式错误`);
+    }
+  }
+
   let added = 0;
   let updated = 0;
   let skipped = 0;
 
-  // 业务表 Upsert（sourceId 不存在新增；updatedAt 更新则覆盖；否则跳过）
-  for (const table of BUSINESS_TABLES) {
-    for (const e of data[table] || []) {
-      if (!e || !e.sourceId) continue;
-      const existing = storage.get<any>(table, e.sourceId);
-      if (!existing) {
-        storage.insert(table, e);
+  try {
+    // 业务表 Upsert：跳过软删记录与非法条目，避免已删数据复活或写入脏实体
+    for (const table of BUSINESS_TABLES) {
+      for (const e of (data[table] || []) as any[]) {
+        if (
+          !e ||
+          typeof e !== 'object' ||
+          Array.isArray(e) ||
+          !e.sourceId ||
+          e.deleted === true
+        ) {
+          skipped++;
+          continue;
+        }
+        const existing = storage.get<any>(table, e.sourceId);
+        if (!existing) {
+          storage.insert(table, e);
+          added++;
+        } else if ((e.updatedAt || 0) > (existing.updatedAt || 0)) {
+          storage.update(table, e);
+          updated++;
+        } else {
+          skipped++;
+        }
+      }
+    }
+
+    // user 合并：reminderSentCount 取 max，不覆盖本地 openid / 会员
+    const importedUser = data['user'] as any;
+    if (importedUser && typeof importedUser === 'object' && !Array.isArray(importedUser)) {
+      const local = storage.getUser();
+      if (!local) {
+        storage.setUser({
+          ...importedUser,
+          sourceId: importedUser.sourceId || 'mp:user:default',
+          sourcePlatform: 'mp',
+          openid: ''
+        });
         added++;
-      } else if ((e.updatedAt || 0) > (existing.updatedAt || 0)) {
-        storage.update(table, e);
-        updated++;
       } else {
-        skipped++;
+        if ((importedUser.reminderSentCount || 0) > (local.reminderSentCount || 0)) {
+          local.reminderSentCount = importedUser.reminderSentCount;
+        }
+        local.updatedAt = Date.now();
+        storage.setUser(local);
+        updated++;
       }
     }
-  }
 
-  // user 合并：reminderSentCount 取 max，不覆盖本地 openid/会员
-  const importedUser = data['user'] as any;
-  if (importedUser) {
-    const local = storage.getUser();
-    if (!local) {
-      storage.setUser({
-        ...importedUser,
-        sourceId: importedUser.sourceId || 'mp:user:default',
-        sourcePlatform: 'mp',
-        openid: ''
-      });
-      added++;
-    } else {
-      if ((importedUser.reminderSentCount || 0) > local.reminderSentCount) {
-        local.reminderSentCount = importedUser.reminderSentCount;
-      }
-      local.updatedAt = Date.now();
-      storage.setUser(local);
-      updated++;
+    // 导入可能带入同名预设（sourceId 与本地不同），合并去重后再重建派生数据
+    dedupePresetCategories(storage);
+
+    // 重建派生数据：区间 + 里程
+    const cars = storage.list<Car>('cars').filter(c => !c.deleted);
+    for (const car of cars) {
+      rebuildConsumptionsForCar(storage, car.sourceId);
+      syncMileages(storage, car.sourceId);
     }
-  }
-
-  // 导入可能带入同名预设（sourceId 与本地不同），合并去重后再重建派生数据
-  dedupePresetCategories(storage);
-
-  // 重建派生数据：区间 + 里程
-  const cars = storage.list<Car>('cars').filter(c => !c.deleted);
-  for (const car of cars) {
-    rebuildConsumptionsForCar(storage, car.sourceId);
-    syncMileages(storage, car.sourceId);
+  } catch {
+    // 本地 Storage 无事务：失败时如实告知，不伪装成功
+    return fail('导入过程中发生错误，数据可能未完整导入');
   }
 
   return { ok: true, added, updated, skipped };

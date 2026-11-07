@@ -1,4 +1,6 @@
 // 折线图组件（油耗趋势）
+import { MAX_FUEL_CONSUMPTION } from '../../domain/fuel.service';
+
 Component({
   properties: {
     points: { type: Array, value: [] }, // [{ label, value }]
@@ -32,17 +34,29 @@ Component({
           ctx.clearRect(0, 0, w, h);
 
           const pts = (this.data.points || []) as Array<{ label: string; value: number }>;
-          if (pts.length < 2) return;
+          if (pts.length === 0) return;
 
-          const yMax = this.data.yMax || 15;
+          // yMax 随实际数据抬高（取 5 的倍数），上限与领域层油耗上限一致；
+          // 绘制时把值 clamp 到 [0, yMax]，避免异常值把点画到画布外
+          const maxValue = Math.max(...pts.map(p => Number(p.value) || 0));
+          const baseYMax = this.data.yMax || 15;
+          const yMax = Math.min(
+            MAX_FUEL_CONSUMPTION,
+            Math.max(baseYMax, Math.ceil(maxValue / 5) * 5)
+          );
           const padL = 28;
           const padR = 12;
           const padT = 24; // 顶部留出数值标注空间
           const padB = 24;
           const plotW = w - padL - padR;
           const plotH = h - padT - padB;
-          const x = (i: number) => padL + (plotW * i) / (pts.length - 1);
-          const y = (v: number) => padT + plotH * (1 - v / yMax);
+          // 单点时居中绘制，避免除以 (length - 1) = 0
+          const x = (i: number) =>
+            pts.length === 1 ? padL + plotW / 2 : padL + (plotW * i) / (pts.length - 1);
+          const y = (v: number) => {
+            const clamped = Math.max(0, Math.min(Number(v) || 0, yMax));
+            return padT + plotH * (1 - clamped / yMax);
+          };
 
           // 网格线（0 / 中 / 顶）
           ctx.strokeStyle = '#EEF0F3';
@@ -55,15 +69,17 @@ Component({
             ctx.stroke();
           });
 
-          // 折线
-          ctx.beginPath();
-          pts.forEach((p, i) => {
-            if (i === 0) ctx.moveTo(x(i), y(p.value));
-            else ctx.lineTo(x(i), y(p.value));
-          });
-          ctx.strokeStyle = '#3B6FF6';
-          ctx.lineWidth = 2;
-          ctx.stroke();
+          // 折线（单区间时只画数据点与数值标注）
+          if (pts.length > 1) {
+            ctx.beginPath();
+            pts.forEach((p, i) => {
+              if (i === 0) ctx.moveTo(x(i), y(p.value));
+              else ctx.lineTo(x(i), y(p.value));
+            });
+            ctx.strokeStyle = '#3B6FF6';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
 
           // 数据点 + 数值标注
           const spacing = plotW / Math.max(1, pts.length - 1);

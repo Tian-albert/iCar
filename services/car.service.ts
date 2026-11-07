@@ -13,6 +13,14 @@ export interface CarForm {
   icon?: string;
 }
 
+/** 首版可编辑的车辆字段（不含能量类型；当前里程由加油记录回写） */
+export interface CarEditForm {
+  name: string;
+  initMileages: number;
+  initDate: number;
+  icon: string;
+}
+
 export function createCar(storage: StorageAdapter, form: CarForm): Car {
   const now = Date.now();
   const car: Car = {
@@ -55,6 +63,24 @@ export function setCarIcon(storage: StorageAdapter, sourceId: string, icon: stri
   car.icon = icon;
   car.updatedAt = Date.now();
   storage.update('cars', car);
+}
+
+/** 编辑车辆档案：只改名称 / 初始里程 / 购车日期 / 图标，不动能量类型 */
+export function updateCar(
+  storage: StorageAdapter,
+  sourceId: string,
+  form: CarEditForm
+): Car | null {
+  const car = getCar(storage, sourceId);
+  if (!car) return null;
+  car.name = form.name.trim();
+  car.initMileages = form.initMileages;
+  car.initDate = form.initDate;
+  car.icon = form.icon;
+  car.updatedAt = Date.now();
+  storage.update('cars', car);
+  // 当前里程由加油记录回写（syncMileages），编辑车辆不触碰，遵守 Q8 的四字段范围
+  return car;
 }
 
 /** 车辆总里程 = 现存加油记录的最大里程（软删过滤后） */

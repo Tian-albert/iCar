@@ -24,16 +24,8 @@
   </view>
 
   <view class="card">
-    <view class="row" bindtap="onComing">
-      <view class="row-label">常见问题</view>
-      <view class="row-arrow">›</view>
-    </view>
-    <view class="row" bindtap="onComing">
+    <view class="row" bindtap="onFeedback">
       <view class="row-label">反馈与建议</view>
-      <view class="row-arrow">›</view>
-    </view>
-    <view class="row" bindtap="onComing">
-      <view class="row-label">更新日志</view>
       <view class="row-arrow">›</view>
     </view>
     <view class="row" bindtap="onOpenAbout">
@@ -42,5 +34,5 @@
     </view>
   </view>
 
-  <view class="version">车记本 v1.0.2</view>
+  <view class="version">车记本 v1.0.3</view>
 </view>

@@ -1,6 +1,12 @@
 // 记一笔支出（支持新建 / 编辑）
 import { getStorage } from '../../store/index';
-import { saveCost, updateCost, listSpendCategories } from '../../services/cost.service';
+import {
+  saveCost,
+  updateCost,
+  listCategories,
+  listSpendCategories,
+  resolveCategorySelection
+} from '../../services/cost.service';
 import { getCar } from '../../services/car.service';
 import { iconEmoji } from '../../utils/icons';
 import { formatDate } from '../../utils/date';
@@ -20,6 +26,8 @@ Page({
     recordId: '',
     categories: [] as CategoryView[],
     selectedIndex: -1,
+    originalCategoryId: '',
+    categoryLocked: false,
     amount: '',
     dateText: formatDate(Date.now()),
     dateValue: Date.now(),
@@ -53,23 +61,33 @@ Page({
   },
   loadCategories(recordId?: string) {
     const storage = getStorage();
-    const cats = listSpendCategories(storage).map(c => ({
+    // 编辑态加载全量类别（含已隐藏），保证原类别能被精确定位
+    const source = recordId ? listCategories(storage) : listSpendCategories(storage);
+    const cats = source.map(c => ({
       sourceId: c.sourceId,
       name: c.name,
       emoji: iconEmoji(c.icon),
       isPreset: c.isPreset
     }));
-    let sel = this.data.selectedIndex;
-    // 编辑：按原类别定位选中项
+
+    let originalCategoryId = this.data.originalCategoryId;
     if (recordId) {
       const cost = storage.get<Cost>('costs', recordId);
-      const idx = cost ? cats.findIndex(c => c.sourceId === cost.categorySourceId) : -1;
-      sel = idx >= 0 ? idx : 0;
+      originalCategoryId = cost?.categorySourceId ?? '';
     }
-    if (sel < 0 && cats.length) sel = 0;
-    this.setData({ categories: cats, selectedIndex: sel });
+    const result = resolveCategorySelection(cats, originalCategoryId, !!recordId);
+    this.setData({
+      categories: cats,
+      selectedIndex: result.selectedIndex,
+      originalCategoryId,
+      categoryLocked: result.locked
+    });
   },
   onSelectCategory(e: WechatMiniprogram.TouchEvent) {
+    if (this.data.categoryLocked) {
+      wx.showToast({ title: '原类别已不可用，保存将保留原类别', icon: 'none' });
+      return;
+    }
     this.setData({ selectedIndex: Number(e.currentTarget.dataset.index) });
   },
   onAmountInput(e: WechatMiniprogram.Input) {
@@ -85,7 +103,10 @@ Page({
   },
   onSave() {
     const cat = this.data.categories[this.data.selectedIndex];
-    if (!cat) {
+    // 锁定态（原类别已软删/异常）保留原 categorySourceId，绝不回退到第一项
+    const categorySourceId =
+      cat?.sourceId || (this.data.recordId ? this.data.originalCategoryId : '');
+    if (!categorySourceId) {
       wx.showToast({ title: '请选择类别', icon: 'none' });
       return;
     }
@@ -96,7 +117,7 @@ Page({
     }
     const form = {
       carSourceId: this.data.carId,
-      categorySourceId: cat.sourceId,
+      categorySourceId,
       amount: round2(amountNum),
       costDate: this.data.dateValue,
       remark: this.data.remark

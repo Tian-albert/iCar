@@ -5,13 +5,15 @@ import { createCar } from '../services/car.service';
 import { Category } from '../types/models';
 import {
   saveCost,
+  updateCost,
   listCosts,
   listCategories,
   listSpendCategories,
   addCategory,
   removeCategory,
   setCategoryVisible,
-  moveCategory
+  moveCategory,
+  resolveCategorySelection
 } from '../services/cost.service';
 
 function createMemoryStorage(): StorageLike {
@@ -174,5 +176,46 @@ describe('seed 同名预设去重', () => {
     const costs = listCosts(adapter, car.sourceId);
     expect(costs.length).toBe(1);
     expect(costs[0].categorySourceId).toBe('mp:category:加油');
+  });
+});
+
+describe('F-02 隐藏类别编辑不串类', () => {
+  it('resolveCategorySelection：编辑态精确定位，找不到时锁定不回退', () => {
+    const cats = [{ sourceId: 'a' }, { sourceId: 'b' }];
+    expect(resolveCategorySelection(cats, 'b', true)).toEqual({ selectedIndex: 1, locked: false });
+    expect(resolveCategorySelection(cats, 'gone', true)).toEqual({ selectedIndex: -1, locked: true });
+    expect(resolveCategorySelection(cats, '', false)).toEqual({ selectedIndex: 0, locked: false });
+    expect(resolveCategorySelection([], '', false)).toEqual({ selectedIndex: -1, locked: false });
+  });
+
+  it('隐藏类别仍能被全量列表定位，编辑支出后 categorySourceId 不变', () => {
+    const { adapter, car } = setup();
+    const fuel = listCategories(adapter).find(c => c.presetType === 'refuel')!;
+    const cost = saveCost(adapter, {
+      carSourceId: car.sourceId,
+      categorySourceId: fuel.sourceId,
+      amount: 100,
+      costDate: Date.now(),
+      remark: ''
+    });
+    setCategoryVisible(adapter, fuel.sourceId, false);
+
+    // 记支出看不到隐藏类别，但编辑态用全量列表可精确定位
+    expect(listSpendCategories(adapter).some(c => c.sourceId === fuel.sourceId)).toBe(false);
+    const editable = listCategories(adapter);
+    const sel = resolveCategorySelection(editable, cost.categorySourceId, true);
+    expect(sel.locked).toBe(false);
+    expect(editable[sel.selectedIndex].sourceId).toBe(fuel.sourceId);
+
+    updateCost(adapter, cost.sourceId, {
+      carSourceId: car.sourceId,
+      categorySourceId: editable[sel.selectedIndex].sourceId,
+      amount: 120,
+      costDate: cost.costDate,
+      remark: '改金额'
+    });
+    const after = listCosts(adapter, car.sourceId)[0];
+    expect(after.categorySourceId).toBe(fuel.sourceId);
+    expect(after.amount).toBe(120);
   });
 });

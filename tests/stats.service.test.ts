@@ -1,6 +1,7 @@
 import { buildStats } from '../domain/stats.service';
-import { rebuildConsumptions } from '../domain/fuel.service';
+import { rebuildConsumptions, buildConsumption, MAX_FUEL_CONSUMPTION } from '../domain/fuel.service';
 import { sample, sampleCar } from './fixtures/sample';
+import { RefuelLog } from '../types/models';
 
 describe('stats.service buildStats（维度=全部，样本数据）', () => {
   const segs = rebuildConsumptions(sample.fuelRecords);
@@ -60,5 +61,30 @@ describe('stats.service buildStats（维度=全部，样本数据）', () => {
   it('有效区间 < 2 时趋势降级（数据不足）', () => {
     const one = buildStats({ type: 'all' }, [], sample.fuelRecords.slice(0, 1), [], sample.categories, sampleCar);
     expect(one.consumptionTrend.length).toBeLessThan(2);
+  });
+});
+
+describe('stats.service 异常油耗口径（审查发现）', () => {
+  it('年平均油耗与趋势图受同一上限约束，不出现荒谬值', () => {
+    const start = {
+      ...sample.fuelRecords[0],
+      makeMileages: 0,
+      volume: 20,
+      isFull: true,
+      isLowFuel: false
+    } as RefuelLog;
+    const end = {
+      ...sample.fuelRecords[1],
+      makeMileages: 1,
+      volume: 50,
+      isFull: true,
+      isLowFuel: false
+    } as RefuelLog;
+    const segs = [buildConsumption(start, end)!];
+    const snap = buildStats({ type: 'all' }, [], [start, end], segs, sample.categories, sampleCar);
+
+    expect(segs[0].fuelConsumption).toBe(MAX_FUEL_CONSUMPTION);
+    expect(snap.consumptionTrend[0].value).toBe(MAX_FUEL_CONSUMPTION);
+    expect(snap.fuel.avgConsumption).toBeLessThanOrEqual(MAX_FUEL_CONSUMPTION);
   });
 });

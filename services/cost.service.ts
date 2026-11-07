@@ -76,6 +76,27 @@ export function listSpendCategories(storage: StorageAdapter): Category[] {
   return listCategories(storage).filter(c => c.visible !== false);
 }
 
+/**
+ * 编辑支出时定位类别（页面与单测共用）：
+ * - 编辑态按原 categorySourceId 精确定位，命中即选中
+ * - 找不到原类别（已软删/数据异常）时锁定，selectedIndex = -1，
+ *   由调用方保留原 categorySourceId，绝不回退到第一项而串改类别
+ * - 新建态默认选第一项
+ */
+export function resolveCategorySelection<T extends { sourceId: string }>(
+  cats: T[],
+  originalId: string,
+  editing: boolean
+): { selectedIndex: number; locked: boolean } {
+  if (editing) {
+    const idx = cats.findIndex(c => c.sourceId === originalId);
+    return idx >= 0
+      ? { selectedIndex: idx, locked: false }
+      : { selectedIndex: -1, locked: true };
+  }
+  return { selectedIndex: cats.length ? 0 : -1, locked: false };
+}
+
 export function getCategory(storage: StorageAdapter, sourceId: string): Category | null {
   const cat = storage.get<Category>('categories', sourceId);
   return cat && !cat.deleted ? cat : null;

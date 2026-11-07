@@ -1,5 +1,6 @@
 // 记加油保存流程单测：验证 RefuelLog + Cost + 区间重算 + 里程回写（BR-25/26）
 import { StorageAdapter, StorageLike } from '../repositories/storage.adapter';
+import { parseAmountInput } from '../utils/number';
 import { seedPresetCategories } from '../repositories/seed';
 import { createCar, getCar } from '../services/car.service';
 import {
@@ -224,5 +225,42 @@ describe('refuel.service 最近油耗', () => {
   it('无区间时返回 null', () => {
     const { adapter, car } = setup();
     expect(getLatestConsumption(adapter, car.sourceId)).toBeNull();
+  });
+});
+
+describe('F-01 实付金额校验', () => {
+  it('parseAmountInput：空串回退、负数与非法值拒绝', () => {
+    expect(parseAmountInput('')).toEqual({ ok: true, value: null });
+    expect(parseAmountInput('  ')).toEqual({ ok: true, value: null });
+    expect(parseAmountInput('-1')).toEqual({ ok: false, value: null });
+    expect(parseAmountInput('abc')).toEqual({ ok: false, value: null });
+    expect(parseAmountInput('88.888')).toEqual({ ok: true, value: 88.89 });
+  });
+
+  it('saveRefuel / updateRefuel 兜底：负数、NaN、空值都回退应付金额', () => {
+    const { adapter, car } = setup();
+    const base = {
+      carSourceId: car.sourceId,
+      fuelDate: new Date(2026, 4, 24).getTime(),
+      makeMileages: 100,
+      unitPrice: 7.5,
+      volume: 40, // 应付 300
+      isFull: true,
+      isLowFuel: false
+    };
+
+    const a = saveRefuel(adapter, { ...base, actualPayAmount: -50 });
+    expect(a.actualPayAmount).toBe(300);
+    expect(adapter.get<any>('costs', a.costSourceId)!.amount).toBe(300);
+
+    const b = saveRefuel(adapter, { ...base, actualPayAmount: NaN });
+    expect(b.actualPayAmount).toBe(300);
+
+    const c = saveRefuel(adapter, { ...base, actualPayAmount: null });
+    expect(c.actualPayAmount).toBe(300);
+
+    updateRefuel(adapter, a.sourceId, { ...base, actualPayAmount: -1 });
+    expect(adapter.get<any>('fuelRecords', a.sourceId)!.actualPayAmount).toBe(300);
+    expect(adapter.get<any>('costs', a.costSourceId)!.amount).toBe(300);
   });
 });
