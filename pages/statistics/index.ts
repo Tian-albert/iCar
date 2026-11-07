@@ -3,7 +3,7 @@ import { getStorage } from '../../store/index';
 import { getCar } from '../../services/car.service';
 import { listCosts, listCategories } from '../../services/cost.service';
 import { listRefuels } from '../../services/refuel.service';
-import { rebuildConsumptions } from '../../domain/fuel.service';
+import { rebuildConsumptionsGrouped } from '../../domain/fuel.service';
 import { buildStats, StatsRange } from '../../domain/stats.service';
 
 interface CatView {
@@ -30,6 +30,15 @@ Page({
     fuelTotalCost: '--',
     fuelAvgConsumption: '--',
     fuelCostPerKm: '--',
+    // 电耗（R-07）
+    isEvCar: false,
+    isHybridCar: false,
+    hasCharge: false,
+    chargeTotalCost: '--',
+    chargeAvgConsumption: '--',
+    chargeCostPerKm: '--',
+    trendUnit: 'L/100km',
+    mileageLabel: '加油里程 (km)',
     // 支出
     expenseTotal: '--',
     expensePerKm: '--',
@@ -70,7 +79,7 @@ Page({
     const costs = listCosts(storage, car.sourceId);
     const refuels = listRefuels(storage, car.sourceId);
     const categories = listCategories(storage);
-    const segs = rebuildConsumptions([...refuels].sort((a, b) => a.fuelDate - b.fuelDate));
+    const segs = rebuildConsumptionsGrouped([...refuels].sort((a, b) => a.fuelDate - b.fuelDate));
 
     const nowYear = new Date().getFullYear();
     const allYears = [
@@ -84,10 +93,20 @@ Page({
 
     const snap = buildStats(this.buildRange(), costs, refuels, segs, categories, car);
     const hasData = costs.length > 0 || refuels.length > 0;
+    const isEvCar = car.energyType === 'ev';
+    const isHybridCar = car.energyType === 'hybrid';
 
     this.setData({
       years,
       hasData,
+      isEvCar,
+      isHybridCar,
+      hasCharge: snap.electricity.mileage > 0 || snap.electricity.totalCost > 0,
+      chargeTotalCost: snap.electricity.totalCost.toFixed(2),
+      chargeAvgConsumption: snap.electricity.avgConsumption.toFixed(2),
+      chargeCostPerKm: snap.electricity.costPerKm.toFixed(3),
+      trendUnit: isEvCar ? 'kWh/100km' : 'L/100km',
+      mileageLabel: isEvCar ? '充电里程 (km)' : '加油里程 (km)',
       mileageLatest: snap.mileage.latest,
       mileageIncreased: snap.mileage.increased,
       mileageFuel: snap.mileage.fuelMileage,

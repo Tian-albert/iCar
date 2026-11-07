@@ -16,7 +16,13 @@
     </view>
     <view class="form-row">
       <view class="form-label">能源类型</view>
-      <view class="form-value">燃油</view>
+      <picker range="{{energyLabels}}" value="{{energyIndex}}" bindchange="onEnergyChange">
+        <view class="form-value">{{energyLabels[energyIndex]}}</view>
+      </picker>
+    </view>
+    <view wx:if="{{energyIndex > 0}}" class="form-row">
+      <view class="form-label">电池容量 (kWh)</view>
+      <input class="form-input" type="digit" placeholder="选填，如 60" value="{{batteryCapacity}}" bindinput="onBatteryInput" />
     </view>
     <view class="form-row">
       <view class="form-label">车辆图标</view>
@@ -27,7 +33,7 @@
     </view>
   </view>
 
-  <view class="tip">首版仅支持燃油车；纯电 / 混动的记录与统计将在后续版本提供。</view>
+  <view class="tip">燃油车记加油（升 / 元每升）；纯电车记充电（kWh / 元每度）；混动车两种记录都支持，油耗与电耗分别统计。</view>
 
   <view class="footer">
     <button class="btn-primary" bindtap="onSave">{{isEdit ? '保存' : '添加车辆'}}</button>

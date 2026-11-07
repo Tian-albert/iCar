@@ -9,31 +9,45 @@
       bindtap="onTabChange">{{item.label}}</view>
   </view>
 
-  <!-- 加油 -->
+  <!-- 加油 / 充电 -->
   <block wx:if="{{activeTab === 'fuel'}}">
+    <!-- 混动车可切换本次录入类型 -->
+    <view wx:if="{{carEnergyType === 'hybrid'}}" class="mode-row">
+      <view class="mode-opt {{energyMode === 'fuel' ? 'mode-active' : ''}}" data-mode="fuel" bindtap="onEnergyModeChange">加油</view>
+      <view class="mode-opt {{energyMode === 'ev' ? 'mode-active' : ''}}" data-mode="ev" bindtap="onEnergyModeChange">充电</view>
+    </view>
+
     <view class="card">
       <view class="group-title">基本信息</view>
       <view class="form-row">
-        <view class="form-label">加油日期</view>
+        <view class="form-label">{{isCharging ? '充电日期' : '加油日期'}}</view>
         <picker mode="date" value="{{fuelDateText}}" bindchange="onFuelDateChange">
           <view class="form-value">{{fuelDateText}}</view>
         </picker>
       </view>
       <view class="form-row">
-        <view class="form-label">加油时里程 (km) <text class="required">*</text></view>
+        <view class="form-label">{{isCharging ? '充电时里程 (km)' : '加油时里程 (km)'}} <text class="required">*</text></view>
         <input class="form-input" type="number" value="{{fuelMileages}}" bindinput="onFuelMileageInput" />
       </view>
     </view>
 
     <view class="card">
-      <view class="group-title">油量信息</view>
+      <view class="group-title">{{isCharging ? '电量信息' : '油量信息'}}</view>
       <view class="form-row">
-        <view class="form-label">单价 (元/升) <text class="required">*</text></view>
+        <view class="form-label">{{isCharging ? '电价 (元/kWh)' : '单价 (元/升)'}} <text class="required">*</text></view>
         <input class="form-input" type="digit" value="{{fuelUnitPrice}}" bindinput="onFuelUnitPriceInput" />
       </view>
       <view class="form-row">
-        <view class="form-label">加油量 (升) <text class="required">*</text></view>
+        <view class="form-label">{{isCharging ? '充电量 (kWh)' : '加油量 (升)'}} <text class="required">*</text></view>
         <input class="form-input" type="digit" value="{{fuelVolume}}" bindinput="onFuelVolumeInput" />
+      </view>
+      <view wx:if="{{isCharging}}" class="form-row">
+        <view class="form-label">充电前电量 (%)</view>
+        <input class="form-input" type="number" placeholder="0–100" value="{{chargeBefore}}" bindinput="onChargeBeforeInput" />
+      </view>
+      <view wx:if="{{isCharging}}" class="form-row">
+        <view class="form-label">充电后电量 (%)</view>
+        <input class="form-input" type="number" placeholder="0–100" value="{{chargeAfter}}" bindinput="onChargeAfterInput" />
       </view>
       <view class="form-row">
         <view class="form-label">应付金额 (元)</view>
@@ -46,17 +60,17 @@
     </view>
 
     <view class="card">
-      <view class="group-title">加油选项</view>
+      <view class="group-title">{{isCharging ? '充电选项' : '加油选项'}}</view>
       <view class="opt-row">
         <view class="opt-group">
-          <view class="opt-label">加满了吗</view>
+          <view class="opt-label">{{isCharging ? '充满了吗' : '加满了吗'}}</view>
           <view class="seg-control">
-            <view class="seg-opt {{fuelFullIndex === 0 ? 'seg-opt-active' : ''}}" data-field="full" data-index="0" bindtap="onFuelOptionSelect">加满</view>
-            <view class="seg-opt {{fuelFullIndex === 1 ? 'seg-opt-active' : ''}}" data-field="full" data-index="1" bindtap="onFuelOptionSelect">没加满</view>
+            <view class="seg-opt {{fuelFullIndex === 0 ? 'seg-opt-active' : ''}}" data-field="full" data-index="0" bindtap="onFuelOptionSelect">{{isCharging ? '充满' : '加满'}}</view>
+            <view class="seg-opt {{fuelFullIndex === 1 ? 'seg-opt-active' : ''}}" data-field="full" data-index="1" bindtap="onFuelOptionSelect">{{isCharging ? '没充满' : '没加满'}}</view>
           </view>
         </view>
         <view class="opt-group">
-          <view class="opt-label">油量低吗</view>
+          <view class="opt-label">{{isCharging ? '电量低吗' : '油量低吗'}}</view>
           <view class="seg-control">
             <view class="seg-opt {{fuelLowIndex === 0 ? 'seg-opt-active' : ''}}" data-field="low" data-index="0" bindtap="onFuelOptionSelect">低</view>
             <view class="seg-opt {{fuelLowIndex === 1 ? 'seg-opt-active' : ''}}" data-field="low" data-index="1" bindtap="onFuelOptionSelect">不低</view>

@@ -14,6 +14,7 @@ import { saveCost, listSpendCategories } from '../../services/cost.service';
 import { iconEmoji } from '../../utils/icons';
 import { formatDate } from '../../utils/date';
 import { round2, parseAmountInput, AMOUNT_INPUT_ERROR } from '../../utils/number';
+import { EnergyType } from '../../types/models';
 
 interface TabItem {
   key: string;
@@ -46,7 +47,13 @@ Page({
     carName: '',
     activeTab: 'fuel',
     tabs: TABS,
-    // 加油
+    // R-07：能量类型与本次录入模式（混动车可在加油 / 充电间切换）
+    carEnergyType: 'fuel' as EnergyType,
+    energyMode: 'fuel' as EnergyType,
+    isCharging: false,
+    chargeBefore: '',
+    chargeAfter: '',
+    // 加油 / 充电
     fuelDateText: '',
     fuelDateValue: 0,
     fuelMileages: '',
@@ -101,11 +108,22 @@ Page({
     }));
     const categories = this.buildCategories();
     const tab = TABS.some(t => t.key === options.tab) ? options.tab : 'fuel';
+    const carEnergyType: EnergyType = car.energyType || 'fuel';
+    const energyMode: EnergyType = carEnergyType === 'ev' ? 'ev' : 'fuel';
+    const tabs = TABS.map(t =>
+      t.key === 'fuel'
+        ? { ...t, label: carEnergyType === 'ev' ? '充电' : carEnergyType === 'hybrid' ? '加油/充电' : '加油' }
+        : t
+    );
 
     this.setData({
       carId: car.sourceId,
       carName: car.name,
       activeTab: tab,
+      tabs,
+      carEnergyType,
+      energyMode,
+      isCharging: energyMode === 'ev',
       fuelDateText: today,
       fuelDateValue: now,
       fuelMileages: String(car.mileages),
@@ -128,6 +146,18 @@ Page({
     // 从类别管理 / 保养项编辑返回时刷新对应列表，保留已填内容与勾选状态
     if (this.data.activeTab === 'cost') this.refreshCategories();
     if (this.data.activeTab === 'maintain') this.refreshMaintains();
+  },
+  /** 混动车切换本次录入的是加油还是充电（R-07） */
+  onEnergyModeChange(e: WechatMiniprogram.TouchEvent) {
+    const mode = e.currentTarget.dataset.mode as 'fuel' | 'ev';
+    if (mode === this.data.energyMode) return;
+    this.setData({ energyMode: mode, isCharging: mode === 'ev' });
+  },
+  onChargeBeforeInput(e: WechatMiniprogram.Input) {
+    this.setData({ chargeBefore: e.detail.value });
+  },
+  onChargeAfterInput(e: WechatMiniprogram.Input) {
+    this.setData({ chargeAfter: e.detail.value });
   },
   buildCategories(): CategoryOption[] {
     return listSpendCategories(getStorage()).map(c => ({
@@ -286,11 +316,11 @@ Page({
       return;
     }
     if (!fuelUnitPrice || isNaN(priceNum) || priceNum <= 0) {
-      wx.showToast({ title: '请输入单价', icon: 'none' });
+      wx.showToast({ title: this.data.isCharging ? '请输入电价' : '请输入单价', icon: 'none' });
       return;
     }
     if (!fuelVolume || isNaN(volumeNum) || volumeNum <= 0) {
-      wx.showToast({ title: '请输入加油量', icon: 'none' });
+      wx.showToast({ title: this.data.isCharging ? '请输入充电量' : '请输入加油量', icon: 'none' });
       return;
     }
     const now = new Date();
@@ -307,19 +337,30 @@ Page({
       wx.showToast({ title: AMOUNT_INPUT_ERROR, icon: 'none' });
       return;
     }
+    const isCharging = this.data.isCharging;
+    const chargeBefore = Number(this.data.chargeBefore || 0);
+    const chargeAfter = Number(this.data.chargeAfter || 0);
+    const validPct = (n: number) => isFinite(n) && n >= 0 && n <= 100;
+    if (isCharging && (!validPct(chargeBefore) || !validPct(chargeAfter))) {
+      wx.showToast({ title: '充电电量需在 0–100%', icon: 'none' });
+      return;
+    }
 
     if (!guardSave(() => {
       saveRefuel(getStorage(), {
-      carSourceId: carId,
-      fuelDate,
-      makeMileages: mileageNum,
-      unitPrice: priceNum,
-      volume: volumeNum,
-      actualPayAmount: parsedActual.value,
-      isFull: this.data.fuelFullIndex === 0,
-      isLowFuel: this.data.fuelLowIndex === 0,
-      lastRecorded: this.data.fuelLastIndex === 0,
-      remark: this.data.fuelRemark
+        carSourceId: carId,
+        fuelDate,
+        makeMileages: mileageNum,
+        unitPrice: priceNum,
+        volume: volumeNum,
+        actualPayAmount: parsedActual.value,
+        isFull: this.data.fuelFullIndex === 0,
+        isLowFuel: this.data.fuelLowIndex === 0,
+        lastRecorded: this.data.fuelLastIndex === 0,
+        remark: this.data.fuelRemark,
+        energyType: isCharging ? 'ev' : 'fuel',
+        chargeBeforePercent: isCharging ? chargeBefore : 0,
+        chargeAfterPercent: isCharging ? chargeAfter : 0
       });
     })) return;
     this.done();

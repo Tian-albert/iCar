@@ -24,7 +24,11 @@ Page({
     fullIndex: 0,
     lowIndex: 1,
     lastIndex: 0,
-    remark: ''
+    remark: '',
+    // R-07：充电记录编辑
+    isCharging: false,
+    chargeBefore: '',
+    chargeAfter: ''
   },
   onLoad(options: Record<string, string>) {
     const storage = getStorage();
@@ -37,7 +41,8 @@ Page({
     const patch: Record<string, any> = {
       carId: car.sourceId,
       carName: car.name,
-      mileages: String(car.mileages)
+      mileages: String(car.mileages),
+      isCharging: car.energyType === 'ev'
     };
     if (options.recordId) {
       const log = storage.get<RefuelLog>('fuelRecords', options.recordId);
@@ -56,10 +61,14 @@ Page({
         patch.lowIndex = log.isLowFuel ? 0 : 1;
         patch.lastIndex = log.lastRecorded ? 0 : 1;
         patch.remark = log.remark;
+        patch.isCharging = log.energyType === 'ev';
+        patch.chargeBefore = log.chargeBeforePercent ? String(log.chargeBeforePercent) : '';
+        patch.chargeAfter = log.chargeAfterPercent ? String(log.chargeAfterPercent) : '';
       }
     }
     this.setData(patch);
-    wx.setNavigationBarTitle({ title: options.recordId ? '编辑加油' : '记加油' });
+    const verb = patch.isCharging ? '充电' : '加油';
+    wx.setNavigationBarTitle({ title: options.recordId ? `编辑${verb}` : `记${verb}` });
   },
   onDateChange(e: WechatMiniprogram.PickerChange) {
     const text = e.detail.value as string;
@@ -99,6 +108,12 @@ Page({
   onRemarkInput(e: WechatMiniprogram.Input) {
     this.setData({ remark: e.detail.value });
   },
+  onChargeBeforeInput(e: WechatMiniprogram.Input) {
+    this.setData({ chargeBefore: e.detail.value });
+  },
+  onChargeAfterInput(e: WechatMiniprogram.Input) {
+    this.setData({ chargeAfter: e.detail.value });
+  },
   onSave() {
     if (!this.data.carId) {
       wx.showToast({ title: '车辆信息无效', icon: 'none' });
@@ -115,15 +130,23 @@ Page({
       return;
     }
     if (!unitPrice || isNaN(priceNum) || priceNum <= 0) {
-      wx.showToast({ title: '请输入单价', icon: 'none' });
+      wx.showToast({ title: this.data.isCharging ? '请输入电价' : '请输入单价', icon: 'none' });
       return;
     }
     if (!volume || isNaN(volumeNum) || volumeNum <= 0) {
-      wx.showToast({ title: '请输入加油量', icon: 'none' });
+      wx.showToast({ title: this.data.isCharging ? '请输入充电量' : '请输入加油量', icon: 'none' });
       return;
     }
     if (!parsedActual.ok) {
       wx.showToast({ title: AMOUNT_INPUT_ERROR, icon: 'none' });
+      return;
+    }
+    const isCharging = this.data.isCharging;
+    const chargeBefore = Number(this.data.chargeBefore || 0);
+    const chargeAfter = Number(this.data.chargeAfter || 0);
+    const validPct = (n: number) => isFinite(n) && n >= 0 && n <= 100;
+    if (isCharging && (!validPct(chargeBefore) || !validPct(chargeAfter))) {
+      wx.showToast({ title: '充电电量需在 0–100%', icon: 'none' });
       return;
     }
 
@@ -142,7 +165,10 @@ Page({
       isFull: this.data.fullIndex === 0,
       isLowFuel: this.data.lowIndex === 0,
       lastRecorded: this.data.lastIndex === 0,
-      remark: this.data.remark
+      remark: this.data.remark,
+      energyType: isCharging ? ('ev' as const) : ('fuel' as const),
+      chargeBeforePercent: isCharging ? chargeBefore : 0,
+      chargeAfterPercent: isCharging ? chargeAfter : 0
     };
 
     const storage = getStorage();

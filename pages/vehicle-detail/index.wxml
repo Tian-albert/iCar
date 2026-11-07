@@ -16,13 +16,13 @@
   <!-- 最近油耗 -->
   <view class="latest-card">
     <view class="latest-head">
-      <text class="latest-title">最近油耗</text>
-      <text class="latest-sub">{{hasLatest ? '最近一次有效加油区间' : '暂无有效区间'}}</text>
+      <text class="latest-title">{{isEvCar ? '最近电耗' : '最近油耗'}}</text>
+      <text class="latest-sub">{{hasLatest ? (isEvCar ? '最近一次有效充电区间' : '最近一次有效加油区间') : '暂无有效区间'}}</text>
     </view>
     <view class="latest-body">
       <view class="latest-col">
         <view class="latest-value">{{latestConsumptionText}}</view>
-        <view class="latest-label">L/100km</view>
+        <view class="latest-label">{{isEvCar ? 'kWh/100km' : 'L/100km'}}</view>
       </view>
       <view class="latest-col">
         <view class="latest-value">{{latestMileageText}}</view>
@@ -98,18 +98,18 @@
       <text class="record-mileage">{{item.mileage}} km</text>
     </view>
     <view class="record-mid">
-      <text class="record-calc">{{item.priceText}} 元/L × {{item.volumeText}} L</text>
+      <text class="record-calc">{{item.priceText}} {{item.isCharging ? '元/kWh' : '元/L'}} × {{item.volumeText}} {{item.isCharging ? 'kWh' : 'L'}}</text>
       <text class="record-amount">¥ {{item.amountText}}</text>
     </view>
     <view class="record-tags">
-      <text wx:if="{{item.isFull}}" class="tag tag-green">加满</text>
-      <text wx:if="{{item.isLowFuel}}" class="tag tag-orange">油量低</text>
+      <text wx:if="{{item.isFull}}" class="tag tag-green">{{item.isCharging ? '充满' : '加满'}}</text>
+      <text wx:if="{{item.isLowFuel}}" class="tag tag-orange">{{item.isCharging ? '电量低' : '油量低'}}</text>
     </view>
     <view wx:if="{{item.remark}}" class="record-remark">{{item.remark}}</view>
     <view wx:if="{{item.seg}}" class="record-seg">
       <view class="seg-col">
         <view class="seg-value">{{item.seg.consumption}}</view>
-        <view class="seg-label">L/100km</view>
+        <view class="seg-label">{{item.isCharging ? 'kWh/100km' : 'L/100km'}}</view>
       </view>
       <view class="seg-col">
         <view class="seg-value">{{item.seg.costPerKm}}</view>

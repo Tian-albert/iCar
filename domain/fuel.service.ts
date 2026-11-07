@@ -1,5 +1,5 @@
 // 加油与油耗计算（对齐设计报告 5.2）
-import { RefuelLog, FuelConsumption } from '../types/models';
+import { RefuelLog, FuelConsumption, EnergyType } from '../types/models';
 import { round2 } from '../utils/number';
 
 /**
@@ -114,6 +114,24 @@ export function rebuildConsumptions(logs: RefuelLog[]): FuelConsumption[] {
     }
   }
   return result;
+}
+
+/**
+ * 按能量类型分组重建区间（R-07）。
+ * 混动车同时存在加油与充电记录，必须分开成段，否则会把 L 与 kWh 混加。
+ * 服务层与统计页共用，保证两处口径一致。
+ */
+export function rebuildConsumptionsGrouped(logs: RefuelLog[]): FuelConsumption[] {
+  const groups = new Map<EnergyType, RefuelLog[]>();
+  for (const l of logs) {
+    const t: EnergyType = l.energyType || 'fuel';
+    const arr = groups.get(t) ?? [];
+    arr.push(l);
+    groups.set(t, arr);
+  }
+  const out: FuelConsumption[] = [];
+  for (const group of groups.values()) out.push(...rebuildConsumptions(group));
+  return out;
 }
 
 /**

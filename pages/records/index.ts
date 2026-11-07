@@ -175,6 +175,7 @@ function buildFuelRecords(refuels: RefuelLog[], segs: FuelConsumption[]) {
       amountText: r.actualPayAmount.toFixed(2),
       isFull: r.isFull,
       isLowFuel: r.isLowFuel,
+      isCharging: r.energyType === 'ev',
       remark: r.remark,
       seg: seg
         ? {

@@ -27,7 +27,9 @@ describe('car.service 车辆编辑', () => {
       name: '我的 CRV',
       initMileages: 300,
       initDate: newDate,
-      icon: '🚙'
+      icon: '🚙',
+      energyType: 'ev',
+      batteryCapacity: 60
     });
 
     expect(updated).not.toBeNull();
@@ -36,7 +38,9 @@ describe('car.service 车辆编辑', () => {
     expect(after.initMileages).toBe(300);
     expect(after.initDate).toBe(newDate);
     expect(after.icon).toBe('🚙');
-    expect(after.energyType).toBe('fuel');
+    // R-07：能量类型与电池容量可在编辑页修改
+    expect(after.energyType).toBe('ev');
+    expect(after.batteryCapacity).toBe(60);
     // Q8 / F-05 只授权改四个字段；当前里程由加油记录回写，编辑车辆不得顺带改写
     expect(after.mileages).toBe(100);
   });
@@ -48,7 +52,9 @@ describe('car.service 车辆编辑', () => {
         name: 'x',
         initMileages: 0,
         initDate: 0,
-        icon: 'car'
+        icon: 'car',
+        energyType: 'fuel',
+        batteryCapacity: 0
       })
     ).toBeNull();
   });

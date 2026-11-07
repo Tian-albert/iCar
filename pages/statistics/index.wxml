@@ -28,12 +28,12 @@
     </view>
     <view class="metric-col">
       <view class="metric-value">{{mileageFuel}}</view>
-      <view class="metric-label">加油里程 (km)</view>
+      <view class="metric-label">{{mileageLabel}}</view>
     </view>
   </view>
 
-  <!-- 油耗数据 -->
-  <view class="metric-card">
+  <!-- 油耗数据（纯电车隐藏） -->
+  <view wx:if="{{!isEvCar}}" class="metric-card">
     <view class="metric-col">
       <view class="metric-value">{{fuelTotalCost}}</view>
       <view class="metric-label">总油费 (元)</view>
@@ -45,6 +45,22 @@
     <view class="metric-col">
       <view class="metric-value">{{fuelCostPerKm}}</view>
       <view class="metric-label">平均油耗 (元/km)</view>
+    </view>
+  </view>
+
+  <!-- 电耗数据（纯电 / 混动，R-07） -->
+  <view wx:if="{{isEvCar || isHybridCar}}" class="metric-card">
+    <view class="metric-col">
+      <view class="metric-value">{{chargeTotalCost}}</view>
+      <view class="metric-label">总电费 (元)</view>
+    </view>
+    <view class="metric-col">
+      <view class="metric-value">{{chargeAvgConsumption}}</view>
+      <view class="metric-label">平均电耗 (kWh/100km)</view>
+    </view>
+    <view class="metric-col">
+      <view class="metric-value">{{chargeCostPerKm}}</view>
+      <view class="metric-label">每公里电费 (元/km)</view>
     </view>
   </view>
 
@@ -84,10 +100,10 @@
   </view>
 
   <!-- 油耗趋势 -->
-  <view class="section-title">油耗趋势 (L/100km)</view>
+  <view class="section-title">{{isEvCar ? '电耗' : '能耗'}}趋势 ({{trendUnit}})</view>
   <view class="card">
-    <view wx:if="{{trend.length === 0}}" class="chart-empty">暂无有效油耗区间，记录两次加满加油后生成趋势</view>
-    <line-chart wx:else class="chart" points="{{trend}}" yMax="{{15}}" />
+    <view wx:if="{{trend.length === 0}}" class="chart-empty">{{isEvCar ? '暂无有效充电区间，记录两次充满充电后生成趋势' : '暂无有效油耗区间，记录两次加满加油后生成趋势'}}</view>
+    <line-chart wx:else class="chart" points="{{trend}}" yMax="{{15}}" unit="{{trendUnit}}" />
   </view>
 
   <!-- 行程 -->

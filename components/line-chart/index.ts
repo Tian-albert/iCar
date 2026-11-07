@@ -6,7 +6,8 @@ import { drawBubble } from '../../utils/chart-draw';
 Component({
   properties: {
     points: { type: Array, value: [] }, // [{ label, value }]
-    yMax: { type: Number, value: 15 }
+    yMax: { type: Number, value: 15 },
+    unit: { type: String, value: 'L/100km' }
   },
   data: {
     activeIndex: -1
@@ -155,7 +156,7 @@ Component({
             ctx.fillStyle = '#FFFFFF';
             ctx.fill();
             drawBubble(ctx, {
-              text: `${p.label} · ${p.value.toFixed(2)} L/100km`,
+              text: `${p.label} · ${p.value.toFixed(2)} ${this.data.unit}`,
               x: px,
               y: py - 26,
               w,

@@ -11,15 +11,18 @@ export interface CarForm {
   initDate: number;
   energyType: EnergyType;
   icon?: string;
+  /** 电池容量 kWh（纯电 / 混动，R-07） */
+  batteryCapacity?: number;
 }
 
 /**
- * 首版可编辑的车辆字段（不含能量类型；当前里程由加油记录回写）。
+ * 可编辑的车辆字段（当前里程由记录回写，不在编辑范围）。
  * 复用 CarForm 的字段定义，避免两处同义字段各自声明。
  */
-export type CarEditForm = Required<Pick<CarForm, 'name' | 'initDate' | 'icon'>> & {
+export type CarEditForm = Required<Pick<CarForm, 'name' | 'initDate' | 'icon' | 'energyType'>> & {
   /** 编辑态必填（CarForm 中为可选） */
   initMileages: number;
+  batteryCapacity: number;
 };
 
 export function createCar(storage: StorageAdapter, form: CarForm): Car {
@@ -36,7 +39,7 @@ export function createCar(storage: StorageAdapter, form: CarForm): Car {
     mileages: form.mileages,
     evMileages: 0,
     hevMileages: 0,
-    batteryCapacity: 0,
+    batteryCapacity: form.batteryCapacity ?? 0,
     energyType: form.energyType,
     energyTrackingEnabled: true,
     maintainSoonMileage: 500,
@@ -78,6 +81,8 @@ export function updateCar(
   car.initMileages = form.initMileages;
   car.initDate = form.initDate;
   car.icon = form.icon;
+  car.energyType = form.energyType;
+  car.batteryCapacity = form.batteryCapacity;
   car.updatedAt = Date.now();
   storage.update('cars', car);
   // 当前里程由加油记录回写（syncMileages），编辑车辆不触碰，遵守 Q8 的四字段范围

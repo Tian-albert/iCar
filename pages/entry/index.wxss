@@ -67,6 +67,26 @@
 .required {
   color: var(--color-danger);
 }
+/* 混动车：加油 / 充电模式切换 */
+.mode-row {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+.mode-opt {
+  flex: 1;
+  padding: 18rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--color-text-2);
+  background: var(--color-card);
+  border-radius: var(--radius-pill);
+}
+.mode-opt.mode-active {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
 /* 加油选项：三组两段式开关同排 */
 .opt-row {
   display: flex;

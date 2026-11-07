@@ -2,12 +2,13 @@
 import { Category, Cost } from '../types/models';
 import { StorageAdapter } from './storage.adapter';
 
-// 预设类别：加油 / 保养 / 维修 / 停车（停车无专用表单，presetType 为空）
+// 预设类别：加油 / 保养 / 维修 / 停车 / 充电（停车无专用表单，presetType 为空）
 const PRESETS: Array<Pick<Category, 'name' | 'icon' | 'presetType' | 'sortOrder'>> = [
   { name: '加油', icon: 'oil', presetType: 'refuel', sortOrder: 0 },
   { name: '保养', icon: 'maintain', presetType: 'maintain', sortOrder: 1 },
   { name: '维修', icon: 'fix', presetType: 'fix', sortOrder: 2 },
-  { name: '停车', icon: 'p', presetType: '', sortOrder: 3 }
+  { name: '停车', icon: 'p', presetType: '', sortOrder: 3 },
+  { name: '充电', icon: 'ev', presetType: 'ev', sortOrder: 4 }
 ];
 
 /**
@@ -86,19 +87,18 @@ export function seedPresetCategories(adapter: StorageAdapter): void {
     }
   });
 
-  // 2. 降级旧"充电"预设为自定义（旧版本 seed 产物）
+  // 2. R-07：旧版本把「充电」预设降级成了自定义类别，这里升级回预设，
+  //    保证充电记录的关联支出能归到「充电」而不是「其他」。
   for (const c of all) {
-    if (c.isPreset && c.presetType === 'ev') {
-      c.isPreset = false;
-      c.presetType = '';
-      c.visible = c.visible ?? true;
-      c.sortOrder = c.sortOrder ?? 0;
+    if (c.name === '充电' && !c.isPreset && c.presetType !== 'ev') {
+      c.isPreset = true;
+      c.presetType = 'ev';
       c.updatedAt = Date.now();
       adapter.update('categories', c);
     }
   }
 
-  // 3. 确保 4 个预设存在（仅按未删除记录判断，避免"软删后不再重建"）
+  // 3. 确保 5 个预设存在（仅按未删除记录判断，避免"软删后不再重建"）
   const current = adapter.list<Category>('categories').filter(c => !c.deleted);
   for (const preset of PRESETS) {
     if (current.some(c => c.name === preset.name && c.isPreset)) continue;

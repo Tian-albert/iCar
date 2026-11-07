@@ -21,6 +21,7 @@ interface RecordView {
   amountText: string;
   isFull: boolean;
   isLowFuel: boolean;
+  isCharging: boolean;
   remark: string;
   seg: { consumption: string; costPerKm: string; mileage: number } | null;
 }
@@ -47,6 +48,7 @@ Page({
     carName: '',
     carIcon: '🚗',
     carIsImage: false,
+    isEvCar: false,
     mileages: 0,
     // 最近油耗
     hasLatest: false,
@@ -82,7 +84,8 @@ Page({
 
     const refuels = listRefuels(storage, car.sourceId);
     const segs = getConsumptions(storage, car.sourceId);
-    const latest = getLatestConsumption(storage, car.sourceId);
+    const isEvCar = car.energyType === 'ev';
+    const latest = getLatestConsumption(storage, car.sourceId, isEvCar ? 'ev' : 'fuel');
     const costsAll = listCosts(storage, car.sourceId);
     const categories = listCategories(storage);
     const nowYear = new Date().getFullYear();
@@ -123,6 +126,7 @@ Page({
       carName: car.name,
       carIcon: displayIcon(car.icon || 'car'),
       carIsImage: isImageIcon(car.icon || ''),
+      isEvCar,
       mileages: car.mileages,
       hasLatest: !!latest,
       latestConsumptionText: latest ? latest.fuelConsumption.toFixed(2) : '--',
@@ -199,6 +203,7 @@ function buildRecords(refuels: RefuelLog[], segs: FuelConsumption[]): RecordView
       amountText: r.actualPayAmount.toFixed(2),
       isFull: r.isFull,
       isLowFuel: r.isLowFuel,
+      isCharging: r.energyType === 'ev',
       remark: r.remark,
       seg: seg
         ? {
