@@ -1,7 +1,6 @@
 // 分类支出环形图：外标签引线 + 点击放大 + 气泡 + 中心金额
 import { hitDonutSegment, toCanvasPoint } from '../../utils/chart-math';
-import { drawBubble } from '../../utils/chart-draw';
-import { CHART_THEME } from '../../utils/chart-theme';
+import { CHART_THEME, drawBubble } from '../../utils/chart-draw';
 
 interface Segment {
   name: string;

@@ -1,6 +1,6 @@
 // T-05 防漂移：canvas 主题色必须与 app.wxss 令牌一致，且业务代码不得内联 hex
 // 项目 tsconfig.types 只含小程序类型，Node 模块声明不可用，故用 require + 根相对路径
-import { CHART_THEME } from '../utils/chart-theme';
+import { CHART_THEME } from '../utils/chart-draw';
 
 const fs = require('fs') as any;
 const path = require('path') as any;
@@ -46,17 +46,63 @@ describe('chart-theme 与设计令牌一致性（T-05）', () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  it('图表组件与绘制工具不再内联 hex 色值', () => {
+  it('图表组件不再内联 hex 色值（chart-draw 是唯一色值定义点）', () => {
     const files = [
       'components/bar-chart/index.ts',
       'components/line-chart/index.ts',
-      'components/donut-chart/index.ts',
-      'utils/chart-draw.ts'
+      'components/donut-chart/index.ts'
     ];
     for (const f of files) {
       const src: string = fs.readFileSync(f, 'utf-8');
       expect(src).not.toMatch(/['"]#[0-9A-Fa-f]{3,8}['"]/);
+      expect(src).toContain('CHART_THEME');
     }
+  });
+
+  it('所有相对 import 都能解析到真实文件（防止 require 未定义模块导致白屏）', () => {
+    const importRe = /from\s+['"](\.[^'"]+)['"]/g;
+    const dirs = [
+      'pages',
+      'components',
+      'utils',
+      'services',
+      'domain',
+      'repositories',
+      'store',
+      'custom-tab-bar'
+    ];
+    const walk = (dir: string): string[] => {
+      const out: string[] = [];
+      if (!fs.existsSync(dir)) return out;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full: string = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name !== 'node_modules') out.push(...walk(full));
+        } else if (entry.name.endsWith('.ts')) {
+          out.push(full);
+        }
+      }
+      return out;
+    };
+    const files = dirs.reduce<string[]>((acc, d) => acc.concat(walk(d)), []);
+    files.push('app.ts');
+    expect(files.length).toBeGreaterThan(0);
+
+    const missing: string[] = [];
+    for (const f of files) {
+      const src: string = fs.readFileSync(f, 'utf-8');
+      let m: RegExpExecArray | null;
+      importRe.lastIndex = 0;
+      while ((m = importRe.exec(src)) !== null) {
+        const base = path.resolve(path.dirname(f), m[1]);
+        const ok =
+          fs.existsSync(base + '.ts') ||
+          fs.existsSync(path.join(base, 'index.ts')) ||
+          fs.existsSync(base + '.json');
+        if (!ok) missing.push(`${f} -> ${m[1]}`);
+      }
+    }
+    expect(missing).toEqual([]);
   });
 
   it('页面与组件 WXSS（app.wxss 除外）不再内联 hex 色值', () => {

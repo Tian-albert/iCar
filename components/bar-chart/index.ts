@@ -1,7 +1,6 @@
 // 柱状图组件（行程 / 费用按月）：点击柱子高亮并显示数值气泡（R-06）
 import { hitBarIndex, toCanvasPoint } from '../../utils/chart-math';
-import { drawBubble } from '../../utils/chart-draw';
-import { CHART_THEME } from '../../utils/chart-theme';
+import { CHART_THEME, drawBubble } from '../../utils/chart-draw';
 
 Component({
   properties: {

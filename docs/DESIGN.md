@@ -12,9 +12,10 @@
 | 技术栈 | 微信小程序原生 WXML + WXSS，非 Web HTML/CSS |
 | 单位 | 普通声明统一用 `rpx`（750rpx = 屏宽）；**但 `app.wxss` 的自定义属性只能用 `px` 或 hex 单值** —— WXSS 编译器对含 `rpx` / `rgba()` / 逗号的变量值兼容性不稳，曾导致全局样式异常。因此 `--radius-*` / `--space-*` 与新增令牌统一为 `px`（按 375px 屏与 rpx 等价换算） |
 | 作用域 | `app.wxss` 全局作用于页面；**自定义组件默认样式隔离**，组件内需自行引令牌或传值 |
-| Canvas | **Canvas 2D 上下文不解析 CSS 变量**，`fillStyle`/`strokeStyle` 只能写字面量 → 必须引用 `utils/chart-theme.ts` 的 JS 常量，不得写死色值 |
+| Canvas | **Canvas 2D 上下文不解析 CSS 变量**，`fillStyle`/`strokeStyle` 只能写字面量 → 必须引用 `utils/chart-draw.ts` 导出的 `CHART_THEME`，不得写死色值 |
 | 安全区 | 底部固定元素用 `env(safe-area-inset-bottom)`；页面底部留白 ≥ `160rpx + 安全区` |
 | 深色模式 | 首版不支持，不要引入 `prefers-color-scheme` |
+| 共享模块 | 新增 `utils/` 小模块前先确认开发者工具能编译产出 js（曾因 `chart-theme.ts` 未产出 js 导致全站白屏）。**优先并入已有且验证可加载的模块**；避免 `as const` / `satisfies` 等较新语法，内置 TS 插件版本可能落后。新增/删除模块后必须跑 import 可解析性检查（已固化为 `tests/chart-theme.test.ts`） |
 
 ## 2. 颜色令牌
 
@@ -116,7 +117,7 @@
 
 ## 6. Canvas 图表专用
 
-`components/{donut,line,bar}-chart/index.ts` 通过 `utils/chart-theme.ts` 的 `CHART_THEME` 取色，禁止内联 hex。
+`components/{donut,line,bar}-chart/index.ts` 通过 `utils/chart-draw.ts` 的 `CHART_THEME` 取色，禁止内联 hex。
 
 ```ts
 // 正确
@@ -125,7 +126,7 @@ ctx.fillStyle = CHART_THEME.primary;
 ctx.fillStyle = '#3B6FF6';
 ```
 
-新增图表颜色时**同时**在 `app.wxss` 加 `--chart-*` 与 `CHART_THEME` 加同值常量，两处用注释关联；`tests/chart-theme.test.ts` 校验两者一致。
+新增图表颜色时**同时**在 `app.wxss` 加 `--chart-*` 与 `chart-draw.ts` 的 `CHART_THEME` 加同值常量，两处用注释关联；`tests/chart-theme.test.ts` 校验两者一致。
 
 字号在 canvas 里用逻辑像素（`10px sans-serif` 等），与 WXSS 的 rpx 阶梯无关，不要互相套用。
 
@@ -175,7 +176,7 @@ ctx.fillStyle = '#3B6FF6';
 | 指标 | 审计时 | 本轮后 |
 | --- | --- | --- |
 | wxss 非令牌色值 | 76 处 | **0**（仅 `app.wxss` 定义处保留 hex；阴影 `rgba()` 属合理例外） |
-| canvas TS 内联色串 | 16 处 / 14 行 | **0**（集中到 `utils/chart-theme.ts`，20 处替换） |
+| canvas TS 内联色串 | 16 处 / 14 行 | **0**（集中到 `utils/chart-draw.ts` 的 `CHART_THEME`，20 处替换） |
 | 令牌数量 | 29 | **48**（补 19 个：语义色 5、字号 5、间距 5、圆角 4；阴影与遮罩改为使用处字面量） |
 | `hover-class` | 2 处 | **22 处**（entry / vehicle-detail / records 的分段、开关、卡片、悬浮项） |
 | 卡片阴影 | records 0 | 三个优先页面统一 `--shadow-card` |

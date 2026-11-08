@@ -1,8 +1,7 @@
 // 折线图组件（油耗趋势）：点击数据点高亮并显示数值气泡（R-06）
 import { MAX_FUEL_CONSUMPTION } from '../../domain/fuel.service';
 import { hitLineIndex, toCanvasPoint } from '../../utils/chart-math';
-import { drawBubble } from '../../utils/chart-draw';
-import { CHART_THEME } from '../../utils/chart-theme';
+import { CHART_THEME, drawBubble } from '../../utils/chart-draw';
 
 Component({
   properties: {
