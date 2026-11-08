@@ -256,12 +256,16 @@
 .section-header .section-title {
   margin: 0;
 }
-.header-actions {
+/* 小节右侧的操作链接：横排、基线对齐，箭头由文案自带（设置 › / 更多 ›） */
+.section-actions {
   display: flex;
+  align-items: baseline;
   gap: 24rpx;
+  flex-shrink: 0;
 }
 .manage-link {
   font-size: 28rpx;
+  line-height: 1;
   color: var(--color-primary);
 }
 .mnt-row {

@@ -1,5 +1,5 @@
 // 分类支出环形图：外标签引线 + 点击放大 + 气泡 + 中心金额
-import { hitDonutSegment, toCanvasPoint } from '../../utils/chart-math';
+import { hitDonutSegment, toCanvasPoint, layoutDonutLabels } from '../../utils/chart-math';
 import { CHART_THEME, drawBubble } from '../../utils/chart-draw';
 
 interface Segment {
@@ -8,6 +8,10 @@ interface Segment {
   percent: number;
   color: string;
 }
+
+/** 外标签字号与行高（逻辑像素）：minGap 取行高可保证两行文字不粘连 */
+const LABEL_FONT = '10px sans-serif';
+const LABEL_LINE_HEIGHT = 14;
 
 Component({
   properties: {
@@ -128,33 +132,43 @@ Component({
           ctx.fillText('总支出', cx, cy + 13);
 
           // 外标签引线 + 标注「名字 百分比%」
+          // 标签位置经 layoutDonutLabels 防重叠处理：小占比扇区相邻时自动上下推开，
+          // 引线折点 y 跟随标签 y，因此引线不会交叉。
           start = -Math.PI / 2;
-          ctx.font = '10px sans-serif';
+          const mids: number[] = [];
+          segs.forEach(seg => {
+            const angle = (seg.percent / 100) * Math.PI * 2;
+            mids.push(start + angle / 2);
+            start += angle;
+          });
+          const labels = layoutDonutLabels({
+            segments: segs.map((seg, i) => ({ mid: mids[i], percent: seg.percent })),
+            cx,
+            cy,
+            outerR,
+            minY: LABEL_LINE_HEIGHT / 2 + 2,
+            maxY: h - LABEL_LINE_HEIGHT / 2 - 2,
+            minGap: LABEL_LINE_HEIGHT,
+            elbowGap: 13,
+            tailGap: 4
+          });
+
+          ctx.font = LABEL_FONT;
           ctx.textBaseline = 'middle';
           segs.forEach((seg, i) => {
-            const angle = (seg.percent / 100) * Math.PI * 2;
-            const mid = start + angle / 2;
-            const cos = Math.cos(mid);
-            const sin = Math.sin(mid);
-            const x1 = cx + cos * (outerR + 2);
-            const y1 = cy + sin * (outerR + 2);
-            const x2 = cx + cos * (outerR + 13);
-            const y2 = cy + sin * (outerR + 13);
-            const x3 = cx + cos * (outerR + 17) + (cos >= 0 ? 3 : -3);
-
+            const lay = labels[i];
             ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y2);
+            ctx.moveTo(lay.anchorX, lay.anchorY);
+            ctx.lineTo(lay.elbowX, lay.elbowY);
+            ctx.lineTo(lay.x, lay.elbowY);
             ctx.strokeStyle = seg.color;
             ctx.lineWidth = 1;
             ctx.stroke();
 
             const label = `${seg.name} ${seg.percent.toFixed(2)}%`;
             ctx.fillStyle = CHART_THEME.label;
-            ctx.textAlign = cos >= 0 ? 'left' : 'right';
-            ctx.fillText(label, x3, y2);
-            start += angle;
+            ctx.textAlign = lay.side === 'right' ? 'left' : 'right';
+            ctx.fillText(label, lay.x, lay.y);
           });
 
           // 选中气泡（复用共享绘制）

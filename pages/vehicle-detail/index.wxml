@@ -72,8 +72,8 @@
   <!-- 保养进度（只显示快要保养的项目） -->
   <view class="section-header">
     <view class="section-title">保养进度</view>
-    <view class="header-actions">
-      <text hover-class="hover-dim" class="manage-link" bindtap="onManageThreshold">设置</text>
+    <view class="section-actions">
+      <text hover-class="hover-dim" class="manage-link" bindtap="onManageThreshold">设置 ›</text>
       <text hover-class="hover-dim" class="manage-link" bindtap="onManageMaintain">更多 ›</text>
     </view>
   </view>
