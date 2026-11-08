@@ -32,3 +32,12 @@ export function formatDateTime(ts: number): string {
 export function monthLabel(ts: number): string {
   return `${new Date(ts).getMonth() + 1}月`;
 }
+
+/**
+ * 跨年场景下的月份标签：带年份，避免「全部」范围把 2025/7 与 2026/7 合并成一个点。
+ * 仅在跨度跨年时使用，单年内仍用短标签以保持紧凑。
+ */
+export function monthLabelWithYear(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getFullYear()}/${d.getMonth() + 1}`;
+}

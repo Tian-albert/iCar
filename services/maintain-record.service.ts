@@ -59,10 +59,15 @@ export function ensureMaintainTemplates(storage: StorageAdapter, carSourceId: st
   }
 }
 
+/**
+ * 保养项列表：按 sortOrder 升序，同序按 createdAt 升序。
+ * 新增项 sortOrder 恒为 0，若不排序会退化为索引字典序，重启后顺序可能变化。
+ */
 export function listMaintains(storage: StorageAdapter, carSourceId: string): Maintain[] {
   return storage
     .list<Maintain>('maintains')
-    .filter(m => m.carSourceId === carSourceId && !m.deleted);
+    .filter(m => m.carSourceId === carSourceId && !m.deleted)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.createdAt - b.createdAt);
 }
 
 export function listMaintainHandles(storage: StorageAdapter, carSourceId: string): MaintainHandle[] {

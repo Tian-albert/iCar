@@ -1,8 +1,8 @@
 // 统计聚合（对齐设计报告 5.10 / 7.6）
 import { Car, Category, Cost, FuelConsumption, RefuelLog } from '../types/models';
 import { round2, round3 } from '../utils/number';
-import { monthLabel, startOfDay } from '../utils/date';
-import { clampFuelConsumption } from './fuel.service';
+import { monthLabel, monthLabelWithYear, startOfDay } from '../utils/date';
+import { clampFuelConsumption, MAX_EV_CONSUMPTION } from './fuel.service';
 
 export type StatsRange =
   | { type: 'month'; year: number; month: number }
@@ -64,15 +64,21 @@ export function resolveRange(range: StatsRange): { start: number; end: number } 
   return { start, end };
 }
 
-/** 按本地月份聚合 value 序列（BR-23：无数据月份不补零） */
+/**
+ * 按本地月份聚合 value 序列（BR-23：无数据月份不补零）。
+ * 跨度跨年时标签带年份，否则「全部」范围会把 2025/7 与 2026/7 合并成一个点。
+ */
 function groupByMonth<T>(
   list: T[],
   dateOf: (x: T) => number,
   valueOf: (x: T) => number
 ): Array<{ label: string; value: number }> {
+  const years = new Set(list.map(x => new Date(dateOf(x)).getFullYear()));
+  const crossYear = years.size > 1;
   const map = new Map<string, number>();
   for (const x of list) {
-    const label = monthLabel(dateOf(x));
+    const ts = dateOf(x);
+    const label = crossYear ? monthLabelWithYear(ts) : monthLabel(ts);
     map.set(label, (map.get(label) ?? 0) + valueOf(x));
   }
   // 按时间升序（以 label 出现顺序不保证有序，这里按首次出现顺序即可满足月度序列）
@@ -127,13 +133,18 @@ export function buildStats(
   const avgConsumption = fuelMileage > 0
     ? clampFuelConsumption((sumFuelAmount / fuelMileage) * 100)
     : 0;
+  // 电耗上限独立于油耗：冬季高电耗车型可达 33 kWh/100km，
+  // 套用油耗的 30 上限会把真实值截断，让用户误以为电耗改善了
   const evAvgConsumption = evMileage > 0
-    ? clampFuelConsumption((sumChargeEnergy / evMileage) * 100)
+    ? Math.min(MAX_EV_CONSUMPTION, (sumChargeEnergy / evMileage) * 100)
     : 0;
   const fuelCostPerKm = fuelMileage > 0 ? totalFuelCost / fuelMileage : 0;
   const chargeCostPerKm = evMileage > 0 ? totalChargeCost / evMileage : 0;
   const expensePerKm = increased > 0 ? totalCost / increased : 0;
-  const expensePerKmExFuel = increased > 0 ? (totalCost - totalFuelCost - totalChargeCost) / increased : 0;
+  // 分子可能为负（油费来自加油记录，而关联 cost 可能未计入 totalCost），
+  // 负的「除掉油费」无意义，钳到 0
+  const exEnergy = totalCost - totalFuelCost - totalChargeCost;
+  const expensePerKmExFuel = increased > 0 ? Math.max(0, exEnergy) / increased : 0;
 
   // ---------- 分类支出（降序 + 最大余数补齐 100%） ----------
   const byCategory = new Map<string, number>();

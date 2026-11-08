@@ -32,7 +32,7 @@ export function exportBundle(storage: StorageAdapter): string {
   const manifest = {
     format: 'icar-export',
     version: 1,
-    source: { platform: 'mp', appVersion: '1.0.3', exportedAt: Date.now() },
+    source: { platform: 'mp', appVersion: '1.0.4', exportedAt: Date.now() },
     options: { amountUnit: 'yuan', timeUnit: 'ms', imageMode: 'file', package: 'json' },
     warnings: [] as string[],
     data
@@ -46,6 +46,80 @@ export interface ImportResult {
   updated: number;
   skipped: number;
   message?: string;
+}
+
+/** 数值字段兜底：非有限数一律回退默认值，避免 NaN 污染统计 */
+function num(v: unknown, fallback = 0): number {
+  return typeof v === 'number' && isFinite(v) ? v : fallback;
+}
+
+/** 非负数值字段：负数按 0 处理 */
+function nonNeg(v: unknown): number {
+  return Math.max(0, num(v, 0));
+}
+
+/**
+ * 导入条目的数值净化：逐表把金额 / 里程 / 百分比等关键字段兜底。
+ * 只做「不让脏数据进库」的最小处理，不做业务规则校验（Q7=A）。
+ * 返回 null 表示该条不可用。
+ */
+function sanitizeImported(table: string, e: any): any | null {
+  if (!e || typeof e.sourceId !== 'string' || !e.sourceId) return null;
+  const out = { ...e };
+  out.createdAt = num(out.createdAt, Date.now());
+  out.updatedAt = num(out.updatedAt, out.createdAt);
+  out.deleted = false;
+
+  switch (table) {
+    case 'fuelRecords':
+      out.makeMileages = nonNeg(out.makeMileages);
+      out.makeEVMileages = nonNeg(out.makeEVMileages);
+      out.makeHEVMileages = nonNeg(out.makeHEVMileages);
+      out.unitPrice = nonNeg(out.unitPrice);
+      out.volume = nonNeg(out.volume);
+      out.shouldPayAmount = nonNeg(out.shouldPayAmount);
+      out.actualPayAmount = nonNeg(out.actualPayAmount);
+      out.chargeBeforePercent = Math.min(100, nonNeg(out.chargeBeforePercent));
+      out.chargeAfterPercent = Math.min(100, nonNeg(out.chargeAfterPercent));
+      out.energyType = out.energyType === 'ev' || out.energyType === 'hybrid' ? out.energyType : 'fuel';
+      break;
+    case 'costs':
+      out.amount = nonNeg(out.amount);
+      break;
+    case 'repairRecords':
+      out.mileage = nonNeg(out.mileage);
+      out.amount = nonNeg(out.amount);
+      out.images = Array.isArray(out.images) ? out.images : [];
+      break;
+    case 'maintainHandles':
+      out.makeMileages = nonNeg(out.makeMileages);
+      out.makeEVMileages = nonNeg(out.makeEVMileages);
+      out.makeHEVMileages = nonNeg(out.makeHEVMileages);
+      break;
+    case 'maintainLogs':
+      out.makeMileages = nonNeg(out.makeMileages);
+      out.totalMileages = nonNeg(out.totalMileages);
+      break;
+    case 'maintains':
+      out.cycleMileages = nonNeg(out.cycleMileages);
+      out.cycleMonths = nonNeg(out.cycleMonths);
+      out.cycleDays = nonNeg(out.cycleDays);
+      break;
+    case 'cars':
+      out.mileages = nonNeg(out.mileages);
+      out.initMileages = nonNeg(out.initMileages);
+      out.evMileages = nonNeg(out.evMileages);
+      out.hevMileages = nonNeg(out.hevMileages);
+      out.batteryCapacity = nonNeg(out.batteryCapacity);
+      out.energyType = out.energyType === 'ev' || out.energyType === 'hybrid' ? out.energyType : 'fuel';
+      break;
+    case 'categories':
+      out.sortOrder = nonNeg(out.sortOrder);
+      break;
+    default:
+      break;
+  }
+  return out;
 }
 
 export function importBundle(storage: StorageAdapter, json: string): ImportResult {
@@ -96,12 +170,19 @@ export function importBundle(storage: StorageAdapter, json: string): ImportResul
           skipped++;
           continue;
         }
-        const existing = storage.get<any>(table, e.sourceId);
+        // 导入绕过 service 层，必须在此把数值兜干净：
+        // 一条 amount: NaN 会让统计页总支出与图表直接显示 NaN
+        const clean = sanitizeImported(table, e);
+        if (!clean) {
+          skipped++;
+          continue;
+        }
+        const existing = storage.get<any>(table, clean.sourceId);
         if (!existing) {
-          storage.insert(table, e);
+          storage.insert(table, clean);
           added++;
-        } else if ((e.updatedAt || 0) > (existing.updatedAt || 0)) {
-          storage.update(table, e);
+        } else if ((clean.updatedAt || 0) > (existing.updatedAt || 0)) {
+          storage.update(table, clean);
           updated++;
         } else {
           skipped++;

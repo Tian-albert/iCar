@@ -10,9 +10,11 @@ let adapter: StorageAdapter | null = null;
 export function getStorage(): StorageAdapter {
   if (!adapter) {
     adapter = new StorageAdapter(createWxStorageLike());
+    // 先对账索引再 seed：seed 依赖 list()（走索引），索引为空/损坏时会误判
+    // "预设不存在"并重复插入，用户会看到两套「加油/保养/维修/停车/充电」
+    adapter.rebuildIndex();
     runMigrations(adapter);
     seedPresetCategories(adapter);
-    adapter.rebuildIndex();
     // 软删记录保留 30 天，启动即清理过期项（R-03）
     purgeExpired(adapter);
   }

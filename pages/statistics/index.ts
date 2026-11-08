@@ -109,7 +109,8 @@ Page({
       mileageLabel: isEvCar ? '充电里程 (km)' : '加油里程 (km)',
       mileageLatest: snap.mileage.latest,
       mileageIncreased: snap.mileage.increased,
-      mileageFuel: snap.mileage.fuelMileage,
+      // 纯电车取电耗区间里程，否则该列恒为 0（与详情页口径保持一致）
+      mileageFuel: isEvCar ? snap.mileage.evMileage : snap.mileage.fuelMileage,
       // 无数据时显示占位符，避免把「没数据」呈现成 0.00
       fuelTotalCost: hasData ? snap.fuel.totalCost.toFixed(2) : '--',
       fuelAvgConsumption: hasData ? snap.fuel.avgConsumption.toFixed(2) : '--',

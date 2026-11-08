@@ -9,6 +9,12 @@ import { round2 } from '../utils/number';
  */
 export const MAX_FUEL_CONSUMPTION = 30;
 
+/**
+ * 纯电车电耗合理上限（kWh/100km）。
+ * 与油耗上限分开：冬季高电耗车型可达 33，套用 30 会把真实值截断。
+ */
+export const MAX_EV_CONSUMPTION = 50;
+
 /** 统一收敛所有对外展示的油耗值（区间值、汇总平均、统计页平均），保证口径一致 */
 export function clampFuelConsumption(value: number): number {
   if (!isFinite(value)) return 0;
@@ -51,7 +57,7 @@ function makeSegment(
     fuelAmount,
     fuelConsumption: clampFuelConsumption((fuelAmount / mileage) * 100),
     cost,
-    costPerKm: cost / mileage,
+    costPerKm: isFinite(cost) && mileage > 0 ? cost / mileage : 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     deleted: false
