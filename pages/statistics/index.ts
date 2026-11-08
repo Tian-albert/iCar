@@ -9,6 +9,7 @@ import {
   buildShareCardModel,
   computeShareCardLayout,
   formatRangeLabel,
+  ShareMode,
   ShareCardInput
 } from '../../utils/share-card';
 import {
@@ -168,12 +169,28 @@ Page({
    * 所以在页面里的离屏 canvas 上重绘一张卡片，再交给 wx.showShareImageMenu
    * （自带「发送给朋友 / 分享到朋友圈 / 保存到相册」三个入口）。
    */
+  /** 第一步：选择精简 / 详细模式 */
   onShareStatistics() {
+    if (this.data.sharing) return;
+    wx.showActionSheet({
+      itemList: ['精简模式（指标卡 + 环形图）', '详细模式（完整统计页）'],
+      success: res => {
+        const mode: ShareMode = res.tapIndex === 1 ? 'full' : 'brief';
+        this.generateShareImage(mode);
+      },
+      fail: () => {
+        // 用户取消，无需提示
+      }
+    });
+  },
+
+  /** 第二步：按模式绘制并唤起分享菜单 */
+  generateShareImage(mode: ShareMode) {
     if (this.data.sharing) return;
     this.setData({ sharing: true });
     wx.showLoading({ title: '生成中…', mask: true });
 
-    this.drawShareCard()
+    this.drawShareCard(mode)
       .then((filePath: string) => {
         wx.hideLoading();
         this.setData({ sharing: false });
@@ -216,7 +233,7 @@ Page({
   },
 
   /** 组装模型（供绘制与调试复用） */
-  buildShareModel() {
+  buildShareModel(mode: ShareMode = 'full') {
     const storage = getStorage();
     const car = getCar(storage, this.data.carId);
     if (!car) return null;
@@ -256,13 +273,13 @@ Page({
       monthlyMileage: snap.monthlyMileage.map(m => ({ label: m.label, value: m.value })),
       monthlyCost: snap.monthlyCost.map(m => ({ label: m.label, value: m.value }))
     };
-    return buildShareCardModel(input);
+    return buildShareCardModel(input, mode);
   },
 
   /** 在离屏 canvas 上绘制并导出临时文件路径 */
-  drawShareCard(): Promise<string> {
+  drawShareCard(mode: ShareMode = 'full'): Promise<string> {
     return new Promise((resolve, reject) => {
-      const model = this.buildShareModel();
+      const model = this.buildShareModel(mode);
       if (!model) {
         reject(new Error('car not found'));
         return;

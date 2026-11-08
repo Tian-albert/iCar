@@ -7,7 +7,13 @@
 // Canvas 2D 不解析 CSS 变量，颜色统一取自 CHART_THEME。
 import { CHART_THEME } from './chart-draw';
 import { renderDonut, renderLine, renderBars } from './chart-render';
-import { ShareCardLayout, ShareCardModel, CARD_WIDTH, Rect } from './share-card';
+import {
+  ShareCardLayout,
+  ShareCardModel,
+  CARD_WIDTH,
+  CHART_FONT_SCALE,
+  Rect
+} from './share-card';
 
 /** 卡片色板：与 app.wxss 令牌一致 */
 export const CARD_COLORS = {
@@ -186,7 +192,9 @@ export function drawShareCard(opts: DrawCardOptions): void {
         percent: c.percentValue,
         color: c.color
       })),
-      total: model.categoryTotal
+      total: model.categoryTotal,
+      // 卡片宽度约为页面 2.2 倍，字号同步放大才看得清
+      fontScale: CHART_FONT_SCALE
     });
     ctx.restore();
   }
@@ -209,55 +217,64 @@ export function drawShareCard(opts: DrawCardOptions): void {
     ctx.fillText(`¥ ${row.amount}`, row.x + row.width, row.y + row.height / 2 + 9);
   }
 
-  // ---------- 趋势 ----------
-  drawSectionTitle(ctx, model.trendTitle, layout.trendTitleBaseline, pad);
-  fillCard(ctx, layout.trendCard);
-  if (model.trend.length === 0) {
-    drawChartEmpty(ctx, model.trendEmptyText, layout.trendChartRect);
-  } else {
-    ctx.save();
-    ctx.translate(layout.trendChartRect.x, layout.trendChartRect.y);
-    renderLine({
-      ctx,
-      w: layout.trendChartRect.width,
-      h: layout.trendChartRect.height,
-      points: model.trend
-    });
-    ctx.restore();
+  // ---------- 趋势（精简模式跳过）----------
+  if (layout.trendCard && layout.trendChartRect && layout.trendTitleBaseline !== null) {
+    drawSectionTitle(ctx, model.trendTitle, layout.trendTitleBaseline, pad);
+    fillCard(ctx, layout.trendCard);
+    if (model.trend.length === 0) {
+      drawChartEmpty(ctx, model.trendEmptyText, layout.trendChartRect);
+    } else {
+      ctx.save();
+      ctx.translate(layout.trendChartRect.x, layout.trendChartRect.y);
+      renderLine({
+        ctx,
+        w: layout.trendChartRect.width,
+        h: layout.trendChartRect.height,
+        points: model.trend,
+        fontScale: CHART_FONT_SCALE
+      });
+      ctx.restore();
+    }
   }
 
-  // ---------- 行程 ----------
-  drawSectionTitle(ctx, '行程 (km)', layout.mileageTitleBaseline, pad);
-  fillCard(ctx, layout.mileageCard);
-  if (model.monthlyMileageEmpty) {
-    drawChartEmpty(ctx, '暂无行程数据', layout.mileageChartRect);
-  } else {
-    ctx.save();
-    ctx.translate(layout.mileageChartRect.x, layout.mileageChartRect.y);
-    renderBars({
-      ctx,
-      w: layout.mileageChartRect.width,
-      h: layout.mileageChartRect.height,
-      bars: model.monthlyMileage
-    });
-    ctx.restore();
+  // ---------- 行程（精简模式跳过）----------
+  if (layout.mileageCard && layout.mileageChartRect && layout.mileageTitleBaseline !== null) {
+    drawSectionTitle(ctx, '行程 (km)', layout.mileageTitleBaseline, pad);
+    fillCard(ctx, layout.mileageCard);
+    if (model.monthlyMileageEmpty) {
+      drawChartEmpty(ctx, '暂无行程数据', layout.mileageChartRect);
+    } else {
+      ctx.save();
+      ctx.translate(layout.mileageChartRect.x, layout.mileageChartRect.y);
+      renderBars({
+        ctx,
+        w: layout.mileageChartRect.width,
+        h: layout.mileageChartRect.height,
+        bars: model.monthlyMileage,
+        fontScale: CHART_FONT_SCALE
+      });
+      ctx.restore();
+    }
   }
 
-  // ---------- 费用 ----------
-  drawSectionTitle(ctx, '费用 (元)', layout.costTitleBaseline, pad);
-  fillCard(ctx, layout.costCard);
-  if (model.monthlyCostEmpty) {
-    drawChartEmpty(ctx, '暂无费用数据', layout.costChartRect);
-  } else {
-    ctx.save();
-    ctx.translate(layout.costChartRect.x, layout.costChartRect.y);
-    renderBars({
-      ctx,
-      w: layout.costChartRect.width,
-      h: layout.costChartRect.height,
-      bars: model.monthlyCost
-    });
-    ctx.restore();
+  // ---------- 费用（精简模式跳过）----------
+  if (layout.costCard && layout.costChartRect && layout.costTitleBaseline !== null) {
+    drawSectionTitle(ctx, '费用 (元)', layout.costTitleBaseline, pad);
+    fillCard(ctx, layout.costCard);
+    if (model.monthlyCostEmpty) {
+      drawChartEmpty(ctx, '暂无费用数据', layout.costChartRect);
+    } else {
+      ctx.save();
+      ctx.translate(layout.costChartRect.x, layout.costChartRect.y);
+      renderBars({
+        ctx,
+        w: layout.costChartRect.width,
+        h: layout.costChartRect.height,
+        bars: model.monthlyCost,
+        fontScale: CHART_FONT_SCALE
+      });
+      ctx.restore();
+    }
   }
 
   // ---------- 页脚 ----------

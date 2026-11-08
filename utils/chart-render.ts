@@ -12,6 +12,21 @@ import { MAX_FUEL_CONSUMPTION } from '../domain/fuel.service';
 export const LABEL_FONT = '10px sans-serif';
 export const LABEL_LINE_HEIGHT = 14;
 
+/**
+ * 字号缩放。
+ *
+ * 页面组件宽度约 335px（750rpx 屏宽减 padding），字号 10px 是相对它调的；
+ * 分享卡片逻辑宽度 750px（2 倍设计稿），若沿用 10px 会显得极小、看不清。
+ * 因此绘制函数接受 fontScale，卡片侧传 2 左右，组件侧保持 1。
+ */
+function fs(base: number, scale: number): number {
+  return Math.round(base * scale);
+}
+
+function fontOf(size: number, scale: number, weight = 'normal'): string {
+  return `${weight} ${fs(size, scale)}px sans-serif`;
+}
+
 // ---------------- 环形图 ----------------
 
 export interface DonutSegment {
@@ -29,22 +44,27 @@ export interface DonutRenderOptions {
   total: string;
   /** 选中扇区索引，-1 表示无选中 */
   activeIndex?: number;
+  /** 字号缩放，默认 1（页面组件）；分享卡片传约 2 */
+  fontScale?: number;
 }
 
 /** 绘制环形图（与 donut-chart 组件完全同一算法） */
 export function renderDonut(opts: DonutRenderOptions): void {
   const { ctx, w, h, segments, total } = opts;
   const active = typeof opts.activeIndex === 'number' ? opts.activeIndex : -1;
+  const scale = opts.fontScale && opts.fontScale > 0 ? opts.fontScale : 1;
+  const lineH = LABEL_LINE_HEIGHT * scale;
 
   if (!segments.length) return;
 
   const cx = w / 2;
   const cy = h / 2;
-  const labelSpace = Math.max(70, w * 0.26);
-  const outerR = Math.min(w / 2 - labelSpace, h / 2 - 14);
+  // 字号放大后外标签需要更多横向空间，按 scale 一并放大
+  const labelSpace = Math.max(70 * scale, w * 0.26);
+  const outerR = Math.min(w / 2 - labelSpace, h / 2 - 14 * scale);
   if (outerR < 20) return;
   const innerR = outerR * 0.55;
-  const offR = 10;
+  const offR = 10 * scale;
 
   // 扇区
   let start = -Math.PI / 2;
@@ -75,11 +95,11 @@ export function renderDonut(opts: DonutRenderOptions): void {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = CHART_THEME.text1;
-  ctx.font = 'bold 14px sans-serif';
-  ctx.fillText(`¥${total}`, cx, cy - 7);
+  ctx.font = fontOf(14, scale, 'bold');
+  ctx.fillText(`¥${total}`, cx, cy - 7 * scale);
   ctx.fillStyle = CHART_THEME.text3;
-  ctx.font = '10px sans-serif';
-  ctx.fillText('总支出', cx, cy + 13);
+  ctx.font = fontOf(10, scale);
+  ctx.fillText('总支出', cx, cy + 13 * scale);
 
   // 外标签（防重叠）
   start = -Math.PI / 2;
@@ -94,14 +114,14 @@ export function renderDonut(opts: DonutRenderOptions): void {
     cx,
     cy,
     outerR,
-    minY: LABEL_LINE_HEIGHT / 2 + 2,
-    maxY: h - LABEL_LINE_HEIGHT / 2 - 2,
-    minGap: LABEL_LINE_HEIGHT,
-    elbowGap: 13,
-    tailGap: 4
+    minY: lineH / 2 + 2,
+    maxY: h - lineH / 2 - 2,
+    minGap: lineH,
+    elbowGap: 13 * scale,
+    tailGap: 4 * scale
   });
 
-  ctx.font = LABEL_FONT;
+  ctx.font = fontOf(10, scale);
   ctx.textBaseline = 'middle';
   segments.forEach((seg, i) => {
     const lay = labels[i];
@@ -154,6 +174,8 @@ export interface LineRenderOptions {
   /** Y 轴基准上限 */
   yMax?: number;
   activeIndex?: number;
+  /** 字号缩放，默认 1（页面组件）；分享卡片传约 2 */
+  fontScale?: number;
 }
 
 /** 绘制折线图（与 line-chart 组件完全同一算法） */
@@ -161,14 +183,16 @@ export function renderLine(opts: LineRenderOptions): void {
   const { ctx, w, h, points: pts } = opts;
   if (!pts.length) return;
 
+  const scale = opts.fontScale && opts.fontScale > 0 ? opts.fontScale : 1;
   const maxValue = Math.max(...pts.map(p => p.value));
   const baseYMax = opts.yMax || 15;
   const yMax = Math.min(MAX_FUEL_CONSUMPTION, Math.max(baseYMax, Math.ceil(maxValue / 5) * 5));
 
-  const padL = 28;
-  const padR = 12;
-  const padT = 24;
-  const padB = 24;
+  // 字号放大后左右留白需同步加大，否则数值标注会被裁切
+  const padL = 28 * scale;
+  const padR = 12 * scale;
+  const padT = 24 * scale;
+  const padB = 24 * scale;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
 
@@ -203,8 +227,8 @@ export function renderLine(opts: LineRenderOptions): void {
 
   // 数据点 + 数值
   const spacing = plotW / Math.max(1, pts.length - 1);
-  const dense = spacing < 36;
-  ctx.font = '10px sans-serif';
+  const dense = spacing < 36 * scale;
+  ctx.font = fontOf(10, scale);
   ctx.textAlign = 'center';
 
   pts.forEach((p, i) => {
@@ -212,14 +236,14 @@ export function renderLine(opts: LineRenderOptions): void {
     const py = y(p.value);
 
     ctx.beginPath();
-    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.arc(px, py, 3 * scale, 0, Math.PI * 2);
     ctx.fillStyle = CHART_THEME.primary;
     ctx.fill();
 
-    let ty = py - 9;
-    if (ty < padT + 9) ty = py + 17;
-    else if (dense && i % 2 === 1) ty = py + 17;
-    if (ty > h - padB - 2) ty = py - 9;
+    let ty = py - 9 * scale;
+    if (ty < padT + 9 * scale) ty = py + 17 * scale;
+    else if (dense && i % 2 === 1) ty = py + 17 * scale;
+    if (ty > h - padB - 2) ty = py - 9 * scale;
 
     ctx.fillStyle = CHART_THEME.primary;
     ctx.fillText(p.value.toFixed(2), px, ty);
@@ -227,12 +251,12 @@ export function renderLine(opts: LineRenderOptions): void {
 
   // X 轴标签（最多 6 个）
   ctx.fillStyle = CHART_THEME.text3;
-  ctx.font = '10px sans-serif';
+  ctx.font = fontOf(10, scale);
   ctx.textAlign = 'center';
   const step = Math.ceil(pts.length / 6);
   pts.forEach((p, i) => {
     if (i % step !== 0 && i !== pts.length - 1) return;
-    ctx.fillText(p.label, x(i), h - 6);
+    ctx.fillText(p.label, x(i), h - 6 * scale);
   });
 
   // 选中高亮
@@ -242,12 +266,12 @@ export function renderLine(opts: LineRenderOptions): void {
     const px = x(active);
     const py = y(p.value);
     ctx.beginPath();
-    ctx.arc(px, py, 7, 0, Math.PI * 2);
+    ctx.arc(px, py, 7 * scale, 0, Math.PI * 2);
     ctx.strokeStyle = CHART_THEME.primary;
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.arc(px, py, 3 * scale, 0, Math.PI * 2);
     ctx.fillStyle = CHART_THEME.card;
     ctx.fill();
   }
@@ -266,6 +290,8 @@ export interface BarRenderOptions {
   h: number;
   bars: BarItem[];
   activeIndex?: number;
+  /** 字号缩放，默认 1（页面组件）；分享卡片传约 2 */
+  fontScale?: number;
 }
 
 /** 绘制柱状图（与 bar-chart 组件完全同一算法） */
@@ -273,13 +299,15 @@ export function renderBars(opts: BarRenderOptions): void {
   const { ctx, w, h, bars } = opts;
   if (!bars.length) return;
 
+  const scale = opts.fontScale && opts.fontScale > 0 ? opts.fontScale : 1;
   const maxVal = Math.max(...bars.map(b => b.value));
   if (maxVal <= 0) return;
 
-  const padL = 8;
-  const padR = 8;
-  const padT = 18;
-  const padB = 24;
+  // 字号放大后上下留白同步加大，避免数值标注与 X 轴标签被裁切
+  const padL = 8 * scale;
+  const padR = 8 * scale;
+  const padT = 18 * scale;
+  const padB = 24 * scale;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
   const slot = plotW / bars.length;
@@ -311,11 +339,11 @@ export function renderBars(opts: BarRenderOptions): void {
     }
 
     ctx.fillStyle = isActive ? CHART_THEME.primaryDark : CHART_THEME.text3;
-    ctx.font = isActive ? 'bold 10px sans-serif' : '10px sans-serif';
+    ctx.font = fontOf(10, scale, isActive ? 'bold' : 'normal');
     ctx.textAlign = 'center';
-    ctx.fillText(String(Math.round(b.value)), cx, y - 4);
+    ctx.fillText(String(Math.round(b.value)), cx, y - 4 * scale);
 
-    ctx.fillText(b.label, cx, h - 6);
+    ctx.fillText(b.label, cx, h - 6 * scale);
   });
 
   if (active >= 0 && active < bars.length) {

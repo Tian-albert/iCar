@@ -5,6 +5,7 @@ import {
   formatRangeLabel,
   CARD_WIDTH,
   MAX_CATEGORY_ROWS,
+  Rect,
   ShareCardInput
 } from '../utils/share-card';
 import { EnergyType } from '../types/models';
@@ -210,24 +211,32 @@ describe('布局：1:1 复刻页面结构', () => {
     }
   });
 
-  it('区块自上而下顺序正确（头部 → 指标 → 分类 → 趋势 → 行程 → 费用）', () => {
-    const m = buildShareCardModel(input());
+  it('详细模式区块自上而下顺序正确（头部 → 指标 → 分类 → 趋势 → 行程 → 费用）', () => {
+    const m = buildShareCardModel(input(), 'full');
     const lay = computeShareCardLayout(m);
+
+    const trend = lay.trendCard!;
+    const mileage = lay.mileageCard!;
+    const cost = lay.costCard!;
+    expect(trend).not.toBeNull();
+    expect(mileage).not.toBeNull();
+    expect(cost).not.toBeNull();
 
     const lastGroup = lay.groupRects[lay.groupRects.length - 1].rect;
     expect(lay.header.y + lay.header.height).toBeLessThan(lay.groupRects[0].rect.y);
     expect(lastGroup.y + lastGroup.height).toBeLessThan(lay.categoryCard.y);
-    expect(lay.categoryCard.y + lay.categoryCard.height).toBeLessThan(lay.trendCard.y);
-    expect(lay.trendCard.y + lay.trendCard.height).toBeLessThan(lay.mileageCard.y);
-    expect(lay.mileageCard.y + lay.mileageCard.height).toBeLessThan(lay.costCard.y);
-    expect(lay.costCard.y + lay.costCard.height).toBeLessThan(lay.footerBaseline);
+    expect(lay.categoryCard.y + lay.categoryCard.height).toBeLessThan(trend.y);
+    expect(trend.y + trend.height).toBeLessThan(mileage.y);
+    expect(mileage.y + mileage.height).toBeLessThan(cost.y);
+    expect(cost.y + cost.height).toBeLessThan(lay.footerBaseline);
   });
 
   it('高度容纳全部内容与页脚', () => {
-    const m = buildShareCardModel(input());
+    const m = buildShareCardModel(input(), 'full');
     const lay = computeShareCardLayout(m);
+    const cost = lay.costCard!;
     expect(lay.height).toBeGreaterThan(lay.footerBaseline);
-    expect(lay.height).toBeGreaterThan(lay.costCard.y + lay.costCard.height);
+    expect(lay.height).toBeGreaterThan(cost.y + cost.height);
   });
 
   it('指标卡组数量随车型变化', () => {
@@ -262,17 +271,68 @@ describe('布局：1:1 复刻页面结构', () => {
   });
 
   it('三张图表区域都在各自卡片内部', () => {
-    const m = buildShareCardModel(input());
+    const m = buildShareCardModel(input(), 'full');
     const lay = computeShareCardLayout(m);
-    const pairs: Array<[typeof lay.trendCard, typeof lay.trendChartRect]> = [
+    const pairs: Array<[Rect | null, Rect | null]> = [
       [lay.trendCard, lay.trendChartRect],
       [lay.mileageCard, lay.mileageChartRect],
       [lay.costCard, lay.costChartRect]
     ];
     for (const [card, chart] of pairs) {
-      expect(chart.x).toBeGreaterThanOrEqual(card.x);
-      expect(chart.x + chart.width).toBeLessThanOrEqual(card.x + card.width);
-      expect(chart.y + chart.height).toBeLessThanOrEqual(card.y + card.height);
+      expect(card).not.toBeNull();
+      expect(chart).not.toBeNull();
+      const c = card!;
+      const ch = chart!;
+      expect(ch.x).toBeGreaterThanOrEqual(c.x);
+      expect(ch.x + ch.width).toBeLessThanOrEqual(c.x + c.width);
+      expect(ch.y + ch.height).toBeLessThanOrEqual(c.y + c.height);
     }
+  });
+});
+
+describe('精简模式：仅指标卡 + 环形图', () => {
+  it('模型记录 mode', () => {
+    expect(buildShareCardModel(input(), 'brief').mode).toBe('brief');
+    expect(buildShareCardModel(input(), 'full').mode).toBe('full');
+  });
+
+  it('精简模式不包含三张图表的布局区域', () => {
+    const m = buildShareCardModel(input(), 'brief');
+    const lay = computeShareCardLayout(m);
+    expect(lay.trendCard).toBeNull();
+    expect(lay.trendChartRect).toBeNull();
+    expect(lay.mileageCard).toBeNull();
+    expect(lay.costCard).toBeNull();
+    expect(lay.trendTitleBaseline).toBeNull();
+  });
+
+  it('精简模式仍保留指标卡与分类环形图', () => {
+    const m = buildShareCardModel(input(), 'brief');
+    const lay = computeShareCardLayout(m);
+    expect(lay.groupRects.length).toBe(m.groups.length);
+    expect(lay.donutRect.width).toBeGreaterThan(0);
+    expect(lay.categoryCard.height).toBeGreaterThan(0);
+  });
+
+  it('精简模式高度明显小于详细模式', () => {
+    const brief = computeShareCardLayout(buildShareCardModel(input(), 'brief'));
+    const full = computeShareCardLayout(buildShareCardModel(input(), 'full'));
+    expect(brief.height).toBeLessThan(full.height);
+    // 少掉三张 300px 图表，差距应在 900px 以上
+    expect(full.height - brief.height).toBeGreaterThan(900);
+  });
+
+  it('两种模式的指标卡与分类数据完全一致', () => {
+    const brief = buildShareCardModel(input(), 'brief');
+    const full = buildShareCardModel(input(), 'full');
+    expect(brief.groups).toEqual(full.groups);
+    expect(brief.categories).toEqual(full.categories);
+  });
+
+  it('分类区在精简模式下仍位于页脚之上', () => {
+    const m = buildShareCardModel(input(), 'brief');
+    const lay = computeShareCardLayout(m);
+    expect(lay.categoryCard.y + lay.categoryCard.height).toBeLessThan(lay.footerBaseline);
+    expect(lay.height).toBeGreaterThan(lay.footerBaseline);
   });
 });

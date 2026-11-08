@@ -6,7 +6,12 @@ import {
   CARD_COLORS,
   MAX_CANVAS_EDGE
 } from '../utils/share-card-draw';
-import { buildShareCardModel, computeShareCardLayout, ShareCardInput } from '../utils/share-card';
+import {
+  buildShareCardModel,
+  computeShareCardLayout,
+  ShareCardInput,
+  ShareMode
+} from '../utils/share-card';
 
 interface Call {
   op: string;
@@ -83,8 +88,8 @@ function input(over: Partial<ShareCardInput> = {}): ShareCardInput {
   };
 }
 
-function draw(over: Partial<ShareCardInput> = {}) {
-  const model = buildShareCardModel(input(over));
+function draw(over: Partial<ShareCardInput> = {}, mode: ShareMode = 'full') {
+  const model = buildShareCardModel(input(over), mode);
   const layout = computeShareCardLayout(model);
   const ctx = fakeCtx();
   drawShareCard({ ctx, model, layout, dpr: 2, dateText: '2026-11-08' });
@@ -164,9 +169,9 @@ describe('三张图表：调用共享绘制函数', () => {
     const translates = ctx._transforms.filter((t: any) => t.op === 'translate');
     const targets = translates.map((t: any) => `${t.args[0]},${t.args[1]}`);
     expect(targets).toContain(`${layout.donutRect.x},${layout.donutRect.y}`);
-    expect(targets).toContain(`${layout.trendChartRect.x},${layout.trendChartRect.y}`);
-    expect(targets).toContain(`${layout.mileageChartRect.x},${layout.mileageChartRect.y}`);
-    expect(targets).toContain(`${layout.costChartRect.x},${layout.costChartRect.y}`);
+    expect(targets).toContain(`${layout.trendChartRect!.x},${layout.trendChartRect!.y}`);
+    expect(targets).toContain(`${layout.mileageChartRect!.x},${layout.mileageChartRect!.y}`);
+    expect(targets).toContain(`${layout.costChartRect!.x},${layout.costChartRect!.y}`);
   });
 
   it('图表空态绘制文案而非图表', () => {
@@ -251,6 +256,62 @@ describe('resolveExportDpr：防止超出 canvas 尺寸上限', () => {
     const dpr = resolveExportDpr(layout.width, layout.height, 3);
     const mp = (layout.width * dpr * layout.height * dpr) / 1e6;
     expect(mp).toBeLessThan(16);
+  });
+});
+
+describe('精简模式绘制', () => {
+  it('只绘制指标卡与环形图，不绘制三张图表', () => {
+    const { ctx } = draw({}, 'brief');
+    const texts = ctx._texts.map((t: any) => t.text);
+
+    // 保留
+    expect(texts).toContain('测试 CRV');
+    expect(texts).toContain('最新总里程');
+    expect(texts).toContain('分类支出');
+    expect(texts).toContain('总支出');
+
+    // 跳过
+    expect(texts).not.toContain('行程 (km)');
+    expect(texts).not.toContain('费用 (元)');
+    expect(texts.some((t: string) => t.includes('趋势'))).toBe(false);
+  });
+
+  it('精简模式只为环形图做一次 translate', () => {
+    const { ctx, layout } = draw({}, 'brief');
+    const translates = ctx._transforms.filter((t: any) => t.op === 'translate');
+    expect(translates.length).toBe(1);
+    expect(translates[0].args).toEqual([layout.donutRect.x, layout.donutRect.y]);
+  });
+
+  it('两种模式的指标数值一致', () => {
+    const brief = draw({}, 'brief').ctx._texts.map((t: any) => t.text);
+    const full = draw({}, 'full').ctx._texts.map((t: any) => t.text);
+    for (const key of ['5850', '8.46', '8200.00']) {
+      expect(brief).toContain(key);
+      expect(full).toContain(key);
+    }
+  });
+});
+
+describe('图表字号放大（卡片侧 fontScale）', () => {
+  /** 收集所有 fillText 的字体大小 */
+  function fontSizes(ctx: any): number[] {
+    const sizes: number[] = [];
+    for (const t of ctx._texts as any[]) {
+      const m = /(\d+)px/.exec(t.font || '');
+      if (m) sizes.push(Number(m[1]));
+    }
+    return sizes;
+  }
+
+  it('卡片内图表字号明显大于组件默认的 10px', () => {
+    const { ctx } = draw();
+    const sizes = fontSizes(ctx);
+    // 图表标签按 fontScale=2 放大到 20px
+    expect(sizes.some(s => s >= 20)).toBe(true);
+    // 不应存在 10px 的图表标签（组件默认值）
+    const tiny = sizes.filter(s => s <= 10);
+    expect(tiny.length).toBe(0);
   });
 });
 

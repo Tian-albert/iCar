@@ -20,6 +20,16 @@ import { StatsRange } from '../domain/stats.service';
 /** 卡片逻辑宽度：750 = 设计稿 2 倍图，朋友圈预览清晰 */
 export const CARD_WIDTH = 750;
 
+/**
+ * 分享模式：
+ * - `brief` 精简：指标卡 + 分类环形图，适合朋友圈快速浏览
+ * - `full` 详细：1:1 复刻统计页（含趋势折线、行程/费用柱状图）
+ */
+export type ShareMode = 'brief' | 'full';
+
+/** 图表字号缩放：卡片宽度约为页面 2.2 倍，字号同步放大才看得清 */
+export const CHART_FONT_SCALE = 2;
+
 /** 分类明细列表最多展示条数（环形图仍用全量） */
 export const MAX_CATEGORY_ROWS = 6;
 
@@ -74,6 +84,8 @@ export interface ShareCardModel {
   energyLabel: string;
   rangeLabel: string;
   hasData: boolean;
+  /** 精简 / 详细模式，决定布局是否包含三张图表 */
+  mode: ShareMode;
   /** 按页面顺序排列的指标卡组 */
   groups: ShareMetricGroup[];
   /** 分类环形图数据（全量） */
@@ -102,6 +114,7 @@ export interface ShareCardLayout {
   width: number;
   height: number;
   padding: number;
+  mode: ShareMode;
   header: Rect;
   titleBaseline: number;
   subtitleBaseline: number;
@@ -112,18 +125,18 @@ export interface ShareCardLayout {
   categoryCard: Rect;
   donutRect: Rect;
   categoryRowRects: Array<ShareCategoryRow & Rect>;
-  /** 趋势区 */
-  trendTitleBaseline: number;
-  trendCard: Rect;
-  trendChartRect: Rect;
-  /** 行程区 */
-  mileageTitleBaseline: number;
-  mileageCard: Rect;
-  mileageChartRect: Rect;
-  /** 费用区 */
-  costTitleBaseline: number;
-  costCard: Rect;
-  costChartRect: Rect;
+  /** 趋势区（精简模式下为 null，绘制时跳过） */
+  trendTitleBaseline: number | null;
+  trendCard: Rect | null;
+  trendChartRect: Rect | null;
+  /** 行程区（精简模式下为 null） */
+  mileageTitleBaseline: number | null;
+  mileageCard: Rect | null;
+  mileageChartRect: Rect | null;
+  /** 费用区（精简模式下为 null） */
+  costTitleBaseline: number | null;
+  costCard: Rect | null;
+  costChartRect: Rect | null;
   footerBaseline: number;
 }
 
@@ -152,7 +165,7 @@ export function formatRangeLabel(range: StatsRange): string {
  * 组装分享卡片模型。
  * 指标卡组与统计页完全对应：里程 → 油耗（纯电隐藏）→ 电耗（纯电/混动）→ 支出。
  */
-export function buildShareCardModel(input: ShareCardInput): ShareCardModel {
+export function buildShareCardModel(input: ShareCardInput, mode: ShareMode = 'full'): ShareCardModel {
   const { energyType, hasData } = input;
   const isEv = energyType === 'ev';
   const isHybrid = energyType === 'hybrid';
@@ -221,6 +234,7 @@ export function buildShareCardModel(input: ShareCardInput): ShareCardModel {
     energyLabel: ENERGY_LABEL[energyType] || '燃油',
     rangeLabel: input.rangeLabel,
     hasData,
+    mode,
     groups,
     categories: categoryRowsAll,
     categoryRows: categoryRowsAll.slice(0, MAX_CATEGORY_ROWS),
@@ -307,41 +321,56 @@ export function computeShareCardLayout(model: ShareCardModel): ShareCardLayout {
   }));
   y += catInnerH + GROUP_GAP;
 
-  // ---- 趋势 ----
-  const trendTitleBaseline = y + SECTION_TITLE_H - 16;
-  y += SECTION_TITLE_H;
-  const trendCard: Rect = { x: PAD, y, width: contentW, height: CHART_H + CARD_PAD * 2 };
-  const trendChartRect: Rect = {
-    x: PAD + CARD_PAD,
-    y: y + CARD_PAD,
-    width: contentW - CARD_PAD * 2,
-    height: CHART_H
-  };
-  y += trendCard.height + GROUP_GAP;
+  // 精简模式到分类区结束，不再绘制三张图表
+  const isFull = model.mode === 'full';
 
-  // ---- 行程 ----
-  const mileageTitleBaseline = y + SECTION_TITLE_H - 16;
-  y += SECTION_TITLE_H;
-  const mileageCard: Rect = { x: PAD, y, width: contentW, height: CHART_H + CARD_PAD * 2 };
-  const mileageChartRect: Rect = {
-    x: PAD + CARD_PAD,
-    y: y + CARD_PAD,
-    width: contentW - CARD_PAD * 2,
-    height: CHART_H
-  };
-  y += mileageCard.height + GROUP_GAP;
+  let trendTitleBaseline: number | null = null;
+  let trendCard: Rect | null = null;
+  let trendChartRect: Rect | null = null;
+  let mileageTitleBaseline: number | null = null;
+  let mileageCard: Rect | null = null;
+  let mileageChartRect: Rect | null = null;
+  let costTitleBaseline: number | null = null;
+  let costCard: Rect | null = null;
+  let costChartRect: Rect | null = null;
 
-  // ---- 费用 ----
-  const costTitleBaseline = y + SECTION_TITLE_H - 16;
-  y += SECTION_TITLE_H;
-  const costCard: Rect = { x: PAD, y, width: contentW, height: CHART_H + CARD_PAD * 2 };
-  const costChartRect: Rect = {
-    x: PAD + CARD_PAD,
-    y: y + CARD_PAD,
-    width: contentW - CARD_PAD * 2,
-    height: CHART_H
-  };
-  y += costCard.height;
+  if (isFull) {
+    // ---- 趋势 ----
+    trendTitleBaseline = y + SECTION_TITLE_H - 16;
+    y += SECTION_TITLE_H;
+    trendCard = { x: PAD, y, width: contentW, height: CHART_H + CARD_PAD * 2 };
+    trendChartRect = {
+      x: PAD + CARD_PAD,
+      y: y + CARD_PAD,
+      width: contentW - CARD_PAD * 2,
+      height: CHART_H
+    };
+    y += trendCard.height + GROUP_GAP;
+
+    // ---- 行程 ----
+    mileageTitleBaseline = y + SECTION_TITLE_H - 16;
+    y += SECTION_TITLE_H;
+    mileageCard = { x: PAD, y, width: contentW, height: CHART_H + CARD_PAD * 2 };
+    mileageChartRect = {
+      x: PAD + CARD_PAD,
+      y: y + CARD_PAD,
+      width: contentW - CARD_PAD * 2,
+      height: CHART_H
+    };
+    y += mileageCard.height + GROUP_GAP;
+
+    // ---- 费用 ----
+    costTitleBaseline = y + SECTION_TITLE_H - 16;
+    y += SECTION_TITLE_H;
+    costCard = { x: PAD, y, width: contentW, height: CHART_H + CARD_PAD * 2 };
+    costChartRect = {
+      x: PAD + CARD_PAD,
+      y: y + CARD_PAD,
+      width: contentW - CARD_PAD * 2,
+      height: CHART_H
+    };
+    y += costCard.height;
+  }
 
   const footerBaseline = y + 64;
   const height = footerBaseline + 48;
@@ -350,6 +379,7 @@ export function computeShareCardLayout(model: ShareCardModel): ShareCardLayout {
     width,
     height,
     padding: PAD,
+    mode: model.mode,
     header,
     titleBaseline,
     subtitleBaseline,
