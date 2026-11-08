@@ -41,31 +41,29 @@ page {
   --color-border: #E6EAF1;
   --color-text-4: #8A93A6;
   --color-primary-dark: #1D4ED8;
-  --color-overlay: rgba(0, 0, 0, 0.06);
 
-  /* 字号阶梯（rpx） */
-  --font-xs: 22rpx;
-  --font-sm: 24rpx;
-  --font-md: 28rpx;
-  --font-lg: 32rpx;
-  --font-xl: 40rpx;
+  /* 字号阶梯（px；自定义属性值避免 rpx，见 docs/DESIGN.md 第 1 节） */
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
 
-  /* 间距阶梯（rpx） */
-  --sp-1: 8rpx;
-  --sp-2: 16rpx;
-  --sp-3: 24rpx;
-  --sp-4: 32rpx;
-  --sp-5: 48rpx;
+  /* 间距阶梯（px，按 375px 屏与 rpx 等价换算） */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
 
-  /* 圆角（rpx） */
-  --r-sm: 8rpx;
-  --r-md: 16rpx;
-  --r-lg: 24rpx;
-  --r-pill: 999rpx;
+  /* 圆角（px） */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-pill: 999px;
 
-  /* 阴影层级 */
-  --shadow-card: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
-  --shadow-float: 0 10rpx 28rpx rgba(59, 111, 246, 0.40);
+  /* 阴影为复合值，不定义为自定义属性（WXSS 对含函数/逗号的变量值兼容性不稳），
+     使用处直接写字面量，见 docs/DESIGN.md 第 4 节 */
 
   background-color: var(--color-bg);
   color: var(--color-text-1);

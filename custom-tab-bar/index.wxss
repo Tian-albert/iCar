@@ -23,12 +23,13 @@
   font-size: 44rpx;
   line-height: 1;
 }
+/* 自定义组件默认样式隔离，取不到页面级 CSS 变量，此处用字面量 */
 .tab-text {
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: var(--color-text-3);
+  color: #9AA4B2;
 }
 .tab-active .tab-text {
-  color: var(--color-primary);
+  color: #3B6FF6;
   font-weight: 600;
 }

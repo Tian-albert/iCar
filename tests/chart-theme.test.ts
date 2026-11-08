@@ -31,6 +31,21 @@ describe('chart-theme 与设计令牌一致性（T-05）', () => {
     }
   });
 
+  it('app.wxss 自定义属性均为单值 hex/px（复合值与 rpx 会破坏 WXSS 编译）', () => {
+    const re = /(--[a-zA-Z0-9-]+)\s*:\s*([^;]+);/g;
+    let count = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(css)) !== null) {
+      count++;
+      const value = m[2];
+      expect(value.trim()).toMatch(/^(#[0-9A-Fa-f]{3,8}|\d+(\.\d+)?px)$/);
+      expect(value).not.toContain('rgba(');
+      expect(value).not.toContain('rpx');
+      expect(value).not.toContain(',');
+    }
+    expect(count).toBeGreaterThan(0);
+  });
+
   it('图表组件与绘制工具不再内联 hex 色值', () => {
     const files = [
       'components/bar-chart/index.ts',

@@ -30,7 +30,7 @@
   border-radius: var(--radius-card);
   padding: var(--sp-3) var(--sp-4);
   margin-bottom: var(--sp-3);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
 }
 /* 统一的按下反馈（见 docs/DESIGN.md 第 5 节） */
 .hover-dim {
