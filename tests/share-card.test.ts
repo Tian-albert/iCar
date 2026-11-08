@@ -84,7 +84,7 @@ describe('指标取值', () => {
       mileage: { latest: 5460, increased: 5460, fuelMileage: 0, evMileage: 5460 }
     }));
     const mileage = m.groups.find(g => g.key === 'mileage')!;
-    expect(mileage.metrics[2].label).toBe('充电里程');
+    expect(mileage.metrics[2].label).toBe('充电里程 (km)');
     expect(mileage.metrics[2].value).toBe('5460');
   });
 

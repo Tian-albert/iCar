@@ -2,6 +2,7 @@
 // 绘制算法已抽到 utils/chart-render.ts，与统计页分享卡片共用同一份实现。
 import { hitLineIndex, toCanvasPoint } from '../../utils/chart-math';
 import { renderLine } from '../../utils/chart-render';
+import { MAX_EV_CONSUMPTION } from '../../domain/fuel.service';
 
 Component({
   properties: {
@@ -63,13 +64,18 @@ Component({
             plotW: w - 40
           };
 
+          // 单位含 kWh 即电耗，用 50 封顶；否则按油耗 30
+          const unit = (this.data.unit as string) || '';
+          const ceiling = unit.indexOf('kWh') >= 0 ? MAX_EV_CONSUMPTION : undefined;
+
           renderLine({
             ctx,
             w,
             h,
             points: pts,
             yMax: this.data.yMax as number,
-            activeIndex: this.data.activeIndex as number
+            activeIndex: this.data.activeIndex as number,
+            ceiling
           });
         });
     }

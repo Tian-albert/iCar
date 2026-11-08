@@ -15,6 +15,11 @@ from datetime import datetime, timedelta
 
 OUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# 版本号从 package.json 读取，避免与小程序实际版本不一致
+_PKG = os.path.join(os.path.dirname(OUT_DIR), 'package.json')
+with open(_PKG, encoding='utf-8') as _f:
+    APP_VERSION = json.load(_f)['version']
+
 # 预设类别 ID 与 seed.ts 保持一致，导入后会自动合并
 PRESET_CATEGORIES = [
     ('加油', 'oil', 'refuel', 0),
@@ -287,7 +292,7 @@ def make_bundle(cars, maintains, handles, logs, repairs, refuels, costs):
     return {
         'format': 'icar-export',
         'version': 1,
-        'source': {'platform': 'mp', 'appVersion': '1.0.4', 'exportedAt': ts(2026, 11, 8, 20, 0)},
+        'source': {'platform': 'mp', 'appVersion': APP_VERSION, 'exportedAt': ts(2026, 11, 8, 20, 0)},
         'options': {'amountUnit': 'yuan', 'timeUnit': 'ms', 'imageMode': 'file', 'package': 'json'},
         'warnings': ['本文件为测试数据，仅用于验证功能与图表展示'],
         'data': data,

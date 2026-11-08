@@ -50,6 +50,7 @@ function describe(table: string, e: any): string {
     case 'maintains': return `保养项：${e.name ?? ''}`;
     case 'fuelRecords': return `加油记录 · ${e.makeMileages ?? 0} km`;
     case 'maintainHandles': return `保养记录 · ${e.makeMileages ?? 0} km`;
+    case 'maintainLogs': return `保养明细 · ${e.makeMileages ?? 0} km`;
     case 'repairRecords': return `维修记录 · ${e.content ?? ''}`;
     case 'costs': return `支出记录 · ¥${e.amount ?? 0}`;
     default: return '记录';

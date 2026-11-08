@@ -30,7 +30,7 @@
 .btn-primary {
   background: var(--color-primary);
   color: var(--color-card);
-  border-radius: var(--radius-pill);
+  border-radius: var(--r-pill);
   font-size: 32rpx;
 }
 .btn-secondary {

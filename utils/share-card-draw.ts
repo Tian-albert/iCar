@@ -7,6 +7,7 @@
 // Canvas 2D 不解析 CSS 变量，颜色统一取自 CHART_THEME。
 import { CHART_THEME } from './chart-draw';
 import { renderDonut, renderLine, renderBars } from './chart-render';
+import { MAX_EV_CONSUMPTION } from '../domain/fuel.service';
 import {
   ShareCardLayout,
   ShareCardModel,
@@ -217,6 +218,20 @@ export function drawShareCard(opts: DrawCardOptions): void {
     ctx.fillText(`¥ ${row.amount}`, row.x + row.width, row.y + row.height / 2 + 9);
   }
 
+  // 明细被截断时明确提示，否则用户会发现金额合计对不上「总支出」
+  if (model.categoryHiddenCount > 0 && layout.categoryRowRects.length > 0) {
+    const lastRow = layout.categoryRowRects[layout.categoryRowRects.length - 1];
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = CARD_COLORS.text3;
+    ctx.font = font(22);
+    ctx.fillText(
+      `另有 ${model.categoryHiddenCount} 项未显示，合计见上方总支出`,
+      lastRow.x,
+      lastRow.y + lastRow.height + 26
+    );
+  }
+
   // ---------- 趋势（精简模式跳过）----------
   if (layout.trendCard && layout.trendChartRect && layout.trendTitleBaseline !== null) {
     drawSectionTitle(ctx, model.trendTitle, layout.trendTitleBaseline, pad);
@@ -231,7 +246,9 @@ export function drawShareCard(opts: DrawCardOptions): void {
         w: layout.trendChartRect.width,
         h: layout.trendChartRect.height,
         points: model.trend,
-        fontScale: CHART_FONT_SCALE
+        fontScale: CHART_FONT_SCALE,
+        // 电耗允许到 50，不能用油耗的 30 封顶
+        ceiling: model.trendUnit.indexOf('kWh') >= 0 ? MAX_EV_CONSUMPTION : undefined
       });
       ctx.restore();
     }
@@ -375,6 +392,9 @@ export function resolveExportDpr(logicalWidth: number, logicalHeight: number, de
     deviceDpr || 2,
     MAX_CANVAS_EDGE / Math.max(logicalWidth, logicalHeight)
   );
+  // 必须向下取整：toFixed(2) 会四舍五入放大 dpr，
+  // 例如 3000 逻辑高时 4096/3000=1.3653 -> 1.37 -> 4110px 超限。
+  const floored = Math.floor(safe * 100) / 100;
   // 保底 1，避免极端情况下算出 0 或负数
-  return Math.max(1, Number(safe.toFixed(2)));
+  return Math.max(1, floored);
 }

@@ -7,7 +7,7 @@
       <view hover-class="hover-dim" class="seg {{rangeType === 'all' ? 'seg-active' : ''}}" data-type="all" bindtap="onRangeChange">全部</view>
     </view>
     <view class="range-pickers">
-      <picker wx:if="{{rangeType !== 'all'}}" range="{{years}}" value="{{0}}" bindchange="onYearChange">
+      <picker wx:if="{{rangeType !== 'all'}}" range="{{years}}" value="{{yearIndex}}" bindchange="onYearChange">
         <view class="picker-value">{{year}}年 ▾</view>
       </picker>
       <picker wx:if="{{rangeType === 'month'}}" range="{{months}}" value="{{month - 1}}" bindchange="onMonthChange">
@@ -83,7 +83,7 @@
   <!-- 分类支出 -->
   <view class="cat-header">
     <view class="cat-title">分类支出</view>
-    <view class="cat-total">总支出 <text class="cat-total-num">¥{{expenseTotal}}</text></view>
+    <view wx:if="{{hasData}}" class="cat-total">总支出 <text class="cat-total-num">¥{{expenseTotal}}</text></view>
   </view>
   <view class="card cat-card">
     <view wx:if="{{!hasData || categories.length === 0}}" class="chart-empty">暂无支出数据，记一笔后即可查看分类占比</view>

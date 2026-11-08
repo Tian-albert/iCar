@@ -170,11 +170,14 @@ export function updateMaintainHandle(storage: StorageAdapter, sourceId: string, 
   handle.remark = form.remark ?? '';
   handle.updatedAt = now;
 
-  // 重建 logs：软删旧的，插入新的（保养项选择可能变化）
+  // 重建 logs：**物理删除**旧的，插入新的（保养项选择可能变化）。
+  // 这里不能用 softDelete —— 那会为每条旧 log 生成一个独立删除批次，
+  // 回收站里出现一堆名为「记录」的孤立条目，单独恢复还会造成保养记录重复。
+  // 语义上这只是「编辑同一条记录的明细」，不是删除记录本身。
   const oldLogs = storage
     .list<MaintainLog>('maintainLogs')
     .filter(l => l.handleSourceId === sourceId && !l.deleted);
-  for (const l of oldLogs) storage.softDelete('maintainLogs', l.sourceId);
+  for (const l of oldLogs) storage.hardDelete('maintainLogs', l.sourceId);
   for (const maintainSourceId of form.maintainSourceIds) {
     const log: MaintainLog = {
       sourceId: genId('maintain-log'),

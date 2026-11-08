@@ -111,7 +111,7 @@ describe('指标卡：与页面同结构', () => {
     const { ctx } = draw();
     const texts = ctx._texts.map((t: any) => t.text);
     // 里程
-    expect(texts).toContain('最新总里程');
+    expect(texts).toContain('最新总里程 (km)');
     expect(texts).toContain('5850');
     // 油耗
     expect(texts).toContain('平均油耗 (L/100km)');
@@ -131,7 +131,7 @@ describe('指标卡：与页面同结构', () => {
     const texts = ctx._texts.map((t: any) => t.text);
     expect(texts).not.toContain('平均油耗 (L/100km)');
     expect(texts).toContain('平均电耗 (kWh/100km)');
-    expect(texts).toContain('充电里程');
+    expect(texts).toContain('充电里程 (km)');
   });
 });
 
@@ -266,7 +266,7 @@ describe('精简模式绘制', () => {
 
     // 保留
     expect(texts).toContain('测试 CRV');
-    expect(texts).toContain('最新总里程');
+    expect(texts).toContain('最新总里程 (km)');
     expect(texts).toContain('分类支出');
     expect(texts).toContain('总支出');
 

@@ -1,5 +1,6 @@
 <view class="picker-mask" wx:if="{{show}}" bindtap="onClose">
-  <view hover-class="hover-dim" class="picker-panel" catchtap="noop">
+  <!-- 面板本身只用于阻止冒泡，不能加 hover-class：按住空白处整块弹层会闪成半透明 -->
+  <view class="picker-panel" catchtap="noop">
     <view class="picker-title">选择图标</view>
     <view class="icon-grid">
       <view hover-class="hover-dim" wx:for="{{icons}}" wx:key="*this" class="icon-item" data-icon="{{item}}" bindtap="onSelect">{{item}}</view>

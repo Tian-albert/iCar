@@ -123,12 +123,15 @@ Page({
       const names = logs
         .filter(l => l.handleSourceId === h.sourceId)
         .map(l => maintainMap.get(l.maintainSourceId) ?? '未知');
+      // 保养项被删除后，其 logs 会连带软删，导致 names 为空、记录只剩日期里程。
+      // 回退为明确文案，避免出现空白。
+      const namesText = names.length > 0 ? names.join('、') : '保养项已删除';
       const cost = h.costSourceId ? storage.get<Cost>('costs', h.costSourceId) : null;
       return {
         sourceId: h.sourceId,
         dateText: formatDateTime(h.makeDate),
         mileage: h.makeMileages,
-        names: names.join('、'),
+        names: namesText,
         amountText: cost && !cost.deleted ? cost.amount.toFixed(2) : '--'
       };
     });

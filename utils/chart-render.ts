@@ -176,6 +176,11 @@ export interface LineRenderOptions {
   activeIndex?: number;
   /** 字号缩放，默认 1（页面组件）；分享卡片传约 2 */
   fontScale?: number;
+  /**
+   * Y 轴封顶值：油耗 30，电耗 50。
+   * 纯电车电耗可达 33+，若沿用油耗上限 30，数据点会被压到图顶而标签仍显示真值。
+   */
+  ceiling?: number;
 }
 
 /** 绘制折线图（与 line-chart 组件完全同一算法） */
@@ -186,7 +191,8 @@ export function renderLine(opts: LineRenderOptions): void {
   const scale = opts.fontScale && opts.fontScale > 0 ? opts.fontScale : 1;
   const maxValue = Math.max(...pts.map(p => p.value));
   const baseYMax = opts.yMax || 15;
-  const yMax = Math.min(MAX_FUEL_CONSUMPTION, Math.max(baseYMax, Math.ceil(maxValue / 5) * 5));
+  const ceiling = opts.ceiling && opts.ceiling > 0 ? opts.ceiling : MAX_FUEL_CONSUMPTION;
+  const yMax = Math.min(ceiling, Math.max(baseYMax, Math.ceil(maxValue / 5) * 5));
 
   // 字号放大后左右留白需同步加大，否则数值标注会被裁切
   const padL = 28 * scale;

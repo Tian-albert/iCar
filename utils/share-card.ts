@@ -28,7 +28,7 @@ export const CARD_WIDTH = 750;
 export type ShareMode = 'brief' | 'full';
 
 /** 图表字号缩放：卡片宽度约为页面 2.2 倍，字号同步放大才看得清 */
-export const CHART_FONT_SCALE = 2;
+export const CHART_FONT_SCALE = 2.2;
 
 /** 分类明细列表最多展示条数（环形图仍用全量） */
 export const MAX_CATEGORY_ROWS = 6;
@@ -92,6 +92,8 @@ export interface ShareCardModel {
   categories: ShareCategoryRow[];
   /** 分类明细列表（可能被截断） */
   categoryRows: ShareCategoryRow[];
+  /** 被截断未展示的分类条数，>0 时卡片末尾提示「等 N 项」 */
+  categoryHiddenCount: number;
   categoryTotal: string;
   trendTitle: string;
   trendUnit: string;
@@ -172,12 +174,13 @@ export function buildShareCardModel(input: ShareCardInput, mode: ShareMode = 'fu
   const v = (s: string) => (hasData ? s : '--');
 
   // ---- 里程卡（3 列）----
+  // 标签带单位，与页面 index.wxml 保持一致
   const mileageMetrics: ShareMetric[] = [
-    { label: '最新总里程', value: v(fmtInt(input.mileage.latest)) },
-    { label: '增加总里程', value: v(fmtInt(input.mileage.increased)) },
+    { label: '最新总里程 (km)', value: v(fmtInt(input.mileage.latest)) },
+    { label: '增加总里程 (km)', value: v(fmtInt(input.mileage.increased)) },
     isEv
-      ? { label: '充电里程', value: v(fmtInt(input.mileage.evMileage)) }
-      : { label: '加油里程', value: v(fmtInt(input.mileage.fuelMileage)) }
+      ? { label: '充电里程 (km)', value: v(fmtInt(input.mileage.evMileage)) }
+      : { label: '加油里程 (km)', value: v(fmtInt(input.mileage.fuelMileage)) }
   ];
 
   const groups: ShareMetricGroup[] = [{ key: 'mileage', metrics: mileageMetrics }];
@@ -238,6 +241,7 @@ export function buildShareCardModel(input: ShareCardInput, mode: ShareMode = 'fu
     groups,
     categories: categoryRowsAll,
     categoryRows: categoryRowsAll.slice(0, MAX_CATEGORY_ROWS),
+    categoryHiddenCount: Math.max(0, categoryRowsAll.length - MAX_CATEGORY_ROWS),
     categoryTotal: v(fmt(input.expense.total)),
     trendTitle: `${isEv ? '电耗' : '能耗'}趋势 (${input.trendUnit})`,
     trendUnit: input.trendUnit,
@@ -307,8 +311,10 @@ export function computeShareCardLayout(model: ShareCardModel): ShareCardLayout {
     height: DONUT_H
   };
   const rowStartY = donutRect.y + DONUT_H + 8;
+  // 截断提示行需要额外高度，否则会画到卡片外
+  const hiddenTipH = model.categoryHiddenCount > 0 && model.categoryRows.length > 0 ? 40 : 0;
   const catInnerH = CARD_PAD * 2 + DONUT_H + (model.categoryRows.length > 0
-    ? model.categoryRows.length * CAT_ROW_H + 8
+    ? model.categoryRows.length * CAT_ROW_H + 8 + hiddenTipH
     : 0);
 
   const categoryCard: Rect = { x: PAD, y, width: contentW, height: catInnerH };

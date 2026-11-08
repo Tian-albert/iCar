@@ -33,6 +33,8 @@ Page({
     rangeType: 'all',
     hasData: false,
     year: 0,
+    /** 年份选择器的高亮索引，避免写死 0 导致切年后高亮仍停在首项 */
+    yearIndex: 0,
     month: 1,
     years: [] as number[],
     months: Array.from({ length: 12 }, (_, i) => i + 1) as number[],
@@ -114,6 +116,7 @@ Page({
 
     this.setData({
       years,
+      yearIndex: Math.max(0, years.indexOf(this.data.year)),
       hasData,
       isEvCar,
       isHybridCar,
@@ -153,7 +156,8 @@ Page({
     this.load();
   },
   onYearChange(e: WechatMiniprogram.PickerChange) {
-    this.setData({ year: this.data.years[Number(e.detail.value)] });
+    const idx = Number(e.detail.value);
+    this.setData({ year: this.data.years[idx], yearIndex: idx });
     this.load();
   },
   onMonthChange(e: WechatMiniprogram.PickerChange) {
@@ -285,10 +289,15 @@ Page({
         return;
       }
 
+      // exec 回调在 Promise executor 返回后才执行，其中若抛错不会被外层 .catch 捕获，
+      // 会导致 Promise 永不 settle、sharing 永久为 true、loading 遮罩卡死整页。
+      // 因此整段用 try/catch 包住，保证任何异常都能 settle。
+      try {
       this.createSelectorQuery()
         .select('#shareCanvas')
         .fields({ node: true, size: true })
         .exec((res: any) => {
+          try {
           const canvas = res && res[0] && res[0].node;
           if (!canvas) {
             reject(new Error('canvas not found'));
@@ -322,18 +331,30 @@ Page({
             drawEmptyCard(opts);
           }
 
+          // 注意：设置了 canvas.width/height 后，导出坐标系是**物理像素**。
+          // 若 width 传逻辑值（layout.width），取样区只覆盖左上 1/dpr，
+          // 结果右侧与底部被裁掉并放大发虚。因此 width/height 必须用物理尺寸。
+          const physW = Math.round(layout.width * dpr);
+          const physH = Math.round(height * dpr);
+
           wx.canvasToTempFilePath({
             canvas,
             x: 0,
             y: 0,
-            width: layout.width,
-            height,
-            destWidth: layout.width * dpr,
-            destHeight: height * dpr,
+            width: physW,
+            height: physH,
+            destWidth: physW,
+            destHeight: physH,
             success: r => resolve(r.tempFilePath),
             fail: () => reject(new Error('export failed'))
           });
+          } catch (err) {
+            reject(err);
+          }
         });
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 });

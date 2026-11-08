@@ -1,7 +1,7 @@
 // 关于页：展示主体资质（备案编号）并提供工信部备案查询入口
 Page({
   data: {
-    version: '1.0.4',
+    version: '1.1.1',
     icp: '粤ICP备2026165445号-1X',
     beianUrl: 'http://beian.miit.gov.cn'
   },
