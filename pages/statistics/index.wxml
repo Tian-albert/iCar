@@ -119,4 +119,19 @@
     <view wx:if="{{monthlyCost.length === 0}}" class="chart-empty">暂无费用数据</view>
     <bar-chart wx:else class="chart" bars="{{monthlyCost}}" unit="元" />
   </view>
+
+  <!-- 分享统计卡片 -->
+  <view class="share-bar">
+    <button
+      class="btn-share"
+      hover-class="btn-share-hover"
+      loading="{{sharing}}"
+      disabled="{{sharing}}"
+      bindtap="onShareStatistics"
+    >生成统计图片 · 分享</button>
+    <view class="share-hint">可发送给朋友、分享到朋友圈或保存到相册</view>
+  </view>
+
+  <!-- 离屏画布：仅用于导出分享图，视觉上不可见 -->
+  <canvas type="2d" id="shareCanvas" class="share-canvas"></canvas>
 </view>

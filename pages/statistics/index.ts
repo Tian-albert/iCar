@@ -5,6 +5,14 @@ import { listCosts, listCategories } from '../../services/cost.service';
 import { listRefuels } from '../../services/refuel.service';
 import { rebuildConsumptionsGrouped } from '../../domain/fuel.service';
 import { buildStats, StatsRange } from '../../domain/stats.service';
+import {
+  buildShareCardModel,
+  computeShareCardLayout,
+  formatRangeLabel,
+  ShareCardInput
+} from '../../utils/share-card';
+import { drawShareCard, drawEmptyCard, EMPTY_CARD_HEIGHT } from '../../utils/share-card-draw';
+import { formatDate } from '../../utils/date';
 
 interface CatView {
   name: string;
@@ -46,7 +54,9 @@ Page({
     categories: [] as CatView[],
     trend: [] as Array<{ label: string; value: number }>,
     monthlyMileage: [] as Array<{ label: string; value: number }>,
-    monthlyCost: [] as Array<{ label: string; value: number }>
+    monthlyCost: [] as Array<{ label: string; value: number }>,
+    /** 分享进行中，防止重复点击 */
+    sharing: false
   },
   onLoad(options: Record<string, string>) {
     const now = new Date();
@@ -143,5 +153,149 @@ Page({
   onMonthChange(e: WechatMiniprogram.PickerChange) {
     this.setData({ month: this.data.months[Number(e.detail.value)] });
     this.load();
+  },
+
+  // ---------------- 分享统计卡片 ----------------
+  /**
+   * 生成统计卡片并唤起分享菜单。
+   *
+   * 小程序没有「整页截图」能力，canvasToTempFilePath 只能导出 canvas 内容，
+   * 所以在页面里的离屏 canvas 上重绘一张卡片，再交给 wx.showShareImageMenu
+   * （自带「发送给朋友 / 分享到朋友圈 / 保存到相册」三个入口）。
+   */
+  onShareStatistics() {
+    if (this.data.sharing) return;
+    this.setData({ sharing: true });
+    wx.showLoading({ title: '生成中…', mask: true });
+
+    this.drawShareCard()
+      .then((filePath: string) => {
+        wx.hideLoading();
+        this.setData({ sharing: false });
+        this.openShareSheet(filePath);
+      })
+      .catch(() => {
+        wx.hideLoading();
+        this.setData({ sharing: false });
+        wx.showToast({ title: '生成图片失败，请重试', icon: 'none' });
+      });
+  },
+
+  /**
+   * 唤起图片分享菜单（发送给朋友 / 分享到朋友圈 / 保存到相册）。
+   * showShareImageMenu 需要基础库 2.14.4+；低版本回退为「预览长按保存」。
+   */
+  openShareSheet(filePath: string) {
+    if (typeof wx.showShareImageMenu === 'function') {
+      wx.showShareImageMenu({
+        path: filePath,
+        fail: err => {
+          const msg = (err && err.errMsg) || '';
+          if (msg.indexOf('cancel') >= 0) return;
+          // 基础库不支持或调用失败时回退到预览
+          this.previewAsFallback(filePath);
+        }
+      });
+      return;
+    }
+    this.previewAsFallback(filePath);
+  },
+
+  /** 兜底：预览大图，用户可长按保存或转发 */
+  previewAsFallback(filePath: string) {
+    wx.previewImage({
+      urls: [filePath],
+      current: filePath,
+      fail: () => wx.showToast({ title: '分享失败，请重试', icon: 'none' })
+    });
+  },
+
+  /** 组装模型（供绘制与调试复用） */
+  buildShareModel() {
+    const storage = getStorage();
+    const car = getCar(storage, this.data.carId);
+    if (!car) return null;
+
+    const costs = listCosts(storage, car.sourceId);
+    const refuels = listRefuels(storage, car.sourceId);
+    const categories = listCategories(storage);
+    const segs = rebuildConsumptionsGrouped([...refuels].sort((a, b) => a.fuelDate - b.fuelDate));
+    const range = this.buildRange();
+    const snap = buildStats(range, costs, refuels, segs, categories, car);
+
+    const catMap = new Map(categories.map(c => [c.sourceId, c]));
+    const input: ShareCardInput = {
+      carName: car.name,
+      energyType: car.energyType,
+      rangeLabel: formatRangeLabel(range),
+      hasData: costs.length > 0 || refuels.length > 0,
+      mileage: snap.mileage,
+      fuel: snap.fuel,
+      electricity: snap.electricity,
+      expense: { total: snap.expense.total, perKm: snap.expense.perKm },
+      categories: snap.categories.map(c => ({
+        name: catMap.get(c.categorySourceId)?.name || c.name,
+        amount: c.amount,
+        percent: c.percent
+      }))
+    };
+    return buildShareCardModel(input);
+  },
+
+  /** 在离屏 canvas 上绘制并导出临时文件路径 */
+  drawShareCard(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const model = this.buildShareModel();
+      if (!model) {
+        reject(new Error('car not found'));
+        return;
+      }
+
+      this.createSelectorQuery()
+        .select('#shareCanvas')
+        .fields({ node: true, size: true })
+        .exec((res: any) => {
+          const canvas = res && res[0] && res[0].node;
+          if (!canvas) {
+            reject(new Error('canvas not found'));
+            return;
+          }
+
+          const dpr = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).pixelRatio || 2;
+          const layout = computeShareCardLayout(model);
+          const height = model.hasData ? layout.height : EMPTY_CARD_HEIGHT;
+
+          // 物理像素尺寸必须显式设置，否则导出为空白
+          canvas.width = layout.width * dpr;
+          canvas.height = height * dpr;
+
+          const ctx = canvas.getContext('2d');
+          const opts = {
+            ctx,
+            model,
+            layout: { ...layout, height },
+            dpr,
+            footerText: '车记本 · 记录每一公里',
+            dateText: formatDate(Date.now())
+          };
+          if (model.hasData) {
+            drawShareCard(opts);
+          } else {
+            drawEmptyCard(opts);
+          }
+
+          wx.canvasToTempFilePath({
+            canvas,
+            x: 0,
+            y: 0,
+            width: layout.width,
+            height,
+            destWidth: layout.width * dpr,
+            destHeight: height * dpr,
+            success: r => resolve(r.tempFilePath),
+            fail: () => reject(new Error('export failed'))
+          });
+        });
+    });
   }
 });
