@@ -40,7 +40,7 @@
     <view class="stat-arrow">›</view>
     <view class="stat-col">
       <view class="stat-value">{{yearAvgText}}</view>
-      <view class="stat-label">{{currentYear}} 年平均油耗</view>
+      <view class="stat-label">{{currentYear}} 年平均{{isEvCar ? '电耗' : '油耗'}}</view>
     </view>
     <view class="stat-col">
       <view class="stat-value">{{yearExpenseText}}</view>
@@ -88,9 +88,9 @@
   </view>
   <view wx:else class="empty" bindtap="onManageMaintain">暂无快到期的保养项目，点此查看全部 ›</view>
 
-  <!-- 加油记录（仅最新 3 条） -->
-  <view class="section-title">加油记录</view>
-  <view wx:if="{{recordsTotal === 0}}" class="empty">还没有加油记录，点右下角「＋」记一笔</view>
+  <!-- 加油/充电记录（仅最新 3 条） -->
+  <view class="section-title">加油/充电记录</view>
+  <view wx:if="{{recordsTotal === 0}}" class="empty">还没有{{recordNoun}}记录，点右下角「＋」记一笔</view>
 
   <view wx:for="{{records}}" wx:key="sourceId" class="record card">
     <view class="record-top">
@@ -123,7 +123,7 @@
   </view>
 
   <view wx:if="{{recordsTotal > records.length}}" class="more-row" bindtap="onMoreRecords">
-    查看全部 {{recordsTotal}} 条加油记录 ›
+    查看全部 {{recordsTotal}} 条{{recordNoun}}记录 ›
   </view>
 
   <!-- 遮罩 -->
@@ -132,7 +132,7 @@
   <!-- 右下角悬浮「记一笔」 -->
   <view class="fab-wrap">
     <view class="fab-menu" wx:if="{{fabOpen}}">
-      <view class="fab-item" data-tab="fuel" bindtap="onAddEntry">加油</view>
+      <view class="fab-item" data-tab="fuel" bindtap="onAddEntry">{{recordNoun}}</view>
       <view class="fab-item" data-tab="maintain" bindtap="onAddEntry">保养</view>
       <view class="fab-item" data-tab="repair" bindtap="onAddEntry">维修</view>
       <view class="fab-item" data-tab="cost" bindtap="onAddEntry">支出</view>

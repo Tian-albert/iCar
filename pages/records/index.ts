@@ -5,6 +5,7 @@ import { listMaintains, listMaintainHandles, listMaintainLogs, removeMaintainHan
 import { listRepairs, removeRepair } from '../../services/repair.service';
 import { listCosts, listCategories, removeCost } from '../../services/cost.service';
 import { iconEmoji } from '../../utils/icons';
+import { getCar } from '../../services/car.service';
 import { formatDateTime } from '../../utils/date';
 import { Cost, FuelConsumption, RefuelLog } from '../../types/models';
 
@@ -23,6 +24,7 @@ Page({
   data: {
     carId: '',
     activeTab: 'fuel',
+    recordNoun: '加油',
     fuelRecords: [] as any[],
     maintainRecords: [] as any[],
     repairRecords: [] as any[],
@@ -34,7 +36,12 @@ Page({
     const tab = (['fuel', 'maintain', 'repair', 'cost'] as string[]).includes(options.tab)
       ? options.tab
       : 'fuel';
-    this.setData({ carId: options.id, activeTab: tab });
+    // R-07：Tab 文案随车型变化，避免纯电车点「查看全部充电记录」进来仍显示「加油」
+    const car = getCar(getStorage(), options.id);
+    const energyType = car?.energyType || 'fuel';
+    const recordNoun =
+      energyType === 'ev' ? '充电' : energyType === 'hybrid' ? '加油/充电' : '加油';
+    this.setData({ carId: options.id, activeTab: tab, recordNoun });
   },
   onShow() {
     this.load();

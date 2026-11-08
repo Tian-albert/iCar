@@ -9,8 +9,14 @@ import { iconEmoji, displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDateTime, formatDate } from '../../utils/date';
 import { FuelConsumption, RefuelLog } from '../../types/models';
 
-/** 详情页最多展示的加油记录条数（其余进「查看全部」） */
+/** 详情页最多展示的加油/充电记录条数（其余进「查看全部」） */
 const RECENT_RECORD_LIMIT = 3;
+
+const MILEAGE_HELP_FUEL =
+  '有效里程 = 本年度参与油耗统计的行驶里程之和。\n\n只有「本次加满，且上次加满或为低油量补油」的相邻两次加油，才构成一段有效区间，其里程 = 本次加油里程 − 上次加油里程。\n\n未加满的加油不构成完整区间，这段行驶里程不计入，所以有效里程会小于车辆总里程。\n\n年平均油耗 = 本年度区间油耗量 ÷ 本年度有效里程。';
+
+const MILEAGE_HELP_EV =
+  '有效里程 = 本年度参与电耗统计的行驶里程之和。\n\n只有「本次充满，且上次充满或为低电量补电」的相邻两次充电，才构成一段有效区间，其里程 = 本次充电里程 − 上次充电里程。\n\n未充满的充电不构成完整区间，这段行驶里程不计入，所以有效里程会小于车辆总里程。\n\n年平均电耗 = 本年度区间电量 ÷ 本年度有效里程。';
 
 interface RecordView {
   sourceId: string;
@@ -49,6 +55,9 @@ Page({
     carIcon: '🚗',
     carIsImage: false,
     isEvCar: false,
+    // 按车型变化的文案：加油 / 充电 / 加油/充电
+    recordNoun: '加油',
+    mileageHelpText: MILEAGE_HELP_FUEL,
     mileages: 0,
     // 最近油耗
     hasLatest: false,
@@ -91,6 +100,14 @@ Page({
     const nowYear = new Date().getFullYear();
     const yearSnap = buildStats({ type: 'year', year: nowYear }, costsAll, refuels, segs, categories, car);
 
+    const isHybridCar = car.energyType === 'hybrid';
+    const recordNoun = isEvCar ? '充电' : isHybridCar ? '加油/充电' : '加油';
+    // 纯电车今年统计与「有效里程」走电耗区间；燃油 / 混动按主口径（油耗）
+    const yearMileage = isEvCar ? yearSnap.mileage.evMileage : yearSnap.mileage.fuelMileage;
+    const yearAvgValue = isEvCar
+      ? yearSnap.electricity.avgConsumption
+      : yearSnap.fuel.avgConsumption;
+
     ensureMaintainTemplates(storage, car.sourceId);
     const allProgress = getMaintainProgress(storage, car.sourceId, Date.now());
     // 只展示"快要保养"（剩余里程/天数 ≤ 阈值）的项目，其余进"更多"
@@ -127,15 +144,17 @@ Page({
       carIcon: displayIcon(car.icon || 'car'),
       carIsImage: isImageIcon(car.icon || ''),
       isEvCar,
+      recordNoun,
+      mileageHelpText: isEvCar ? MILEAGE_HELP_EV : MILEAGE_HELP_FUEL,
       mileages: car.mileages,
       hasLatest: !!latest,
       latestConsumptionText: latest ? latest.fuelConsumption.toFixed(2) : '--',
       latestMileageText: latest ? String(latest.mileage) : '--',
       latestCostPerKmText: latest ? latest.costPerKm.toFixed(2) : '--',
       currentYear: nowYear,
-      yearAvgText: yearSnap.mileage.fuelMileage > 0 ? yearSnap.fuel.avgConsumption.toFixed(2) : '--',
+      yearAvgText: yearMileage > 0 ? yearAvgValue.toFixed(2) : '--',
       yearExpenseText: yearSnap.expense.total.toFixed(2),
-      yearMileageText: String(yearSnap.mileage.fuelMileage),
+      yearMileageText: String(yearMileage),
       records: allRecords.slice(0, RECENT_RECORD_LIMIT),
       recordsTotal: allRecords.length,
       recentCosts,
@@ -165,8 +184,7 @@ Page({
   onExplainMileage() {
     wx.showModal({
       title: '什么是有效里程',
-      content:
-        '有效里程 = 本年度参与油耗统计的行驶里程之和。\n\n只有「本次加满，且上次加满或为低油量补油」的相邻两次加油，才构成一段有效区间，其里程 = 本次加油里程 − 上次加油里程。\n\n未加满的加油不构成完整区间，这段行驶里程不计入，所以有效里程会小于车辆总里程。\n\n年平均油耗 = 本年度区间油耗量 ÷ 本年度有效里程。',
+      content: this.data.mileageHelpText,
       showCancel: false,
       confirmText: '知道了',
       confirmColor: '#3B6FF6'

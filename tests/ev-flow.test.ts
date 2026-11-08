@@ -130,3 +130,37 @@ describe('R-07 电耗统计', () => {
     expect(snap.consumptionTrend.length).toBe(1);
   });
 });
+
+describe('车辆详情「今年统计」按车型取数（真机走查修复）', () => {
+  const yearSnap = (energyType: EnergyType, amount: number) => {
+    const { adapter, car } = setup(energyType);
+    record(adapter, car.sourceId, 100, amount, energyType === 'ev' ? 'ev' : 'fuel');
+    record(adapter, car.sourceId, 600, amount, energyType === 'ev' ? 'ev' : 'fuel');
+    const segs = getConsumptions(adapter, car.sourceId);
+    return buildStats(
+      { type: 'year', year: 2026 },
+      listCosts(adapter, car.sourceId),
+      listRefuels(adapter, car.sourceId),
+      segs,
+      listCategories(adapter),
+      car
+    );
+  };
+
+  it('纯电车：平均电耗与有效里程都取电耗口径，燃油口径为 0', () => {
+    const snap = yearSnap('ev', 25);
+    // 页面此前误取 fuelMileage / fuel.avgConsumption，会显示 0 与 '--'
+    expect(snap.mileage.evMileage).toBe(500);
+    expect(snap.electricity.avgConsumption).toBe(5); // 25kWh / 500km × 100
+    expect(snap.mileage.fuelMileage).toBe(0);
+    expect(snap.fuel.avgConsumption).toBe(0);
+  });
+
+  it('燃油车：仍取燃油口径，电耗口径全为 0', () => {
+    const snap = yearSnap('fuel', 40);
+    expect(snap.mileage.fuelMileage).toBe(500);
+    expect(snap.fuel.avgConsumption).toBe(8); // 40L / 500km × 100
+    expect(snap.mileage.evMileage).toBe(0);
+    expect(snap.electricity.avgConsumption).toBe(0);
+  });
+});

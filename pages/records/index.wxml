@@ -1,7 +1,7 @@
 <view class="page">
   <!-- Tab -->
   <view class="seg-tabs">
-    <view class="seg {{activeTab === 'fuel' ? 'seg-active' : ''}}" data-tab="fuel" bindtap="onTabChange">加油</view>
+    <view class="seg {{activeTab === 'fuel' ? 'seg-active' : ''}}" data-tab="fuel" bindtap="onTabChange">{{recordNoun}}</view>
     <view class="seg {{activeTab === 'maintain' ? 'seg-active' : ''}}" data-tab="maintain" bindtap="onTabChange">保养</view>
     <view class="seg {{activeTab === 'repair' ? 'seg-active' : ''}}" data-tab="repair" bindtap="onTabChange">维修</view>
     <view class="seg {{activeTab === 'cost' ? 'seg-active' : ''}}" data-tab="cost" bindtap="onTabChange">支出</view>
@@ -9,7 +9,7 @@
 
   <!-- 加油 -->
   <block wx:if="{{activeTab === 'fuel'}}">
-    <view wx:if="{{fuelRecords.length === 0}}" class="empty">暂无加油记录</view>
+    <view wx:if="{{fuelRecords.length === 0}}" class="empty">暂无{{recordNoun}}记录</view>
     <view wx:for="{{fuelRecords}}" wx:key="sourceId" class="record card">
       <view class="record-top">
         <text class="record-date">{{item.dateText}}</text>
