@@ -35,7 +35,7 @@
 .tag {
   padding: 16rpx 28rpx;
   border-radius: var(--radius-card);
-  background: #f2f3f5;
+  background: var(--color-fill);
   color: var(--color-text-2);
   text-align: center;
   min-width: 140rpx;
@@ -57,7 +57,7 @@
   display: flex;
   align-items: center;
   min-height: 104rpx;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--color-divider);
 }
 .form-row:last-child {
   border-bottom: none;
@@ -84,7 +84,7 @@
 }
 .btn-primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-card);
   border-radius: var(--radius-pill);
   font-size: 32rpx;
 }

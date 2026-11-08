@@ -23,7 +23,7 @@
   display: flex;
   align-items: center;
   min-height: 108rpx;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--color-divider);
 }
 .row:last-child {
   border-bottom: none;
@@ -61,7 +61,7 @@
   margin-left: 12rpx;
   font-size: 34rpx;
   color: var(--color-text-3);
-  background: #f2f3f5;
+  background: var(--color-fill);
   border-radius: 10rpx;
   flex-shrink: 0;
 }
@@ -83,7 +83,7 @@
 }
 .btn-primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-card);
   border-radius: var(--radius-pill);
   font-size: 32rpx;
 }

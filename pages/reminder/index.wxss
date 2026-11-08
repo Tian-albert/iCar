@@ -83,7 +83,7 @@
 }
 .mnt-row {
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--color-divider);
 }
 .mnt-row:last-child {
   border-bottom: none;
@@ -101,7 +101,7 @@
 .mnt-bar {
   margin-top: 12rpx;
   height: 12rpx;
-  background: #eef0f3;
+  background: var(--chart-grid);
   border-radius: 6rpx;
   overflow: hidden;
 }

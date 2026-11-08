@@ -18,7 +18,7 @@
   display: flex;
   align-items: center;
   min-height: 104rpx;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--color-divider);
 }
 .form-row:last-child {
   border-bottom: none;
@@ -50,7 +50,7 @@
 }
 .seg-control {
   display: flex;
-  background: #f2f3f5;
+  background: var(--color-fill);
   border-radius: 10rpx;
   padding: 4rpx;
 }
@@ -63,7 +63,7 @@
   border-radius: 8rpx;
 }
 .seg-opt-active {
-  background: #fff;
+  background: var(--color-card);
   color: var(--color-primary);
   font-weight: 600;
   box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.08);
@@ -88,7 +88,7 @@
 }
 .btn-primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-card);
   border-radius: var(--radius-pill);
   font-size: 32rpx;
 }

@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: space-between;
   min-height: 104rpx;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--color-divider);
 }
 .row:last-child {
   border-bottom: none;

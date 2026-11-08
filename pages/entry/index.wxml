@@ -6,7 +6,7 @@
       wx:key="key"
       class="seg {{activeTab === item.key ? 'seg-active' : ''}}"
       data-tab="{{item.key}}"
-      bindtap="onTabChange">{{item.label}}</view>
+      hover-class="hover-dim" bindtap="onTabChange">{{item.label}}</view>
   </view>
 
   <!-- 加油 / 充电 -->
@@ -65,22 +65,22 @@
         <view class="opt-group">
           <view class="opt-label">{{isCharging ? '充满了吗' : '加满了吗'}}</view>
           <view class="seg-control">
-            <view class="seg-opt {{fuelFullIndex === 0 ? 'seg-opt-active' : ''}}" data-field="full" data-index="0" bindtap="onFuelOptionSelect">{{isCharging ? '充满' : '加满'}}</view>
-            <view class="seg-opt {{fuelFullIndex === 1 ? 'seg-opt-active' : ''}}" data-field="full" data-index="1" bindtap="onFuelOptionSelect">{{isCharging ? '没充满' : '没加满'}}</view>
+            <view class="seg-opt {{fuelFullIndex === 0 ? 'seg-opt-active' : ''}}" data-field="full" data-index="0" hover-class="hover-dim" bindtap="onFuelOptionSelect">{{isCharging ? '充满' : '加满'}}</view>
+            <view class="seg-opt {{fuelFullIndex === 1 ? 'seg-opt-active' : ''}}" data-field="full" data-index="1" hover-class="hover-dim" bindtap="onFuelOptionSelect">{{isCharging ? '没充满' : '没加满'}}</view>
           </view>
         </view>
         <view class="opt-group">
           <view class="opt-label">{{isCharging ? '电量低吗' : '油量低吗'}}</view>
           <view class="seg-control">
-            <view class="seg-opt {{fuelLowIndex === 0 ? 'seg-opt-active' : ''}}" data-field="low" data-index="0" bindtap="onFuelOptionSelect">低</view>
-            <view class="seg-opt {{fuelLowIndex === 1 ? 'seg-opt-active' : ''}}" data-field="low" data-index="1" bindtap="onFuelOptionSelect">不低</view>
+            <view class="seg-opt {{fuelLowIndex === 0 ? 'seg-opt-active' : ''}}" data-field="low" data-index="0" hover-class="hover-dim" bindtap="onFuelOptionSelect">低</view>
+            <view class="seg-opt {{fuelLowIndex === 1 ? 'seg-opt-active' : ''}}" data-field="low" data-index="1" hover-class="hover-dim" bindtap="onFuelOptionSelect">不低</view>
           </view>
         </view>
         <view class="opt-group">
           <view class="opt-label">上次记了吗</view>
           <view class="seg-control">
-            <view class="seg-opt {{fuelLastIndex === 0 ? 'seg-opt-active' : ''}}" data-field="last" data-index="0" bindtap="onFuelOptionSelect">记了</view>
-            <view class="seg-opt {{fuelLastIndex === 1 ? 'seg-opt-active' : ''}}" data-field="last" data-index="1" bindtap="onFuelOptionSelect">没记</view>
+            <view class="seg-opt {{fuelLastIndex === 0 ? 'seg-opt-active' : ''}}" data-field="last" data-index="0" hover-class="hover-dim" bindtap="onFuelOptionSelect">记了</view>
+            <view class="seg-opt {{fuelLastIndex === 1 ? 'seg-opt-active' : ''}}" data-field="last" data-index="1" hover-class="hover-dim" bindtap="onFuelOptionSelect">没记</view>
           </view>
         </view>
       </view>
@@ -96,7 +96,7 @@
     <view class="card">
       <view class="cat-header">
         <view class="group-title">选择保养项目 <text class="required">*</text></view>
-        <text class="manage-link" bindtap="onManageMaintain">管理 ›</text>
+        <text class="manage-link" hover-class="hover-dim" bindtap="onManageMaintain">管理 ›</text>
       </view>
       <view class="tag-wrap" wx:if="{{maintains.length > 0}}">
         <view
@@ -104,7 +104,7 @@
           wx:key="sourceId"
           class="tag {{item.selected ? 'tag-selected' : ''}}"
           data-index="{{index}}"
-          bindtap="onMaintainToggle">
+          hover-class="hover-dim" bindtap="onMaintainToggle">
           <view class="tag-name">{{item.name}}</view>
           <view class="tag-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
         </view>
@@ -172,7 +172,7 @@
     <view class="card">
       <view class="cat-header">
         <view class="group-title">支出类别</view>
-        <text class="manage-link" bindtap="onManageCategory">管理 ›</text>
+        <text class="manage-link" hover-class="hover-dim" bindtap="onManageCategory">管理 ›</text>
       </view>
       <scroll-view scroll-x class="cat-scroll" wx:if="{{categories.length > 0}}">
         <view

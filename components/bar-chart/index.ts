@@ -1,6 +1,7 @@
 // 柱状图组件（行程 / 费用按月）：点击柱子高亮并显示数值气泡（R-06）
 import { hitBarIndex, toCanvasPoint } from '../../utils/chart-math';
 import { drawBubble } from '../../utils/chart-draw';
+import { CHART_THEME } from '../../utils/chart-theme';
 
 Component({
   properties: {
@@ -80,7 +81,7 @@ Component({
             const isActive = i === active;
 
             // 柱子（圆角）
-            ctx.fillStyle = isActive ? '#1D4ED8' : '#3B6FF6';
+            ctx.fillStyle = isActive ? CHART_THEME.primaryDark : CHART_THEME.primary;
             const r = Math.min(4, barW / 2);
             ctx.beginPath();
             ctx.moveTo(x, padT + plotH);
@@ -92,13 +93,13 @@ Component({
             ctx.closePath();
             ctx.fill();
             if (isActive) {
-              ctx.strokeStyle = '#FFFFFF';
+              ctx.strokeStyle = CHART_THEME.card;
               ctx.lineWidth = 2;
               ctx.stroke();
             }
 
             // 数值标签
-            ctx.fillStyle = isActive ? '#1D4ED8' : '#9AA4B2';
+            ctx.fillStyle = isActive ? CHART_THEME.primaryDark : CHART_THEME.text3;
             ctx.font = isActive ? 'bold 10px sans-serif' : '10px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(String(Math.round(b.value)), cx, y - 4);

@@ -39,7 +39,7 @@
   justify-content: flex-end;
   margin-top: 20rpx;
   padding-top: 16rpx;
-  border-top: 1rpx solid #f0f1f4;
+  border-top: 1rpx solid var(--color-divider);
 }
 .restore-btn {
   padding: 10rpx 32rpx;
@@ -65,7 +65,7 @@
   margin-top: 40rpx;
 }
 .btn-plain {
-  background: #fff;
+  background: var(--color-card);
   color: var(--color-text-2);
   border-radius: var(--radius-pill);
   font-size: 28rpx;

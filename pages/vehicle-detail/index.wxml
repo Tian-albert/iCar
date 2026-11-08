@@ -36,7 +36,7 @@
   </view>
 
   <!-- 今年统计（点击进入统计看板，默认年维度） -->
-  <view class="stat-card" bindtap="onOpenStatisticsYear">
+  <view class="stat-card" hover-class="hover-dim" bindtap="onOpenStatisticsYear">
     <view class="stat-arrow">›</view>
     <view class="stat-col">
       <view class="stat-value">{{yearAvgText}}</view>
@@ -122,7 +122,7 @@
     </view>
   </view>
 
-  <view wx:if="{{recordsTotal > records.length}}" class="more-row" bindtap="onMoreRecords">
+  <view wx:if="{{recordsTotal > records.length}}" class="more-row" hover-class="hover-dim" bindtap="onMoreRecords">
     查看全部 {{recordsTotal}} 条{{recordNoun}}记录 ›
   </view>
 
@@ -132,10 +132,10 @@
   <!-- 右下角悬浮「记一笔」 -->
   <view class="fab-wrap">
     <view class="fab-menu" wx:if="{{fabOpen}}">
-      <view class="fab-item" data-tab="fuel" bindtap="onAddEntry">{{recordNoun}}</view>
-      <view class="fab-item" data-tab="maintain" bindtap="onAddEntry">保养</view>
-      <view class="fab-item" data-tab="repair" bindtap="onAddEntry">维修</view>
-      <view class="fab-item" data-tab="cost" bindtap="onAddEntry">支出</view>
+      <view class="fab-item" hover-class="hover-dim" data-tab="fuel" bindtap="onAddEntry">{{recordNoun}}</view>
+      <view class="fab-item" hover-class="hover-dim" data-tab="maintain" bindtap="onAddEntry">保养</view>
+      <view class="fab-item" hover-class="hover-dim" data-tab="repair" bindtap="onAddEntry">维修</view>
+      <view class="fab-item" hover-class="hover-dim" data-tab="cost" bindtap="onAddEntry">支出</view>
     </view>
     <view class="fab {{fabOpen ? 'fab-active' : ''}}" bindtap="onToggleFab">＋</view>
   </view>

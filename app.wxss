@@ -25,7 +25,7 @@ page {
   --chart-grid: #EEF0F3;
   --chart-axis: #9AA4B2;
 
-  /* 圆角与间距 */
+  /* 圆角与间距（历史 px 系列，保持兼容；新代码优先用下方 rpx 系列） */
   --radius-card: 16px;
   --radius-pill: 10px;
   --space-1: 4px;
@@ -34,6 +34,38 @@ page {
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
+
+  /* UI 审计补齐：语义色（见 docs/DESIGN.md） */
+  --color-divider: #F0F1F4;
+  --color-fill: #F2F3F5;
+  --color-border: #E6EAF1;
+  --color-text-4: #8A93A6;
+  --color-primary-dark: #1D4ED8;
+  --color-overlay: rgba(0, 0, 0, 0.06);
+
+  /* 字号阶梯（rpx） */
+  --font-xs: 22rpx;
+  --font-sm: 24rpx;
+  --font-md: 28rpx;
+  --font-lg: 32rpx;
+  --font-xl: 40rpx;
+
+  /* 间距阶梯（rpx） */
+  --sp-1: 8rpx;
+  --sp-2: 16rpx;
+  --sp-3: 24rpx;
+  --sp-4: 32rpx;
+  --sp-5: 48rpx;
+
+  /* 圆角（rpx） */
+  --r-sm: 8rpx;
+  --r-md: 16rpx;
+  --r-lg: 24rpx;
+  --r-pill: 999rpx;
+
+  /* 阴影层级 */
+  --shadow-card: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
+  --shadow-float: 0 10rpx 28rpx rgba(59, 111, 246, 0.40);
 
   background-color: var(--color-bg);
   color: var(--color-text-1);

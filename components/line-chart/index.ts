@@ -2,6 +2,7 @@
 import { MAX_FUEL_CONSUMPTION } from '../../domain/fuel.service';
 import { hitLineIndex, toCanvasPoint } from '../../utils/chart-math';
 import { drawBubble } from '../../utils/chart-draw';
+import { CHART_THEME } from '../../utils/chart-theme';
 
 Component({
   properties: {
@@ -84,7 +85,7 @@ Component({
           };
 
           // 网格线（0 / 中 / 顶）
-          ctx.strokeStyle = '#EEF0F3';
+          ctx.strokeStyle = CHART_THEME.grid;
           ctx.lineWidth = 1;
           [0, 0.5, 1].forEach(ratio => {
             const gy = padT + plotH * ratio;
@@ -101,7 +102,7 @@ Component({
               if (i === 0) ctx.moveTo(x(i), y(p.value));
               else ctx.lineTo(x(i), y(p.value));
             });
-            ctx.strokeStyle = '#3B6FF6';
+            ctx.strokeStyle = CHART_THEME.primary;
             ctx.lineWidth = 2;
             ctx.stroke();
           }
@@ -118,7 +119,7 @@ Component({
 
             ctx.beginPath();
             ctx.arc(px, py, 3, 0, Math.PI * 2);
-            ctx.fillStyle = '#3B6FF6';
+            ctx.fillStyle = CHART_THEME.primary;
             ctx.fill();
 
             let ty = py - 9;
@@ -126,12 +127,12 @@ Component({
             else if (dense && i % 2 === 1) ty = py + 17;
             if (ty > h - padB - 2) ty = py - 9;
 
-            ctx.fillStyle = '#3B6FF6';
+            ctx.fillStyle = CHART_THEME.primary;
             ctx.fillText(p.value.toFixed(2), px, ty);
           });
 
           // X 轴标签（最多 6 个）
-          ctx.fillStyle = '#9AA4B2';
+          ctx.fillStyle = CHART_THEME.text3;
           ctx.font = '10px sans-serif';
           ctx.textAlign = 'center';
           const step = Math.ceil(pts.length / 6);
@@ -148,12 +149,12 @@ Component({
             const py = y(p.value);
             ctx.beginPath();
             ctx.arc(px, py, 7, 0, Math.PI * 2);
-            ctx.strokeStyle = '#3B6FF6';
+            ctx.strokeStyle = CHART_THEME.primary;
             ctx.lineWidth = 2;
             ctx.stroke();
             ctx.beginPath();
             ctx.arc(px, py, 3, 0, Math.PI * 2);
-            ctx.fillStyle = '#FFFFFF';
+            ctx.fillStyle = CHART_THEME.card;
             ctx.fill();
             drawBubble(ctx, {
               text: `${p.label} · ${p.value.toFixed(2)} ${this.data.unit}`,

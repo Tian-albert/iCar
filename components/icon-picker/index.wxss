@@ -11,7 +11,7 @@
 }
 .picker-panel {
   width: 100%;
-  background: #fff;
+  background: var(--color-card);
   border-radius: 24rpx 24rpx 0 0;
   padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
@@ -20,7 +20,7 @@
   text-align: center;
   font-size: 30rpx;
   font-weight: 600;
-  color: #1f2430;
+  color: var(--color-text-1);
 }
 .icon-grid {
   display: flex;
@@ -36,20 +36,20 @@
   font-size: 48rpx;
   border-radius: 16rpx;
   margin: 8rpx;
-  background: #f5f6f8;
+  background: var(--color-bg);
 }
 .custom-btn {
   margin-top: 16rpx;
   text-align: center;
   padding: 20rpx 0;
   font-size: 28rpx;
-  color: #3b6ff6;
-  border-top: 1rpx solid #f0f1f4;
+  color: var(--color-primary);
+  border-top: 1rpx solid var(--color-divider);
 }
 .close-btn {
   margin-top: 8rpx;
   text-align: center;
   padding: 20rpx 0;
   font-size: 28rpx;
-  color: #9aa4b2;
+  color: var(--color-text-3);
 }

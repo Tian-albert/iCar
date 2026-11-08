@@ -1,4 +1,5 @@
 // 图表气泡绘制（R-06）：三个组件共用，避免重复的圆角矩形与气泡代码
+import { CHART_THEME } from './chart-theme';
 export interface BubbleOptions {
   text: string;
   x: number; // 期望的气泡中心 x
@@ -35,18 +36,18 @@ export function drawBubble(ctx: any, opts: BubbleOptions): void {
   const bx = Math.max(3, Math.min(w - bw - 3, x - bw / 2));
   const by = Math.max(3, Math.min(h - bh - 3, y - bh / 2));
 
-  ctx.fillStyle = 'rgba(15,23,42,0.10)';
+  ctx.fillStyle = CHART_THEME.shadow;
   roundRect(ctx, bx + 1, by + 2, bw, bh, 8);
   ctx.fill();
 
   roundRect(ctx, bx, by, bw, bh, 8);
-  ctx.fillStyle = '#FFFFFF';
+  ctx.fillStyle = CHART_THEME.card;
   ctx.fill();
-  ctx.strokeStyle = '#E6EAF1';
+  ctx.strokeStyle = CHART_THEME.border;
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.fillStyle = '#1F2430';
+  ctx.fillStyle = CHART_THEME.text1;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = opts.font || 'bold 11px sans-serif';

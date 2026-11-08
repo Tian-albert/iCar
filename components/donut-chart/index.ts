@@ -1,6 +1,7 @@
 // 分类支出环形图：外标签引线 + 点击放大 + 气泡 + 中心金额
 import { hitDonutSegment, toCanvasPoint } from '../../utils/chart-math';
 import { drawBubble } from '../../utils/chart-draw';
+import { CHART_THEME } from '../../utils/chart-theme';
 
 interface Segment {
   name: string;
@@ -110,7 +111,7 @@ Component({
             ctx.fill();
             ctx.globalAlpha = 1;
             if (isActive) {
-              ctx.strokeStyle = '#FFFFFF';
+              ctx.strokeStyle = CHART_THEME.card;
               ctx.lineWidth = 3;
               ctx.stroke();
             }
@@ -120,10 +121,10 @@ Component({
           // 中心金额
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillStyle = '#1F2430';
+          ctx.fillStyle = CHART_THEME.text1;
           ctx.font = 'bold 14px sans-serif';
           ctx.fillText(`¥${this.data.total}`, cx, cy - 7);
-          ctx.fillStyle = '#9AA4B2';
+          ctx.fillStyle = CHART_THEME.text3;
           ctx.font = '10px sans-serif';
           ctx.fillText('总支出', cx, cy + 13);
 
@@ -151,7 +152,7 @@ Component({
             ctx.stroke();
 
             const label = `${seg.name} ${seg.percent.toFixed(2)}%`;
-            ctx.fillStyle = '#4A5363';
+            ctx.fillStyle = CHART_THEME.label;
             ctx.textAlign = cos >= 0 ? 'left' : 'right';
             ctx.fillText(label, x3, y2);
             start += angle;

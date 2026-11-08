@@ -8,7 +8,11 @@
 .card {
   background: var(--color-card);
   border-radius: var(--radius-card);
-  padding: 28rpx 32rpx;
+  padding: var(--sp-3) var(--sp-4);
+  box-shadow: var(--shadow-card);
+}
+.hover-dim {
+  opacity: 0.6;
 }
 .header {
   display: flex;
@@ -53,10 +57,11 @@
   opacity: 0.6;
 }
 .latest-card {
-  margin-top: 24rpx;
+  margin-top: var(--sp-3);
   background: var(--color-card);
   border-radius: var(--radius-card);
-  padding: 28rpx 32rpx;
+  padding: var(--sp-3) var(--sp-4);
+  box-shadow: var(--shadow-card);
 }
 .latest-head {
   display: flex;
@@ -102,7 +107,7 @@
   position: absolute;
   top: 16rpx;
   right: 24rpx;
-  color: #8a93a6;
+  color: var(--color-text-4);
   font-size: 40rpx;
   line-height: 1;
 }
@@ -113,12 +118,12 @@
 .stat-value {
   font-size: 40rpx;
   font-weight: 600;
-  color: #fff;
+  color: var(--color-card);
 }
 .stat-label {
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: #8a93a6;
+  color: var(--color-text-4);
 }
 .help-icon {
   display: inline-block;
@@ -127,9 +132,9 @@
   line-height: 22rpx;
   text-align: center;
   margin-left: 6rpx;
-  border: 1rpx solid #8a93a6;
+  border: 1rpx solid var(--color-text-4);
   border-radius: 50%;
-  color: #8a93a6;
+  color: var(--color-text-4);
   font-size: 18rpx;
   vertical-align: middle;
 }
@@ -199,7 +204,7 @@
   display: flex;
   margin-top: 20rpx;
   padding-top: 20rpx;
-  border-top: 1rpx solid #f0f1f4;
+  border-top: 1rpx solid var(--color-divider);
 }
 .seg-col {
   flex: 1;
@@ -222,7 +227,7 @@
   display: flex;
   align-items: center;
   min-height: 96rpx;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--color-divider);
 }
 .cost-row:last-child {
   border-bottom: none;
@@ -267,7 +272,7 @@
 }
 .mnt-row {
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--color-divider);
 }
 .mnt-row:last-child {
   border-bottom: none;
@@ -288,7 +293,7 @@
 .mnt-bar {
   margin-top: 12rpx;
   height: 12rpx;
-  background: #eef0f3;
+  background: var(--chart-grid);
   border-radius: 6rpx;
   overflow: hidden;
 }
@@ -333,7 +338,7 @@
 }
 .fab-item {
   padding: 18rpx 40rpx;
-  background: #fff;
+  background: var(--color-card);
   border-radius: var(--radius-pill);
   font-size: 28rpx;
   color: var(--color-text-1);
@@ -346,7 +351,7 @@
   text-align: center;
   border-radius: 50%;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-card);
   font-size: 56rpx;
   box-shadow: 0 10rpx 28rpx rgba(59, 111, 246, 0.4);
   transition: transform 0.2s ease;

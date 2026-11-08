@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   min-height: 104rpx;
-  border-bottom: 1rpx solid #f0f1f4;
+  border-bottom: 1rpx solid var(--color-divider);
 }
 .form-row:last-child {
   border-bottom: none;
@@ -55,7 +55,7 @@
 }
 .btn-primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-card);
   border-radius: var(--radius-pill);
   font-size: 32rpx;
 }
