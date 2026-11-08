@@ -8,7 +8,7 @@
 
   <block wx:else>
     <!-- 置顶车辆卡片 -->
-    <view class="car-card" bindtap="onOpenDetail">
+    <view hover-class="hover-dim" class="car-card" bindtap="onOpenDetail">
       <view class="car-icon">🚙</view>
       <view class="car-info">
         <view class="car-name">
@@ -23,7 +23,7 @@
     <!-- 保养事项 -->
     <view class="section-header">
       <view class="section-title">即将保养</view>
-      <text class="manage-link" bindtap="onOpenManage">全部 {{allCount}} 项 ›</text>
+      <text hover-class="hover-dim" class="manage-link" bindtap="onOpenManage">全部 {{allCount}} 项 ›</text>
     </view>
     <view class="card" wx:if="{{soonItems.length > 0}}">
       <view wx:for="{{soonItems}}" wx:key="name" class="mnt-row">

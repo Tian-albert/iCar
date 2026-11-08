@@ -3,11 +3,6 @@
   padding: 24rpx;
   box-sizing: border-box;
 }
-.card {
-  background: var(--color-card);
-  border-radius: var(--radius-card);
-  padding: 8rpx 32rpx;
-}
 .form-row {
   display: flex;
   align-items: center;

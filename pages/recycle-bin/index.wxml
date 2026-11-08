@@ -13,7 +13,7 @@
     </view>
     <view class="row-meta">{{item.dateText}} · 共 {{item.count}} 条记录</view>
     <view class="row-actions">
-      <view class="restore-btn" data-batch="{{item.batch}}" bindtap="onRestore">恢复</view>
+      <view hover-class="hover-dim" class="restore-btn" data-batch="{{item.batch}}" bindtap="onRestore">恢复</view>
     </view>
   </view>
 

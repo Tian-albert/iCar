@@ -15,7 +15,7 @@
   flex: 1;
   text-align: center;
   padding: 16rpx 0;
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: var(--color-text-2);
   border-radius: var(--radius-pill);
 }
@@ -26,11 +26,7 @@
 }
 /* 卡片与表单 */
 .card {
-  background: var(--color-card);
-  border-radius: var(--radius-card);
-  padding: var(--sp-3) var(--sp-4);
   margin-bottom: var(--sp-3);
-  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
 }
 /* 统一的按下反馈（见 docs/DESIGN.md 第 5 节） */
 .hover-dim {
@@ -38,7 +34,7 @@
 }
 .group-title {
   padding: 24rpx 0 8rpx;
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: var(--color-text-3);
 }
 .form-row {
@@ -82,7 +78,7 @@
   flex: 1;
   padding: 18rpx 0;
   text-align: center;
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: var(--color-text-2);
   background: var(--color-card);
   border-radius: var(--radius-pill);
@@ -111,7 +107,7 @@
 .seg-control {
   display: flex;
   background: var(--color-fill);
-  border-radius: 10rpx;
+  border-radius: 8rpx;
   padding: 4rpx;
 }
 .seg-opt {
@@ -155,7 +151,7 @@
 }
 .tag-cycle {
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: var(--color-text-3);
 }
 .tag-selected .tag-cycle {
@@ -169,7 +165,7 @@
   align-items: center;
 }
 .manage-link {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: var(--color-primary);
 }
 .cat-scroll {

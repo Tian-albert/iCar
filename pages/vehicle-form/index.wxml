@@ -26,7 +26,7 @@
     </view>
     <view class="form-row">
       <view class="form-label">车辆图标</view>
-      <view class="icon-value" bindtap="onPickIcon">
+      <view hover-class="hover-dim" class="icon-value" bindtap="onPickIcon">
         <image wx:if="{{isImage}}" class="icon-img" src="{{icon}}" />
         <text wx:else class="icon-emoji">{{iconText}}</text>
       </view>
@@ -37,7 +37,7 @@
 
   <view class="footer">
     <button class="btn-primary" bindtap="onSave">{{isEdit ? '保存' : '添加车辆'}}</button>
-    <view wx:if="{{isEdit}}" class="danger-btn" bindtap="onDeleteCar">删除车辆</view>
+    <view hover-class="hover-dim" wx:if="{{isEdit}}" class="danger-btn" bindtap="onDeleteCar">删除车辆</view>
   </view>
 
   <icon-picker show="{{pickerShow}}" bind:select="onIconSelect" bind:close="onPickerClose" />

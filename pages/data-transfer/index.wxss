@@ -4,13 +4,10 @@
   box-sizing: border-box;
 }
 .card {
-  background: var(--color-card);
-  border-radius: var(--radius-card);
-  padding: 32rpx;
   margin-bottom: 24rpx;
 }
 .section-title {
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: var(--color-text-1);
 }
@@ -25,7 +22,7 @@
   height: 360rpx;
   box-sizing: border-box;
   border: 1rpx solid var(--color-border);
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   padding: 20rpx;
   font-size: 24rpx;
   margin-bottom: 24rpx;
@@ -34,13 +31,13 @@
   background: var(--color-primary);
   color: var(--color-card);
   border-radius: var(--radius-pill);
-  font-size: 30rpx;
+  font-size: 32rpx;
 }
 .btn-secondary {
   background: var(--color-primary-light);
   color: var(--color-primary);
   border-radius: var(--radius-pill);
-  font-size: 30rpx;
+  font-size: 32rpx;
 }
 .file-btn {
   margin-top: 20rpx;

@@ -6,7 +6,7 @@
     </view>
     <view class="form-row">
       <view class="form-label">图标</view>
-      <view class="icon-value" bindtap="onPickIcon">
+      <view hover-class="hover-dim" class="icon-value" bindtap="onPickIcon">
         <image wx:if="{{isImage}}" class="icon-img" src="{{icon}}" />
         <text wx:else class="icon-emoji">{{iconText}}</text>
       </view>

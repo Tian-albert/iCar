@@ -2,9 +2,9 @@
   <!-- 维度切换 -->
   <view class="range-bar">
     <view class="seg-tabs">
-      <view class="seg {{rangeType === 'month' ? 'seg-active' : ''}}" data-type="month" bindtap="onRangeChange">月</view>
-      <view class="seg {{rangeType === 'year' ? 'seg-active' : ''}}" data-type="year" bindtap="onRangeChange">年</view>
-      <view class="seg {{rangeType === 'all' ? 'seg-active' : ''}}" data-type="all" bindtap="onRangeChange">全部</view>
+      <view hover-class="hover-dim" class="seg {{rangeType === 'month' ? 'seg-active' : ''}}" data-type="month" bindtap="onRangeChange">月</view>
+      <view hover-class="hover-dim" class="seg {{rangeType === 'year' ? 'seg-active' : ''}}" data-type="year" bindtap="onRangeChange">年</view>
+      <view hover-class="hover-dim" class="seg {{rangeType === 'all' ? 'seg-active' : ''}}" data-type="all" bindtap="onRangeChange">全部</view>
     </view>
     <view class="range-pickers">
       <picker wx:if="{{rangeType !== 'all'}}" range="{{years}}" value="{{0}}" bindchange="onYearChange">

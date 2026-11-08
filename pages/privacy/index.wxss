@@ -17,7 +17,7 @@
   margin-top: 40rpx;
 }
 .h {
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: var(--color-text-1);
 }

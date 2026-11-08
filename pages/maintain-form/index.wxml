@@ -2,17 +2,17 @@
   <view class="card">
     <view class="cat-header">
       <view class="group-title">选择保养项目 <text class="required">*</text></view>
-      <text class="manage-link" bindtap="onManageMaintain">管理 ›</text>
+      <text hover-class="hover-dim" class="manage-link" bindtap="onManageMaintain">管理 ›</text>
     </view>
     <view class="tag-wrap">
-      <view
+      <view hover-class="hover-dim"
         wx:for="{{maintains}}"
         wx:key="sourceId"
         class="tag {{item.selected ? 'tag-selected' : ''}}"
         data-index="{{index}}"
         bindtap="onToggleMaintain">
         <view class="tag-name">{{item.name}}</view>
-        <view class="tag-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
+        <view hover-class="hover-dim" class="tag-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
       </view>
     </view>
   </view>

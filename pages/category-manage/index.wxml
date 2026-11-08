@@ -4,7 +4,7 @@
   <view class="card">
     <view wx:for="{{presets}}" wx:key="sourceId" class="row {{dragging && dragId === item.sourceId ? 'drag-row' : ''}}">
       <image wx:if="{{item.isImage}}" class="row-icon-img" src="{{item.icon}}" data-id="{{item.sourceId}}" bindtap="onPickIcon" />
-      <view wx:else class="row-icon" data-id="{{item.sourceId}}" bindtap="onPickIcon">{{item.emoji}}</view>
+      <view hover-class="hover-dim" wx:else class="row-icon" data-id="{{item.sourceId}}" bindtap="onPickIcon">{{item.emoji}}</view>
       <view class="row-name">{{item.name}}</view>
       <switch checked="{{item.visible}}" color="#3B6FF6" data-id="{{item.sourceId}}" bindchange="onToggleVisible" />
       <view
@@ -23,10 +23,10 @@
   <view class="card">
     <view wx:for="{{customs}}" wx:key="sourceId" class="row {{dragging && dragId === item.sourceId ? 'drag-row' : ''}}">
       <image wx:if="{{item.isImage}}" class="row-icon-img" src="{{item.icon}}" data-id="{{item.sourceId}}" bindtap="onPickIcon" />
-      <view wx:else class="row-icon" data-id="{{item.sourceId}}" bindtap="onPickIcon">{{item.emoji}}</view>
+      <view hover-class="hover-dim" wx:else class="row-icon" data-id="{{item.sourceId}}" bindtap="onPickIcon">{{item.emoji}}</view>
       <view class="row-name">{{item.name}}</view>
-      <text class="act edit" data-id="{{item.sourceId}}" data-name="{{item.name}}" bindtap="onEdit">编辑</text>
-      <text class="act delete" data-id="{{item.sourceId}}" data-name="{{item.name}}" bindtap="onDelete">删除</text>
+      <text hover-class="hover-dim" class="act edit" data-id="{{item.sourceId}}" data-name="{{item.name}}" bindtap="onEdit">编辑</text>
+      <text hover-class="hover-dim" class="act delete" data-id="{{item.sourceId}}" data-name="{{item.name}}" bindtap="onDelete">删除</text>
       <switch checked="{{item.visible}}" color="#3B6FF6" data-id="{{item.sourceId}}" bindchange="onToggleVisible" />
       <view
         class="drag-handle {{dragging && dragId === item.sourceId ? 'drag-handle-active' : ''}}"

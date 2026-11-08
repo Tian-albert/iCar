@@ -2,14 +2,20 @@
   <view class="card">
     <view class="cat-header">
       <view class="group-title">支出类别</view>
-      <text class="manage-link" bindtap="onManageCategory">管理 ›</text>
+      <text class="manage-link" hover-class="hover-dim" bindtap="onManageCategory">管理 ›</text>
     </view>
-    <scroll-view scroll-x class="cat-scroll">
+    <!-- 类别全被隐藏或删除时给出明确出口，避免一片空白 -->
+    <view wx:if="{{categories.length === 0}}" class="cat-empty">
+      <view class="cat-empty-desc">没有可用的支出类别</view>
+      <view class="cat-empty-action" hover-class="hover-dim" bindtap="onManageCategory">去类别管理开启或添加 ›</view>
+    </view>
+    <scroll-view wx:else scroll-x class="cat-scroll">
       <view
         wx:for="{{categories}}"
         wx:key="sourceId"
         class="cat-item {{index === selectedIndex ? 'cat-active' : ''}}"
         data-index="{{index}}"
+        hover-class="hover-dim"
         bindtap="onSelectCategory">
         <view class="cat-emoji">{{item.emoji}}</view>
         <view class="cat-name">{{item.name}}</view>
@@ -36,6 +42,6 @@
   </view>
 
   <view class="footer">
-    <button class="btn-primary" bindtap="onSave">保存</button>
+    <button class="btn-primary" disabled="{{categories.length === 0 && !recordId}}" bindtap="onSave">保存</button>
   </view>
 </view>

@@ -50,7 +50,7 @@
       <view class="stat-value">{{yearMileageText}}</view>
       <view class="stat-label">
         有效里程 km
-        <text class="help-icon" catchtap="onExplainMileage">?</text>
+        <text hover-class="hover-dim" class="help-icon" catchtap="onExplainMileage">?</text>
       </view>
     </view>
   </view>
@@ -73,8 +73,8 @@
   <view class="section-header">
     <view class="section-title">保养进度</view>
     <view class="header-actions">
-      <text class="manage-link" bindtap="onManageThreshold">设置</text>
-      <text class="manage-link" bindtap="onManageMaintain">更多 ›</text>
+      <text hover-class="hover-dim" class="manage-link" bindtap="onManageThreshold">设置</text>
+      <text hover-class="hover-dim" class="manage-link" bindtap="onManageMaintain">更多 ›</text>
     </view>
   </view>
   <view class="card" wx:if="{{maintainProgress.length > 0}}">
@@ -86,7 +86,7 @@
       </view>
     </view>
   </view>
-  <view wx:else class="empty" bindtap="onManageMaintain">暂无快到期的保养项目，点此查看全部 ›</view>
+  <view hover-class="hover-dim" wx:else class="empty" bindtap="onManageMaintain">暂无快到期的保养项目，点此查看全部 ›</view>
 
   <!-- 加油/充电记录（仅最新 3 条） -->
   <view class="section-title">加油/充电记录</view>
@@ -137,6 +137,6 @@
       <view class="fab-item" hover-class="hover-dim" data-tab="repair" bindtap="onAddEntry">维修</view>
       <view class="fab-item" hover-class="hover-dim" data-tab="cost" bindtap="onAddEntry">支出</view>
     </view>
-    <view class="fab {{fabOpen ? 'fab-active' : ''}}" bindtap="onToggleFab">＋</view>
+    <view hover-class="hover-dim" class="fab {{fabOpen ? 'fab-active' : ''}}" bindtap="onToggleFab">＋</view>
   </view>
 </view>

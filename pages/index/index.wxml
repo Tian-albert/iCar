@@ -12,7 +12,7 @@
   </view>
 
   <!-- 车辆列表 -->
-  <view wx:for="{{cars}}" wx:key="sourceId" class="car-card" data-id="{{item.sourceId}}" bindtap="onTapCar">
+  <view hover-class="hover-dim" wx:for="{{cars}}" wx:key="sourceId" class="car-card" data-id="{{item.sourceId}}" bindtap="onTapCar">
     <image wx:if="{{item.isImage}}" class="car-icon-img" src="{{item.icon}}" />
     <text wx:else class="car-icon">{{item.emoji}}</text>
     <view class="car-info">
@@ -22,7 +22,7 @@
       </view>
       <view class="car-mileage">{{item.mileages}} km</view>
     </view>
-    <view class="pin-btn {{item.pinned ? 'pin-active' : ''}}" data-id="{{item.sourceId}}" catchtap="onTogglePin">{{item.pinned ? '📌' : '📍'}}</view>
+    <view hover-class="hover-dim" class="pin-btn {{item.pinned ? 'pin-active' : ''}}" data-id="{{item.sourceId}}" catchtap="onTogglePin">{{item.pinned ? '📌' : '📍'}}</view>
     <view class="car-arrow">›</view>
   </view>
 

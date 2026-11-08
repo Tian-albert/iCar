@@ -3,11 +3,6 @@
   padding: 24rpx;
   box-sizing: border-box;
 }
-.card {
-  background: var(--color-card);
-  border-radius: var(--radius-card);
-  padding: 8rpx 32rpx;
-}
 .row {
   padding: 24rpx 0;
   border-bottom: 1rpx solid var(--color-divider);
@@ -21,7 +16,7 @@
   align-items: center;
 }
 .row-name {
-  font-size: 30rpx;
+  font-size: 32rpx;
   color: var(--color-text-1);
 }
 .row-name-wrap {
@@ -50,13 +45,13 @@
   margin-top: 12rpx;
   height: 12rpx;
   background: var(--chart-grid);
-  border-radius: 6rpx;
+  border-radius: 8rpx;
   overflow: hidden;
 }
 .mnt-bar-fill {
   height: 100%;
   background: var(--color-primary);
-  border-radius: 6rpx;
+  border-radius: 8rpx;
 }
 .row-tools {
   display: flex;

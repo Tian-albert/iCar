@@ -13,8 +13,8 @@
   <block wx:if="{{activeTab === 'fuel'}}">
     <!-- 混动车可切换本次录入类型 -->
     <view wx:if="{{carEnergyType === 'hybrid'}}" class="mode-row">
-      <view class="mode-opt {{energyMode === 'fuel' ? 'mode-active' : ''}}" data-mode="fuel" bindtap="onEnergyModeChange">加油</view>
-      <view class="mode-opt {{energyMode === 'ev' ? 'mode-active' : ''}}" data-mode="ev" bindtap="onEnergyModeChange">充电</view>
+      <view hover-class="hover-dim" class="mode-opt {{energyMode === 'fuel' ? 'mode-active' : ''}}" data-mode="fuel" bindtap="onEnergyModeChange">加油</view>
+      <view hover-class="hover-dim" class="mode-opt {{energyMode === 'ev' ? 'mode-active' : ''}}" data-mode="ev" bindtap="onEnergyModeChange">充电</view>
     </view>
 
     <view class="card">
@@ -106,7 +106,7 @@
           data-index="{{index}}"
           hover-class="hover-dim" bindtap="onMaintainToggle">
           <view class="tag-name">{{item.name}}</view>
-          <view class="tag-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
+          <view hover-class="hover-dim" class="tag-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
         </view>
       </view>
       <view wx:else class="tip">暂无保养项，点右上角「管理 ›」添加</view>
@@ -175,7 +175,7 @@
         <text class="manage-link" hover-class="hover-dim" bindtap="onManageCategory">管理 ›</text>
       </view>
       <scroll-view scroll-x class="cat-scroll" wx:if="{{categories.length > 0}}">
-        <view
+        <view hover-class="hover-dim"
           wx:for="{{categories}}"
           wx:key="sourceId"
           class="cat-item {{index === selectedCategoryIndex ? 'cat-active' : ''}}"
