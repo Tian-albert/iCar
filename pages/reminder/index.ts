@@ -4,6 +4,7 @@ import { listCars } from '../../services/car.service';
 import { getPinnedCarId } from '../../services/user.service';
 import { ensureMaintainTemplates, getMaintainProgress } from '../../services/maintain-record.service';
 import { Car } from '../../types/models';
+import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 
 /** 取置顶车辆；未置顶时回退到最近使用的车辆 */
 function pickActiveCar(storage: ReturnType<typeof getStorage>): Car | null {
@@ -24,10 +25,22 @@ Page({
     soonItems: [] as Array<{ name: string; remainText: string; progressPercent: number }>,
     allCount: 0
   },
+  /** 转发：落地车辆列表，接收方本地无数据也能正常打开 */
+  onShareAppMessage() {
+    return buildShareMessage({
+      highlight: this.data.hasCar ? `${this.data.carName}保养还剩多少，一眼看到` : ''
+    });
+  },
+  onShareTimeline() {
+    return buildTimelineMessage({
+      highlight: this.data.hasCar ? `${this.data.carName}保养还剩多少，一眼看到` : ''
+    });
+  },
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 });
     }
+    enableShareMenu();
     this.load();
   },
   load() {

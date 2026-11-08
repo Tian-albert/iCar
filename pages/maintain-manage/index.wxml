@@ -18,7 +18,7 @@
         <view class="row-remain {{item.urgent ? 'row-urgent' : ''}}">{{item.remainText}}</view>
       </view>
       <view class="mnt-bar">
-        <view class="mnt-bar-fill" style="width: {{item.progressPercent}}%;"></view>
+        <view class="mnt-bar-fill" style="width: {{item.progressPercent + '%'}};"></view>
       </view>
       <view class="row-cycle">周期：{{item.cycleText}}</view>
       <view class="row-tools">

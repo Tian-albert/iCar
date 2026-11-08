@@ -2,6 +2,7 @@
 import { getStorage } from '../../store/index';
 import { getUser, setRemindEnabled } from '../../services/user.service';
 import { FEEDBACK_EMAIL } from '../../utils/app-config';
+import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 
 Page({
   data: {
@@ -14,6 +15,13 @@ Page({
       this.getTabBar().setData({ selected: 2 });
     }
     this.load();
+    enableShareMenu();
+  },
+  onShareAppMessage() {
+    return buildShareMessage();
+  },
+  onShareTimeline() {
+    return buildTimelineMessage();
   },
   load() {
     const storage = getStorage();

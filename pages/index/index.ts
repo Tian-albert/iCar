@@ -4,6 +4,7 @@ import { listCars } from '../../services/car.service';
 import { getPinnedCarId, setPinnedCarId } from '../../services/user.service';
 import { Car } from '../../types/models';
 import { displayIcon, isImageIcon } from '../../utils/icons';
+import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 
 interface CarView extends Car {
   pinned: boolean;
@@ -20,6 +21,21 @@ Page({
       this.getTabBar().setData({ selected: 1 });
     }
     this.load();
+    enableShareMenu();
+  },
+  /** 转发给好友 / 群聊：落地到车辆列表，接收方本地无数据也能正常打开 */
+  onShareAppMessage() {
+    const cars = this.data.cars;
+    return buildShareMessage({
+      highlight: cars.length > 0 ? `我的${cars[0].name}已行驶 ${cars[0].mileages} km` : ''
+    });
+  },
+  /** 分享到朋友圈 */
+  onShareTimeline() {
+    const cars = this.data.cars;
+    return buildTimelineMessage({
+      highlight: cars.length > 0 ? `我的${cars[0].name}已行驶 ${cars[0].mileages} km` : ''
+    });
   },
   load() {
     const storage = getStorage();

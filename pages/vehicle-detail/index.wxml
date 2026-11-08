@@ -82,7 +82,7 @@
       <view class="mnt-name">{{item.name}}</view>
       <view class="mnt-remain {{item.urgent ? 'mnt-urgent' : ''}}">{{item.remainText}}</view>
       <view class="mnt-bar">
-        <view class="mnt-bar-fill" style="width: {{item.progressPercent}}%;"></view>
+        <view class="mnt-bar-fill" style="width: {{item.progressPercent + '%'}};"></view>
       </view>
     </view>
   </view>
