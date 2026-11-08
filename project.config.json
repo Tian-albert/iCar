@@ -39,7 +39,12 @@
         "type": "file"
       }
     ],
-    "include": []
+    "include": [
+      {
+        "value": "assets",
+        "type": "folder"
+      }
+    ]
   },
   "setting": {
     "useCompilerPlugins": [
