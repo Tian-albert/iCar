@@ -46,7 +46,7 @@ describe('chart-theme 与设计令牌一致性（T-05）', () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  it('图表组件不再内联 hex 色值（chart-draw 是唯一色值定义点）', () => {
+  it('图表组件不再内联 hex 色值（色值集中在 chart-draw / chart-render）', () => {
     const files = [
       'components/bar-chart/index.ts',
       'components/line-chart/index.ts',
@@ -55,8 +55,15 @@ describe('chart-theme 与设计令牌一致性（T-05）', () => {
     for (const f of files) {
       const src: string = fs.readFileSync(f, 'utf-8');
       expect(src).not.toMatch(/['"]#[0-9A-Fa-f]{3,8}['"]/);
-      expect(src).toContain('CHART_THEME');
+      // 绘制算法已抽到 utils/chart-render，组件只负责 canvas 初始化与触摸命中
+      expect(src).toContain('utils/chart-render');
     }
+  });
+
+  it('chart-render 共享绘制层不内联 hex 色值', () => {
+    const src: string = fs.readFileSync('utils/chart-render.ts', 'utf-8');
+    expect(src).not.toMatch(/['"]#[0-9A-Fa-f]{3,8}['"]/);
+    expect(src).toContain('CHART_THEME');
   });
 
   it('所有相对 import 都能解析到真实文件（防止 require 未定义模块导致白屏）', () => {

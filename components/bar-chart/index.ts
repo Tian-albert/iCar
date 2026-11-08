@@ -1,6 +1,7 @@
 // 柱状图组件（行程 / 费用按月）：点击柱子高亮并显示数值气泡（R-06）
+// 绘制算法已抽到 utils/chart-render.ts，与统计页分享卡片共用同一份实现。
 import { hitBarIndex, toCanvasPoint } from '../../utils/chart-math';
-import { CHART_THEME, drawBubble } from '../../utils/chart-draw';
+import { renderBars } from '../../utils/chart-render';
 
 Component({
   properties: {
@@ -52,73 +53,22 @@ Component({
 
           const bars = (this.data.bars || []) as Array<{ label: string; value: number }>;
           if (!bars.length) return;
-          const maxVal = Math.max(...bars.map(b => b.value));
-          if (maxVal <= 0) return;
 
-          const padL = 8;
-          const padR = 8;
-          const padT = 18;
-          const padB = 24;
-          const plotW = w - padL - padR;
-          const plotH = h - padT - padB;
-          const slot = plotW / bars.length;
-          const barW = slot * 0.5;
+          // 缓存布局供触摸命中复用
           (this as any)._layout = {
             left: res[0].left || 0,
             top: res[0].top || 0,
-            padL,
-            plotW
+            padL: 8,
+            plotW: w - 16
           };
 
-          const active = this.data.activeIndex as number;
-
-          bars.forEach((b, i) => {
-            const cx = padL + slot * i + slot / 2;
-            const bh = (b.value / maxVal) * plotH;
-            const x = cx - barW / 2;
-            const y = padT + plotH - bh;
-            const isActive = i === active;
-
-            // 柱子（圆角）
-            ctx.fillStyle = isActive ? CHART_THEME.primaryDark : CHART_THEME.primary;
-            const r = Math.min(4, barW / 2);
-            ctx.beginPath();
-            ctx.moveTo(x, padT + plotH);
-            ctx.lineTo(x, y + r);
-            ctx.arcTo(x, y, x + r, y, r);
-            ctx.lineTo(x + barW - r, y);
-            ctx.arcTo(x + barW, y, x + barW, y + r, r);
-            ctx.lineTo(x + barW, padT + plotH);
-            ctx.closePath();
-            ctx.fill();
-            if (isActive) {
-              ctx.strokeStyle = CHART_THEME.card;
-              ctx.lineWidth = 2;
-              ctx.stroke();
-            }
-
-            // 数值标签
-            ctx.fillStyle = isActive ? CHART_THEME.primaryDark : CHART_THEME.text3;
-            ctx.font = isActive ? 'bold 10px sans-serif' : '10px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(String(Math.round(b.value)), cx, y - 4);
-
-            // X 轴标签
-            ctx.fillText(b.label, cx, h - 6);
+          renderBars({
+            ctx,
+            w,
+            h,
+            bars,
+            activeIndex: this.data.activeIndex as number
           });
-
-          if (active >= 0 && active < bars.length) {
-            const b = bars[active];
-            const cx = padL + slot * active + slot / 2;
-            const y = padT + plotH - (b.value / maxVal) * plotH;
-            drawBubble(ctx, {
-              text: `${b.label} · ${Math.round(b.value)}${this.data.unit}`,
-              x: cx,
-              y: y - 20,
-              w,
-              h
-            });
-          }
         });
     }
   }

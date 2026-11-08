@@ -128,7 +128,7 @@
       loading="{{sharing}}"
       disabled="{{sharing}}"
       bindtap="onShareStatistics"
-    >生成统计图片 · 分享</button>
+    >生成统计图片</button>
     <view class="share-hint">可发送给朋友、分享到朋友圈或保存到相册</view>
   </view>
 

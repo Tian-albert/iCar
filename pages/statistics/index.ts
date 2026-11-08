@@ -11,7 +11,12 @@ import {
   formatRangeLabel,
   ShareCardInput
 } from '../../utils/share-card';
-import { drawShareCard, drawEmptyCard, EMPTY_CARD_HEIGHT } from '../../utils/share-card-draw';
+import {
+  drawShareCard,
+  drawEmptyCard,
+  resolveExportDpr,
+  EMPTY_CARD_HEIGHT
+} from '../../utils/share-card-draw';
 import { formatDate } from '../../utils/date';
 
 interface CatView {
@@ -232,12 +237,24 @@ Page({
       mileage: snap.mileage,
       fuel: snap.fuel,
       electricity: snap.electricity,
-      expense: { total: snap.expense.total, perKm: snap.expense.perKm },
+      expense: {
+        total: snap.expense.total,
+        perKm: snap.expense.perKm,
+        perKmExFuel: snap.expense.perKmExFuel
+      },
       categories: snap.categories.map(c => ({
         name: catMap.get(c.categorySourceId)?.name || c.name,
         amount: c.amount,
-        percent: c.percent
-      }))
+        percent: c.percent,
+        color: c.color
+      })),
+      trendUnit: car.energyType === 'ev' ? 'kWh/100km' : 'L/100km',
+      trend: snap.consumptionTrend.map(t => ({
+        label: `${new Date(t.date).getMonth() + 1}/${new Date(t.date).getDate()}`,
+        value: t.value
+      })),
+      monthlyMileage: snap.monthlyMileage.map(m => ({ label: m.label, value: m.value })),
+      monthlyCost: snap.monthlyCost.map(m => ({ label: m.label, value: m.value }))
     };
     return buildShareCardModel(input);
   },
@@ -261,13 +278,17 @@ Page({
             return;
           }
 
-          const dpr = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).pixelRatio || 2;
+          const deviceDpr = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).pixelRatio || 2;
           const layout = computeShareCardLayout(model);
           const height = model.hasData ? layout.height : EMPTY_CARD_HEIGHT;
 
+          // 卡片逻辑高度约 3000px，按 dpr=3 会到 9000px 超出 canvas 上限，
+          // 必须按上限反算安全 dpr，否则导出失败或得到空白图
+          const dpr = resolveExportDpr(layout.width, height, deviceDpr);
+
           // 物理像素尺寸必须显式设置，否则导出为空白
-          canvas.width = layout.width * dpr;
-          canvas.height = height * dpr;
+          canvas.width = Math.round(layout.width * dpr);
+          canvas.height = Math.round(height * dpr);
 
           const ctx = canvas.getContext('2d');
           const opts = {

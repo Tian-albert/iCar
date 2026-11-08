@@ -1,21 +1,33 @@
 // 统计页分享卡片：数据模型 + 布局（纯函数，便于单测）
 //
-// 为什么需要这套模型：小程序没有「整页截图」能力，canvasToTempFilePath 只能导出
-// canvas 内容。所以分享图必须在离屏 canvas 上**重绘**，把统计页的关键指标
-// 重新排版成一张适合朋友圈传播的卡片，而不是截取页面。
+// 设计目标：**1:1 复刻统计页**的布局与内容，而不是做一张简化摘要图。
+// 页面结构（自上而下）：
+//   顶部深色头（车名 / 车型 / 维度 / 品牌）
+//   里程指标卡（3 列）
+//   油耗指标卡（3 列，纯电隐藏）
+//   电耗指标卡（3 列，纯电 / 混动显示）
+//   支出指标卡（3 列）
+//   分类支出（环形图 + 明细列表）
+//   {能耗}趋势（折线图）
+//   行程（柱状图）
+//   费用（柱状图）
+//
+// 技术约束：小程序无「整页截图」能力，canvasToTempFilePath 只能导出 canvas 内容，
+// 因此在离屏 canvas 上按上述结构重绘，图表绘制复用 utils/chart-render 的同一份算法。
 import { EnergyType } from '../types/models';
 import { StatsRange } from '../domain/stats.service';
 
-/** 卡片宽度（px）：750 设计稿下 2 倍图，朋友圈预览清晰 */
+/** 卡片逻辑宽度：750 = 设计稿 2 倍图，朋友圈预览清晰 */
 export const CARD_WIDTH = 750;
 
-/** 分类最多展示条数，超出合并为「其他」，避免卡片过长 */
-export const MAX_CATEGORIES = 6;
+/** 分类明细列表最多展示条数（环形图仍用全量） */
+export const MAX_CATEGORY_ROWS = 6;
 
 export interface ShareCategoryInput {
   name: string;
   amount: number;
   percent: number;
+  color: string;
 }
 
 export interface ShareCardInput {
@@ -26,21 +38,35 @@ export interface ShareCardInput {
   mileage: { latest: number; increased: number; fuelMileage: number; evMileage: number };
   fuel: { totalCost: number; avgConsumption: number; costPerKm: number };
   electricity: { totalCost: number; avgConsumption: number; costPerKm: number };
-  expense: { total: number; perKm: number };
+  expense: { total: number; perKm: number; perKmExFuel: number };
   categories: ShareCategoryInput[];
+  trendUnit: string;
+  trend: Array<{ label: string; value: number }>;
+  monthlyMileage: Array<{ label: string; value: number }>;
+  monthlyCost: Array<{ label: string; value: number }>;
 }
 
+/** 指标卡中的一列 */
 export interface ShareMetric {
   label: string;
   value: string;
 }
 
-export interface ShareCategory {
+/** 一组指标卡（对应页面上一个白色卡片，3 列） */
+export interface ShareMetricGroup {
+  key: 'mileage' | 'fuel' | 'electricity' | 'expense';
+  metrics: ShareMetric[];
+}
+
+export interface ShareCategoryRow {
   name: string;
+  /** 展示用金额（已格式化） */
   amount: string;
+  /** 展示用百分比（已格式化） */
   percent: string;
-  /** 0~1，用于绘制占比条 */
-  ratio: number;
+  /** 原始数值，供环形图计算扇区角度 */
+  percentValue: number;
+  color: string;
 }
 
 export interface ShareCardModel {
@@ -48,42 +74,56 @@ export interface ShareCardModel {
   energyLabel: string;
   rangeLabel: string;
   hasData: boolean;
-  metrics: ShareMetric[];
-  categories: ShareCategory[];
-  expenseTotal: string;
+  /** 按页面顺序排列的指标卡组 */
+  groups: ShareMetricGroup[];
+  /** 分类环形图数据（全量） */
+  categories: ShareCategoryRow[];
+  /** 分类明细列表（可能被截断） */
+  categoryRows: ShareCategoryRow[];
+  categoryTotal: string;
+  trendTitle: string;
+  trendUnit: string;
+  trend: Array<{ label: string; value: number }>;
+  trendEmptyText: string;
+  monthlyMileage: Array<{ label: string; value: number }>;
+  monthlyMileageEmpty: boolean;
+  monthlyCost: Array<{ label: string; value: number }>;
+  monthlyCostEmpty: boolean;
 }
 
-export interface MetricLayout {
-  label: string;
-  value: string;
+export interface Rect {
   x: number;
   y: number;
   width: number;
   height: number;
-}
-
-export interface CategoryLayout {
-  name: string;
-  amount: string;
-  percent: string;
-  x: number;
-  y: number;
-  barWidth: number;
-  barMaxWidth: number;
 }
 
 export interface ShareCardLayout {
   width: number;
   height: number;
   padding: number;
+  header: Rect;
   titleBaseline: number;
   subtitleBaseline: number;
-  /** 指标区起始 y */
-  metricsTop: number;
-  metrics: MetricLayout[];
-  /** 分类区标题基线；无分类时为 null */
-  categoryTitleBaseline: number | null;
-  categories: CategoryLayout[];
+  /** 各指标卡组的绘制区域与列坐标 */
+  groupRects: Array<{ key: string; rect: Rect; metrics: Array<ShareMetric & Rect> }>;
+  /** 分类区 */
+  categoryTitleBaseline: number;
+  categoryCard: Rect;
+  donutRect: Rect;
+  categoryRowRects: Array<ShareCategoryRow & Rect>;
+  /** 趋势区 */
+  trendTitleBaseline: number;
+  trendCard: Rect;
+  trendChartRect: Rect;
+  /** 行程区 */
+  mileageTitleBaseline: number;
+  mileageCard: Rect;
+  mileageChartRect: Rect;
+  /** 费用区 */
+  costTitleBaseline: number;
+  costCard: Rect;
+  costChartRect: Rect;
   footerBaseline: number;
 }
 
@@ -93,12 +133,10 @@ const ENERGY_LABEL: Record<EnergyType, string> = {
   hybrid: '混动'
 };
 
-/** 数值格式化：非有限数一律视为无数据 */
 function fmt(v: number, digits = 2): string {
   return typeof v === 'number' && isFinite(v) ? v.toFixed(digits) : '--';
 }
 
-/** 整数格式化（里程） */
 function fmtInt(v: number): string {
   return typeof v === 'number' && isFinite(v) ? String(Math.round(v)) : '--';
 }
@@ -112,141 +150,223 @@ export function formatRangeLabel(range: StatsRange): string {
 
 /**
  * 组装分享卡片模型。
- * 车型分支与统计页保持一致：纯电只看电耗，燃油只看油耗，混动两组都给。
+ * 指标卡组与统计页完全对应：里程 → 油耗（纯电隐藏）→ 电耗（纯电/混动）→ 支出。
  */
 export function buildShareCardModel(input: ShareCardInput): ShareCardModel {
   const { energyType, hasData } = input;
   const isEv = energyType === 'ev';
   const isHybrid = energyType === 'hybrid';
+  const v = (s: string) => (hasData ? s : '--');
 
-  const metrics: ShareMetric[] = [];
+  // ---- 里程卡（3 列）----
+  const mileageMetrics: ShareMetric[] = [
+    { label: '最新总里程', value: v(fmtInt(input.mileage.latest)) },
+    { label: '增加总里程', value: v(fmtInt(input.mileage.increased)) },
+    isEv
+      ? { label: '充电里程', value: v(fmtInt(input.mileage.evMileage)) }
+      : { label: '加油里程', value: v(fmtInt(input.mileage.fuelMileage)) }
+  ];
 
-  // 里程：纯电取 evMileage（fuelMileage 恒为 0），燃油取 fuelMileage，混动两者都给
-  metrics.push({ label: '最新总里程', value: hasData ? fmtInt(input.mileage.latest) : '--' });
-  metrics.push({ label: '增加总里程', value: hasData ? fmtInt(input.mileage.increased) : '--' });
-  if (isEv) {
-    metrics.push({ label: '充电里程', value: hasData ? fmtInt(input.mileage.evMileage) : '--' });
-  } else if (isHybrid) {
-    metrics.push({ label: '加油里程', value: hasData ? fmtInt(input.mileage.fuelMileage) : '--' });
-    metrics.push({ label: '充电里程', value: hasData ? fmtInt(input.mileage.evMileage) : '--' });
-  } else {
-    metrics.push({ label: '加油里程', value: hasData ? fmtInt(input.mileage.fuelMileage) : '--' });
-  }
+  const groups: ShareMetricGroup[] = [{ key: 'mileage', metrics: mileageMetrics }];
 
-  // 能耗指标
+  // ---- 油耗卡（纯电隐藏）----
   if (!isEv) {
-    metrics.push({ label: '总油费', value: hasData ? fmt(input.fuel.totalCost) : '--' });
-    metrics.push({ label: '平均油耗', value: hasData ? fmt(input.fuel.avgConsumption) : '--' });
-    metrics.push({ label: '油耗成本', value: hasData ? fmt(input.fuel.costPerKm, 3) : '--' });
+    groups.push({
+      key: 'fuel',
+      metrics: [
+        { label: '总油费 (元)', value: v(fmt(input.fuel.totalCost)) },
+        { label: '平均油耗 (L/100km)', value: v(fmt(input.fuel.avgConsumption)) },
+        { label: '平均油耗 (元/km)', value: v(fmt(input.fuel.costPerKm, 3)) }
+      ]
+    });
   }
+
+  // ---- 电耗卡（纯电 / 混动）----
   if (isEv || isHybrid) {
-    metrics.push({ label: '总电费', value: hasData ? fmt(input.electricity.totalCost) : '--' });
-    metrics.push({ label: '平均电耗', value: hasData ? fmt(input.electricity.avgConsumption) : '--' });
-    metrics.push({ label: '电耗成本', value: hasData ? fmt(input.electricity.costPerKm, 3) : '--' });
+    groups.push({
+      key: 'electricity',
+      metrics: [
+        { label: '总电费 (元)', value: v(fmt(input.electricity.totalCost)) },
+        { label: '平均电耗 (kWh/100km)', value: v(fmt(input.electricity.avgConsumption)) },
+        { label: '每公里电费 (元/km)', value: v(fmt(input.electricity.costPerKm, 3)) }
+      ]
+    });
   }
 
-  // 支出
-  metrics.push({ label: '总支出', value: hasData ? fmt(input.expense.total) : '--' });
-  metrics.push({ label: '每公里支出', value: hasData ? fmt(input.expense.perKm, 3) : '--' });
+  // ---- 支出卡 ----
+  groups.push({
+    key: 'expense',
+    metrics: [
+      { label: '总支出 (元)', value: v(fmt(input.expense.total)) },
+      { label: '每公里支出 (元/km)', value: v(fmt(input.expense.perKm, 3)) },
+      { label: '除掉油费 (元/km)', value: v(fmt(input.expense.perKmExFuel, 3)) }
+    ]
+  });
 
-  // 分类：降序 + 截断 + 合并「其他」
-  const sorted = [...input.categories]
+  // ---- 分类支出 ----
+  const validCats = input.categories
     .filter(c => isFinite(c.amount) && c.amount > 0)
     .sort((a, b) => b.amount - a.amount);
 
-  let categories: ShareCategory[] = [];
-  if (sorted.length > 0) {
-    const keep = sorted.length > MAX_CATEGORIES ? MAX_CATEGORIES - 1 : sorted.length;
-    const head = sorted.slice(0, keep);
-    const tail = sorted.slice(keep);
-
-    const total = sorted.reduce((s, c) => s + c.amount, 0);
-    const toView = (c: ShareCategoryInput): ShareCategory => ({
-      name: c.name,
-      amount: fmt(c.amount),
-      percent: `${fmt(c.percent, 1)}%`,
-      ratio: total > 0 ? Math.min(1, c.amount / total) : 0
-    });
-
-    categories = head.map(toView);
-    if (tail.length > 0) {
-      const restAmount = tail.reduce((s, c) => s + c.amount, 0);
-      const restPercent = tail.reduce((s, c) => s + c.percent, 0);
-      categories.push(toView({ name: '其他', amount: restAmount, percent: restPercent }));
-    }
-  }
+  const categoryRowsAll: ShareCategoryRow[] = validCats.map(c => ({
+    name: c.name,
+    amount: fmt(c.amount),
+    percent: `${fmt(c.percent, 2)}%`,
+    percentValue: isFinite(c.percent) ? c.percent : 0,
+    color: c.color
+  }));
 
   return {
     carName: input.carName || '我的爱车',
     energyLabel: ENERGY_LABEL[energyType] || '燃油',
     rangeLabel: input.rangeLabel,
     hasData,
-    metrics,
-    categories,
-    expenseTotal: hasData ? fmt(input.expense.total) : '--'
+    groups,
+    categories: categoryRowsAll,
+    categoryRows: categoryRowsAll.slice(0, MAX_CATEGORY_ROWS),
+    categoryTotal: v(fmt(input.expense.total)),
+    trendTitle: `${isEv ? '电耗' : '能耗'}趋势 (${input.trendUnit})`,
+    trendUnit: input.trendUnit,
+    trend: input.trend,
+    trendEmptyText: isEv
+      ? '暂无有效充电区间，记录两次充满充电后生成趋势'
+      : '暂无有效油耗区间，记录两次加满加油后生成趋势',
+    monthlyMileage: input.monthlyMileage,
+    monthlyMileageEmpty: input.monthlyMileage.length === 0,
+    monthlyCost: input.monthlyCost,
+    monthlyCostEmpty: input.monthlyCost.length === 0
   };
 }
 
+// ---------------- 布局常量（与页面 rpx 尺寸一一对应，750 宽直接映射）----------------
+
+const PAD = 24;                 // 页面左右 padding 24rpx
+const GROUP_H = 132;            // 指标卡高度
+const GROUP_GAP = 20;           // 卡片间距 20rpx
+const SECTION_TITLE_H = 60;     // 小节标题占位
+const DONUT_H = 500;            // .donut-chart height: 500rpx
+const CAT_ROW_H = 52;           // 分类明细行高
+const CHART_H = 300;            // .chart height: 300rpx
+const CARD_PAD = 24;            // .cat-card padding 24rpx
+
 /**
- * 计算卡片布局。所有坐标基于 CARD_WIDTH 宽度的画布。
- * 返回的高度即为导出画布高度。
+ * 计算卡片布局。坐标基于 CARD_WIDTH 宽度的逻辑画布。
+ * 结构与统计页 WXML 一一对应，保证「1:1 复刻」。
  */
 export function computeShareCardLayout(model: ShareCardModel): ShareCardLayout {
-  const padding = 48;
-  const contentW = CARD_WIDTH - padding * 2;
+  const width = CARD_WIDTH;
+  const contentW = width - PAD * 2;
+  let y = 0;
 
-  const titleBaseline = 96;
-  const subtitleBaseline = 140;
-  const metricsTop = 188;
+  // ---- 头部深色区 ----
+  const headerH = 168;
+  const header: Rect = { x: 0, y: 0, width, height: headerH };
+  const titleBaseline = 78;
+  const subtitleBaseline = 122;
+  y = headerH + 20;
 
-  // 指标两列网格
-  const COLS = 2;
-  const cellW = contentW / COLS;
-  const cellH = 84;
-  const metrics: MetricLayout[] = model.metrics.map((m, i) => ({
-    label: m.label,
-    value: m.value,
-    x: padding + (i % COLS) * cellW,
-    y: metricsTop + Math.floor(i / COLS) * cellH,
-    width: cellW,
-    height: cellH
-  }));
-
-  const rows = Math.ceil(model.metrics.length / COLS);
-  let cursor = metricsTop + rows * cellH + 20;
-
-  const categoryTitleBaseline = model.categories.length > 0 ? cursor + 28 : null;
-  if (categoryTitleBaseline !== null) cursor = categoryTitleBaseline + 16;
-
-  const CAT_ROW_H = 62;
-  const BAR_MAX_W = contentW - 150;
-  const categories: CategoryLayout[] = model.categories.map((c, i) => ({
-    name: c.name,
-    amount: c.amount,
-    percent: c.percent,
-    x: padding,
-    y: cursor + i * CAT_ROW_H,
-    barWidth: Math.max(0, Math.min(1, c.ratio)) * BAR_MAX_W,
-    barMaxWidth: BAR_MAX_W
-  }));
-
-  if (categories.length > 0) {
-    cursor += categories.length * CAT_ROW_H;
+  // ---- 指标卡组 ----
+  const groupRects: ShareCardLayout['groupRects'] = [];
+  for (const g of model.groups) {
+    const rect: Rect = { x: PAD, y, width: contentW, height: GROUP_H };
+    const colW = contentW / g.metrics.length;
+    const metrics = g.metrics.map((m, i) => ({
+      label: m.label,
+      value: m.value,
+      x: rect.x + colW * i,
+      y: rect.y,
+      width: colW,
+      height: GROUP_H
+    }));
+    groupRects.push({ key: g.key, rect, metrics });
+    y += GROUP_H + GROUP_GAP;
   }
 
-  const footerBaseline = cursor + 56;
-  const height = footerBaseline + 72;
+  // ---- 分类支出 ----
+  const categoryTitleBaseline = y + SECTION_TITLE_H - 16;
+  y += SECTION_TITLE_H;
+
+  const donutRect: Rect = {
+    x: PAD + CARD_PAD,
+    y: y + CARD_PAD,
+    width: contentW - CARD_PAD * 2,
+    height: DONUT_H
+  };
+  const rowStartY = donutRect.y + DONUT_H + 8;
+  const catInnerH = CARD_PAD * 2 + DONUT_H + (model.categoryRows.length > 0
+    ? model.categoryRows.length * CAT_ROW_H + 8
+    : 0);
+
+  const categoryCard: Rect = { x: PAD, y, width: contentW, height: catInnerH };
+  const categoryRowRects = model.categoryRows.map((r, i) => ({
+    ...r,
+    x: categoryCard.x + CARD_PAD,
+    y: rowStartY + i * CAT_ROW_H,
+    width: contentW - CARD_PAD * 2,
+    height: CAT_ROW_H
+  }));
+  y += catInnerH + GROUP_GAP;
+
+  // ---- 趋势 ----
+  const trendTitleBaseline = y + SECTION_TITLE_H - 16;
+  y += SECTION_TITLE_H;
+  const trendCard: Rect = { x: PAD, y, width: contentW, height: CHART_H + CARD_PAD * 2 };
+  const trendChartRect: Rect = {
+    x: PAD + CARD_PAD,
+    y: y + CARD_PAD,
+    width: contentW - CARD_PAD * 2,
+    height: CHART_H
+  };
+  y += trendCard.height + GROUP_GAP;
+
+  // ---- 行程 ----
+  const mileageTitleBaseline = y + SECTION_TITLE_H - 16;
+  y += SECTION_TITLE_H;
+  const mileageCard: Rect = { x: PAD, y, width: contentW, height: CHART_H + CARD_PAD * 2 };
+  const mileageChartRect: Rect = {
+    x: PAD + CARD_PAD,
+    y: y + CARD_PAD,
+    width: contentW - CARD_PAD * 2,
+    height: CHART_H
+  };
+  y += mileageCard.height + GROUP_GAP;
+
+  // ---- 费用 ----
+  const costTitleBaseline = y + SECTION_TITLE_H - 16;
+  y += SECTION_TITLE_H;
+  const costCard: Rect = { x: PAD, y, width: contentW, height: CHART_H + CARD_PAD * 2 };
+  const costChartRect: Rect = {
+    x: PAD + CARD_PAD,
+    y: y + CARD_PAD,
+    width: contentW - CARD_PAD * 2,
+    height: CHART_H
+  };
+  y += costCard.height;
+
+  const footerBaseline = y + 64;
+  const height = footerBaseline + 48;
 
   return {
-    width: CARD_WIDTH,
+    width,
     height,
-    padding,
+    padding: PAD,
+    header,
     titleBaseline,
     subtitleBaseline,
-    metricsTop,
-    metrics,
+    groupRects,
     categoryTitleBaseline,
-    categories,
+    categoryCard,
+    donutRect,
+    categoryRowRects,
+    trendTitleBaseline,
+    trendCard,
+    trendChartRect,
+    mileageTitleBaseline,
+    mileageCard,
+    mileageChartRect,
+    costTitleBaseline,
+    costCard,
+    costChartRect,
     footerBaseline
   };
 }
