@@ -1,7 +1,7 @@
 // 柱状图组件（行程 / 费用按月）：点击柱子高亮并显示数值气泡（R-06）
 // 绘制算法已抽到 utils/chart-render.ts，与统计页分享卡片共用同一份实现。
 import { hitBarIndex, toCanvasPoint } from '../../utils/chart-math';
-import { renderBars } from '../../utils/chart-render';
+import { renderBars, computeBarLayout } from '../../utils/chart-render';
 
 Component({
   properties: {
@@ -54,12 +54,13 @@ Component({
           const bars = (this.data.bars || []) as Array<{ label: string; value: number }>;
           if (!bars.length) return;
 
-          // 缓存布局供触摸命中复用
+          // 缓存布局供触摸命中复用：与绘制共用同一份公式
+          const geo = computeBarLayout(w, h, bars, 1);
           (this as any)._layout = {
             left: res[0].left || 0,
             top: res[0].top || 0,
-            padL: 8,
-            plotW: w - 16
+            padL: geo.padL,
+            plotW: geo.plotW
           };
 
           renderBars({

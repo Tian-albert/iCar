@@ -1,7 +1,7 @@
 // 分类支出环形图：外标签引线 + 点击放大 + 气泡 + 中心金额
 // 绘制算法已抽到 utils/chart-render.ts，与统计页分享卡片共用同一份实现。
 import { hitDonutSegment, toCanvasPoint } from '../../utils/chart-math';
-import { renderDonut } from '../../utils/chart-render';
+import { renderDonut, computeDonutLayout } from '../../utils/chart-render';
 
 interface Segment {
   name: string;
@@ -74,17 +74,17 @@ Component({
           const segs = this.data.segments as Segment[];
           if (!segs.length) return;
 
-          // 缓存布局供触摸命中复用（含画布在视口中的偏移）
-          const labelSpace = Math.max(70, w * 0.26);
-          const outerR = Math.min(w / 2 - labelSpace, h / 2 - 14);
+          // 缓存布局供触摸命中复用：必须与绘制用同一份公式，
+          // 否则改任一侧就会点击错位（computeDonutLayout 已抽出共享）
+          const geo = computeDonutLayout(w, h, 1);
           (this as any)._layout = {
-            cx: w / 2,
-            cy: h / 2,
-            outerR,
-            innerR: outerR * 0.55,
+            cx: geo.cx,
+            cy: geo.cy,
+            outerR: geo.outerR,
+            innerR: geo.innerR,
+            offR: geo.offR,
             left: res[0].left || 0,
-            top: res[0].top || 0,
-            offR: 10
+            top: res[0].top || 0
           };
 
           renderDonut({

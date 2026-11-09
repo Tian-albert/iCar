@@ -27,6 +27,103 @@ function fontOf(size: number, scale: number, weight = 'normal'): string {
   return `${weight} ${fs(size, scale)}px sans-serif`;
 }
 
+// ---------------- 布局计算（组件触摸命中与绘制共用，避免两份公式漂移）----------------
+
+export interface DonutLayout {
+  cx: number;
+  cy: number;
+  outerR: number;
+  innerR: number;
+  /** 选中扇区外移距离 */
+  offR: number;
+  /** 有效：outerR 足够大 */
+  valid: boolean;
+}
+
+/**
+ * 环形图几何布局。
+ * 组件用它做触摸命中判定，绘制函数用它画图——同一份公式，改一处两边同步。
+ */
+export function computeDonutLayout(w: number, h: number, fontScale = 1): DonutLayout {
+  const scale = fontScale > 0 ? fontScale : 1;
+  const cx = w / 2;
+  const cy = h / 2;
+  const labelSpace = Math.max(70 * scale, w * 0.26);
+  const outerR = Math.min(w / 2 - labelSpace, h / 2 - 14 * scale);
+  const innerR = outerR * 0.55;
+  const offR = 10 * scale;
+  return { cx, cy, outerR, innerR, offR, valid: outerR >= 20 };
+}
+
+export interface LineLayout {
+  padL: number;
+  padR: number;
+  padT: number;
+  padB: number;
+  plotW: number;
+  plotH: number;
+  /** 实际使用的 Y 轴上限 */
+  yMax: number;
+}
+
+/**
+ * 折线图几何布局。
+ * yMax 依赖数据与封顶值，组件必须用同一结果做命中判定，否则点击会错位。
+ */
+export function computeLineLayout(
+  w: number,
+  h: number,
+  points: Array<{ value: number }>,
+  opts: { yMax?: number; ceiling?: number; fontScale?: number } = {}
+): LineLayout {
+  const scale = opts.fontScale && opts.fontScale > 0 ? opts.fontScale : 1;
+  const padL = 28 * scale;
+  const padR = 12 * scale;
+  const padT = 24 * scale;
+  const padB = 24 * scale;
+
+  const maxValue = points.length ? Math.max(...points.map(p => p.value)) : 0;
+  const baseYMax = opts.yMax || 15;
+  const ceiling = opts.ceiling && opts.ceiling > 0 ? opts.ceiling : MAX_FUEL_CONSUMPTION;
+  const yMax = Math.min(ceiling, Math.max(baseYMax, Math.ceil(maxValue / 5) * 5));
+
+  return { padL, padR, padT, padB, plotW: w - padL - padR, plotH: h - padT - padB, yMax };
+}
+
+export interface BarLayout {
+  padL: number;
+  padR: number;
+  padT: number;
+  padB: number;
+  plotW: number;
+  plotH: number;
+  /** 每根柱子占的槽宽 */
+  slot: number;
+  barW: number;
+  /** 最大值，<=0 表示无可绘制数据 */
+  maxVal: number;
+}
+
+/** 柱状图几何布局 */
+export function computeBarLayout(
+  w: number,
+  h: number,
+  bars: Array<{ value: number }>,
+  fontScale = 1
+): BarLayout {
+  const scale = fontScale > 0 ? fontScale : 1;
+  const padL = 8 * scale;
+  const padR = 8 * scale;
+  const padT = 18 * scale;
+  const padB = 24 * scale;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+  const maxVal = bars.length ? Math.max(...bars.map(b => b.value)) : 0;
+  const slot = bars.length ? plotW / bars.length : 0;
+  const barW = slot * 0.5;
+  return { padL, padR, padT, padB, plotW, plotH, slot, barW, maxVal };
+}
+
 // ---------------- 环形图 ----------------
 
 export interface DonutSegment {
@@ -57,14 +154,9 @@ export function renderDonut(opts: DonutRenderOptions): void {
 
   if (!segments.length) return;
 
-  const cx = w / 2;
-  const cy = h / 2;
-  // 字号放大后外标签需要更多横向空间，按 scale 一并放大
-  const labelSpace = Math.max(70 * scale, w * 0.26);
-  const outerR = Math.min(w / 2 - labelSpace, h / 2 - 14 * scale);
-  if (outerR < 20) return;
-  const innerR = outerR * 0.55;
-  const offR = 10 * scale;
+  const layout = computeDonutLayout(w, h, scale);
+  if (!layout.valid) return;
+  const { cx, cy, outerR, innerR, offR } = layout;
 
   // 扇区
   let start = -Math.PI / 2;
@@ -189,18 +281,14 @@ export function renderLine(opts: LineRenderOptions): void {
   if (!pts.length) return;
 
   const scale = opts.fontScale && opts.fontScale > 0 ? opts.fontScale : 1;
-  const maxValue = Math.max(...pts.map(p => p.value));
-  const baseYMax = opts.yMax || 15;
-  const ceiling = opts.ceiling && opts.ceiling > 0 ? opts.ceiling : MAX_FUEL_CONSUMPTION;
-  const yMax = Math.min(ceiling, Math.max(baseYMax, Math.ceil(maxValue / 5) * 5));
 
-  // 字号放大后左右留白需同步加大，否则数值标注会被裁切
-  const padL = 28 * scale;
-  const padR = 12 * scale;
-  const padT = 24 * scale;
-  const padB = 24 * scale;
-  const plotW = w - padL - padR;
-  const plotH = h - padT - padB;
+  // 与组件触摸命中共用同一份布局公式
+  const layout = computeLineLayout(w, h, pts, {
+    yMax: opts.yMax,
+    ceiling: opts.ceiling,
+    fontScale: scale
+  });
+  const { padL, padR, padT, padB, plotW, plotH, yMax } = layout;
 
   const x = (i: number) => (pts.length === 1 ? padL + plotW / 2 : padL + (plotW * i) / (pts.length - 1));
   const y = (v: number) => {
@@ -306,18 +394,11 @@ export function renderBars(opts: BarRenderOptions): void {
   if (!bars.length) return;
 
   const scale = opts.fontScale && opts.fontScale > 0 ? opts.fontScale : 1;
-  const maxVal = Math.max(...bars.map(b => b.value));
-  if (maxVal <= 0) return;
 
-  // 字号放大后上下留白同步加大，避免数值标注与 X 轴标签被裁切
-  const padL = 8 * scale;
-  const padR = 8 * scale;
-  const padT = 18 * scale;
-  const padB = 24 * scale;
-  const plotW = w - padL - padR;
-  const plotH = h - padT - padB;
-  const slot = plotW / bars.length;
-  const barW = slot * 0.5;
+  // 与组件触摸命中共用同一份布局公式
+  const layout = computeBarLayout(w, h, bars, scale);
+  if (layout.maxVal <= 0) return;
+  const { padL, padT, plotH, slot, barW, maxVal } = layout;
   const active = typeof opts.activeIndex === 'number' ? opts.activeIndex : -1;
 
   bars.forEach((b, i) => {

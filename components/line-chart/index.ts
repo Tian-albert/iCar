@@ -1,7 +1,7 @@
 // 折线图组件（油耗趋势）：点击数据点高亮并显示数值气泡（R-06）
 // 绘制算法已抽到 utils/chart-render.ts，与统计页分享卡片共用同一份实现。
 import { hitLineIndex, toCanvasPoint } from '../../utils/chart-math';
-import { renderLine } from '../../utils/chart-render';
+import { renderLine, computeLineLayout } from '../../utils/chart-render';
 import { MAX_EV_CONSUMPTION } from '../../domain/fuel.service';
 
 Component({
@@ -56,17 +56,22 @@ Component({
           const pts = (this.data.points || []) as Array<{ label: string; value: number }>;
           if (pts.length === 0) return;
 
-          // 缓存布局供触摸命中复用
-          (this as any)._layout = {
-            left: res[0].left || 0,
-            top: res[0].top || 0,
-            padL: 28,
-            plotW: w - 40
-          };
-
           // 单位含 kWh 即电耗，用 50 封顶；否则按油耗 30
           const unit = (this.data.unit as string) || '';
           const ceiling = unit.indexOf('kWh') >= 0 ? MAX_EV_CONSUMPTION : undefined;
+
+          // 缓存布局供触摸命中复用：必须与绘制共用同一份公式（含 yMax 推导）
+          const geo = computeLineLayout(w, h, pts, {
+            yMax: this.data.yMax as number,
+            ceiling,
+            fontScale: 1
+          });
+          (this as any)._layout = {
+            left: res[0].left || 0,
+            top: res[0].top || 0,
+            padL: geo.padL,
+            plotW: geo.plotW
+          };
 
           renderLine({
             ctx,

@@ -37,6 +37,22 @@
       {
         "value": "README.md",
         "type": "file"
+      },
+      {
+        "value": "tsconfig.json",
+        "type": "file"
+      },
+      {
+        "value": "tsconfig.test.json",
+        "type": "file"
+      },
+      {
+        "value": "jest.config.js",
+        "type": "file"
+      },
+      {
+        "value": "LICENSE",
+        "type": "file"
       }
     ],
     "include": [

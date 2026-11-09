@@ -19,6 +19,7 @@ import {
   EMPTY_CARD_HEIGHT
 } from '../../utils/share-card-draw';
 import { formatDate } from '../../utils/date';
+import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 
 interface CatView {
   name: string;
@@ -30,6 +31,8 @@ interface CatView {
 Page({
   data: {
     carId: '',
+    /** 车名，供分享标题使用 */
+    carName: '',
     rangeType: 'all',
     hasData: false,
     year: 0,
@@ -78,7 +81,33 @@ Page({
   },
   onShow() {
     this.load();
+    enableShareMenu();
   },
+
+  /**
+   * 右上角「…」文字转发。
+   * 落地页必须是车辆列表：统计页依赖 carId，接收方本地无此车会直接 navigateBack。
+   * 需要分享具体数据时走「生成统计图片」。
+   */
+  onShareAppMessage() {
+    const car = this.data.carName ? `我的${this.data.carName}` : '';
+    return buildShareMessage({
+      highlight: car ? `${car} · ${this.shareRangeLabel()}` : ''
+    });
+  },
+
+  onShareTimeline() {
+    const car = this.data.carName ? `我的${this.data.carName}` : '';
+    return buildTimelineMessage({
+      highlight: car ? `${car} · ${this.shareRangeLabel()}` : ''
+    });
+  },
+
+  /** 当前统计维度文案，供分享标题复用 */
+  shareRangeLabel(): string {
+    return formatRangeLabel(this.buildRange());
+  },
+
   buildRange(): StatsRange {
     const { rangeType, year, month } = this.data;
     if (rangeType === 'year') return { type: 'year', year };
@@ -118,6 +147,7 @@ Page({
       years,
       yearIndex: Math.max(0, years.indexOf(this.data.year)),
       hasData,
+      carName: car.name,
       isEvCar,
       isHybridCar,
       hasCharge: snap.electricity.mileage > 0 || snap.electricity.totalCost > 0,
