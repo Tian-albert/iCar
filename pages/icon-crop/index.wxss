@@ -1,0 +1,132 @@
+.crop-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-dark-card);
+}
+
+.crop-hint {
+  padding: 28rpx 0 4rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.crop-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx;
+}
+
+/* 正方形裁剪视口 */
+.crop-view {
+  position: relative;
+  width: 600rpx;
+  height: 600rpx;
+  overflow: hidden;
+  border-radius: 24rpx;
+  background: rgba(0, 0, 0, 1);
+}
+.crop-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.crop-tip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  margin-top: -20rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 三分参考线 */
+.crop-grid {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
+.g-v {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1rpx;
+  background: rgba(255, 255, 255, 0.22);
+}
+.g-v1 {
+  left: 33.33%;
+}
+.g-v2 {
+  left: 66.66%;
+}
+.g-h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1rpx;
+  background: rgba(255, 255, 255, 0.22);
+}
+.g-h1 {
+  top: 33.33%;
+}
+.g-h2 {
+  top: 66.66%;
+}
+
+.crop-controls {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 8rpx 56rpx 8rpx;
+}
+.zoom-label {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+.zoom-slider {
+  flex: 1;
+  margin: 0;
+}
+
+.crop-actions {
+  display: flex;
+  gap: 24rpx;
+  padding: 16rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+}
+.act {
+  flex: 1;
+  padding: 26rpx 0;
+  border-radius: var(--r-pill);
+  text-align: center;
+  font-size: 32rpx;
+}
+.act-cancel {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-card);
+}
+.act-confirm {
+  background: var(--color-primary);
+  color: var(--color-card);
+  font-weight: 600;
+}
+.act-disabled {
+  opacity: 0.6;
+}
+
+/* 离屏画布：移出可视区但保留渲染，尺寸由 canvas.width/height 决定 */
+.crop-canvas {
+  position: fixed;
+  left: -200vw;
+  top: 0;
+  width: 512rpx;
+  height: 512rpx;
+  pointer-events: none;
+}

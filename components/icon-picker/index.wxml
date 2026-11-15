@@ -2,10 +2,33 @@
   <!-- 面板本身只用于阻止冒泡，不能加 hover-class：按住空白处整块弹层会闪成半透明 -->
   <view class="picker-panel" catchtap="noop">
     <view class="picker-title">选择图标</view>
-    <view class="icon-grid">
-      <view hover-class="hover-dim" wx:for="{{icons}}" wx:key="*this" class="icon-item" data-icon="{{item}}" bindtap="onSelect">{{item}}</view>
-    </view>
+
+    <!-- 分栏 -->
+    <scroll-view class="tab-bar" scroll-x enable-flex show-scrollbar="{{false}}">
+      <view
+        wx:for="{{groups}}"
+        wx:key="key"
+        class="tab {{item.key === activeKey ? 'tab-on' : ''}}"
+        hover-class="hover-dim"
+        data-key="{{item.key}}"
+        bindtap="onTab">{{item.label}}</view>
+    </scroll-view>
+
+    <!-- 当前分栏的图标 -->
+    <scroll-view class="icon-scroll" scroll-y show-scrollbar="{{false}}">
+      <view class="icon-grid">
+        <view
+          hover-class="hover-dim"
+          wx:for="{{icons}}"
+          wx:key="*this"
+          class="icon-item"
+          data-icon="{{item}}"
+          bindtap="onSelect">{{item}}</view>
+      </view>
+    </scroll-view>
+
     <view hover-class="hover-dim" class="custom-btn" bindtap="onCustom">＋ 自定义图标（上传图片）</view>
+    <view class="custom-hint">任意尺寸图片都会裁成正方形，图标更清晰</view>
     <view hover-class="hover-dim" class="close-btn" bindtap="onClose">取消</view>
   </view>
 </view>

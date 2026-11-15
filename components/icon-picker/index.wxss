@@ -15,17 +15,50 @@
   border-radius: 24rpx 24rpx 0 0;
   padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
+  /* 图标变多后，面板不能无限长，否则小屏会顶出屏幕 */
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
 }
 .picker-title {
+  flex-shrink: 0;
   text-align: center;
   font-size: 32rpx;
   font-weight: 600;
   color: var(--color-text-1);
 }
+
+/* 分栏：横向可滚动，避免加新分组后挤压换行 */
+.tab-bar {
+  flex-shrink: 0;
+  display: flex;
+  white-space: nowrap;
+  margin-top: 24rpx;
+}
+.tab {
+  flex-shrink: 0;
+  padding: 12rpx 24rpx;
+  margin-right: 12rpx;
+  border-radius: var(--r-pill);
+  background: var(--color-fill);
+  color: var(--color-text-2);
+  font-size: 24rpx;
+}
+.tab-on {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* 图标区：可纵向滚动，最多占面板一半高度 */
+.icon-scroll {
+  flex-shrink: 1;
+  max-height: 560rpx;
+  margin-top: 16rpx;
+}
 .icon-grid {
   display: flex;
   flex-wrap: wrap;
-  margin-top: 24rpx;
 }
 .icon-item {
   width: 88rpx;
@@ -38,18 +71,27 @@
   margin: 8rpx;
   background: var(--color-bg);
 }
+
 .custom-btn {
-  margin-top: 16rpx;
+  flex-shrink: 0;
+  margin-top: 8rpx;
   text-align: center;
-  padding: 20rpx 0;
+  padding: 20rpx 0 8rpx;
   font-size: 28rpx;
   color: var(--color-primary);
   border-top: 1rpx solid var(--color-divider);
 }
+.custom-hint {
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
 .close-btn {
+  flex-shrink: 0;
   margin-top: 8rpx;
   text-align: center;
-  padding: 20rpx 0;
+  padding: 16rpx 0;
   font-size: 28rpx;
   color: var(--color-text-3);
 }

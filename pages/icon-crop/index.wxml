@@ -1,0 +1,56 @@
+<view class="crop-page">
+  <view class="crop-hint" wx:if="{{!failed}}">拖动调整位置 · 双指或滑杆缩放</view>
+
+  <view class="crop-stage">
+    <!-- 正方形裁剪视口；catchtouchmove 阻止页面滚动，避免拖动时整页跟着跑 -->
+    <view
+      class="crop-view"
+      id="cropView"
+      bindtouchstart="onTouchStart"
+      catchtouchmove="onTouchMove"
+      bindtouchend="onTouchEnd"
+      bindtouchcancel="onTouchEnd">
+      <image
+        wx:if="{{src && !failed}}"
+        class="crop-img"
+        src="{{src}}"
+        mode="scaleToFill"
+        style="width:{{displayW}}px;height:{{displayH}}px;transform:translate({{offsetX}}px,{{offsetY}}px);" />
+      <view wx:if="{{loading}}" class="crop-tip">加载中…</view>
+      <view wx:if="{{failed}}" class="crop-tip">图片读取失败，请重新选择</view>
+
+      <!-- 三分参考线 -->
+      <view wx:if="{{!loading && !failed}}" class="crop-grid">
+        <view class="g-v g-v1"></view>
+        <view class="g-v g-v2"></view>
+        <view class="g-h g-h1"></view>
+        <view class="g-h g-h2"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="crop-controls" wx:if="{{!failed}}">
+    <text class="zoom-label">缩放</text>
+    <slider
+      class="zoom-slider"
+      min="0"
+      max="100"
+      value="{{zoomPercent}}"
+      block-size="20"
+      activeColor="#3B6FF6"
+      backgroundColor="rgba(255,255,255,0.18)"
+      bindchanging="onZoomSlide"
+      bindchange="onZoomSlide" />
+  </view>
+
+  <view class="crop-actions">
+    <view class="act act-cancel" hover-class="hover-dim" bindtap="onCancel">取消</view>
+    <view
+      class="act act-confirm {{confirming ? 'act-disabled' : ''}}"
+      hover-class="hover-dim"
+      bindtap="onConfirm">确定</view>
+  </view>
+
+  <!-- 离屏画布：只用于导出，视觉不可见 -->
+  <canvas type="2d" id="cropCanvas" class="crop-canvas"></canvas>
+</view>

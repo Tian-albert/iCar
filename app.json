@@ -3,6 +3,7 @@
     "pages/reminder/index",
     "pages/index/index",
     "pages/user/index",
+    "pages/icon-crop/index",
     "pages/vehicle-form/index",
     "pages/entry/index",
     "pages/refuel-form/index",
@@ -34,9 +35,18 @@
     "selectedColor": "#3B6FF6",
     "backgroundColor": "#ffffff",
     "list": [
-      { "pagePath": "pages/reminder/index", "text": "概览" },
-      { "pagePath": "pages/index/index", "text": "车辆" },
-      { "pagePath": "pages/user/index", "text": "我的" }
+      {
+        "pagePath": "pages/reminder/index",
+        "text": "概览"
+      },
+      {
+        "pagePath": "pages/index/index",
+        "text": "车辆"
+      },
+      {
+        "pagePath": "pages/user/index",
+        "text": "我的"
+      }
     ]
   },
   "style": "v2",
