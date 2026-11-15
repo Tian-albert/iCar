@@ -28,10 +28,10 @@ PRESET_CATEGORIES = [
     ('充电', 'ev', 'ev', 1),
     ('保养', 'maintain', 'maintain', 2),
     ('维修', 'fix', 'fix', 3),
-    ('停车费', 'p', '', 100),
-    ('洗车', 'wash', '', 101),
-    ('高速费', 'toll', '', 102),
-    ('保险', 'shield', '', 103),
+    ('停车', 'p', '', 100),
+    ('高速', 'toll', '', 101),
+    ('保险', 'shield', '', 102),
+    ('洗车', 'wash', '', 103),
 ]
 # 自定义类别不得与预设重名，这里用一个预设里没有的名字
 CUSTOM_CATEGORIES = [
@@ -43,9 +43,9 @@ CAT = {
     'ev': 'mp:category:充电',
     'maintain': 'mp:category:保养',
     'fix': 'mp:category:维修',
-    'park': 'mp:category:停车费',
+    'park': 'mp:category:停车',
     'wash': 'mp:category:洗车',
-    'toll': 'mp:category:高速费',
+    'toll': 'mp:category:高速',
     'insurance': 'mp:category:保险',
 }
 

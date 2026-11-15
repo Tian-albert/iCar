@@ -63,7 +63,8 @@ describe('cost.service 类别管理', () => {
 
   it('自定义类别：空可删，有支出则拒绝', () => {
     const { adapter, car } = setup();
-    const cat = addCategory(adapter, '停车费', 'p');
+    // 用一个不与任何预设/曾用名冲突的名字，避免与归并逻辑互相干扰
+    const cat = addCategory(adapter, '快递费', 'p');
 
     // 有支出后不可删
     saveCost(adapter, {
@@ -90,7 +91,7 @@ describe('cost.service 类别管理', () => {
     addCategory(adapter, '杂费', 'ticket');
     const names = listSpendCategories(adapter).map(c => c.name);
     expect(names).toEqual(
-      expect.arrayContaining(['停车费', '洗车', '高速费', '保险', '杂费'])
+      expect.arrayContaining(['停车', '高速', '保险', '洗车', '杂费'])
     );
     // 系统预设（加油/充电/保养/维修）有专用录入，不得出现在支出类别里
     for (const banned of ['加油', '充电', '保养', '维修']) {
@@ -104,14 +105,14 @@ describe('cost.service 类别管理', () => {
     setCategoryVisible(adapter, wash.sourceId, false);
     const names = listSpendCategories(adapter).map(c => c.name);
     expect(names).not.toContain('洗车');
-    expect(names).toContain('停车费');
+    expect(names).toContain('停车');
   });
 });
 
 describe('cost.service 类别排序', () => {
   it('自定义类别 sortOrder 递增，下移/上移可调整顺序', () => {
     const { adapter } = setup();
-    const a = addCategory(adapter, '停车费', 'p');
+    const a = addCategory(adapter, '快递费', 'p');
     const b = addCategory(adapter, '过路费', 'ticket');
     expect(a.sortOrder).toBe(0);
     expect(b.sortOrder).toBe(1);
@@ -120,23 +121,23 @@ describe('cost.service 类别排序', () => {
     let names = listCategories(adapter)
       .filter(c => !c.isPreset)
       .map(c => c.name);
-    expect(names).toEqual(['过路费', '停车费']);
+    expect(names).toEqual(['过路费', '快递费']);
 
     moveCategory(adapter, a.sourceId, 'up');
     names = listCategories(adapter)
       .filter(c => !c.isPreset)
       .map(c => c.name);
-    expect(names).toEqual(['停车费', '过路费']);
+    expect(names).toEqual(['快递费', '过路费']);
   });
 
   it('首项上移 / 末项下移无效果，预设组不受自定义排序影响', () => {
     const { adapter } = setup();
-    const a = addCategory(adapter, '停车费', 'p');
+    const a = addCategory(adapter, '快递费', 'p');
     addCategory(adapter, '过路费', 'ticket');
 
     moveCategory(adapter, a.sourceId, 'up'); // 已是首项
     const customs = listCategories(adapter).filter(c => !c.isPreset);
-    expect(customs[0].name).toBe('停车费');
+    expect(customs[0].name).toBe('快递费');
 
     // 预设组仍保持 4 个且在前
     const all = listCategories(adapter);

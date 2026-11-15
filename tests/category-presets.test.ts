@@ -70,9 +70,9 @@ function costOf(categorySourceId: string): Cost {
 }
 
 describe('支出类别只包含支出预设', () => {
-  it('新库的支出类别恰好是 停车费 / 洗车 / 高速费 / 保险', () => {
+  it('新库的支出类别恰好是 停车 / 高速 / 保险 / 洗车', () => {
     const names = listSpendCategories(setup()).map(c => c.name);
-    expect(names).toEqual(['停车费', '洗车', '高速费', '保险']);
+    expect(names).toEqual(['停车', '高速', '保险', '洗车']);
   });
 
   it('支出类别里不出现 加油 / 充电 / 保养 / 维修', () => {
@@ -99,16 +99,16 @@ describe('系统预设必须保留（自动归类依赖 presetType）', () => {
     const s = setup();
     const all = listCategories(s);
     expect(isSystemPreset(all.find(c => c.name === '加油')!)).toBe(true);
-    expect(isSystemPreset(all.find(c => c.name === '停车费')!)).toBe(false);
+    expect(isSystemPreset(all.find(c => c.name === '停车')!)).toBe(false);
   });
 });
 
-describe('旧库升级：停车 → 停车费', () => {
-  it('改名且保留 sourceId，历史支出仍指向同一类别', () => {
+describe('旧库升级：曾用名归并到规范名', () => {
+  it('只有「停车费」时原地改名为「停车」，历史支出仍指向同一类别', () => {
     const adapter = new StorageAdapter(memory());
     adapter.insert(
       'categories',
-      cat({ sourceId: 'mp:category:停车', name: '停车', icon: 'p', sortOrder: 3 })
+      cat({ sourceId: 'mp:category:停车', name: '停车费', icon: 'p', sortOrder: 3 })
     );
     adapter.insert('costs', costOf('mp:category:停车'));
 
@@ -116,15 +116,14 @@ describe('旧库升级：停车 → 停车费', () => {
 
     const renamed = getCategory(adapter, 'mp:category:停车');
     expect(renamed).toBeTruthy();
-    expect(renamed!.name).toBe('停车费');
+    expect(renamed!.name).toBe('停车');
 
-    // 支出没有丢，仍挂在原 sourceId 上
     const costs = adapter.list<Cost>('costs').filter(c => !c.deleted);
     expect(costs.length).toBe(1);
     expect(costs[0].categorySourceId).toBe('mp:category:停车');
   });
 
-  it('已存在「停车费」时并入它，不产生两个同名类别', () => {
+  it('「停车」与「停车费」并存时，支出全部归并到「停车」', () => {
     const adapter = new StorageAdapter(memory());
     adapter.insert(
       'categories',
@@ -132,17 +131,61 @@ describe('旧库升级：停车 → 停车费', () => {
     );
     adapter.insert(
       'categories',
-      cat({ sourceId: 'custom-parking-fee', name: '停车费', isPreset: false, icon: '🅿️' })
+      cat({ sourceId: 'old-parking-fee', name: '停车费', isPreset: false, icon: '🅿️' })
     );
     adapter.insert('costs', costOf('mp:category:停车'));
+    adapter.insert('costs', costOf('old-parking-fee'));
 
     seedPresetCategories(adapter);
 
-    const alive = listCategories(adapter).filter(c => c.name === '停车费');
-    expect(alive.length).toBe(1);
+    // 只剩一个「停车」，没有「停车费」
+    expect(listCategories(adapter).filter(c => c.name === '停车').length).toBe(1);
+    expect(listCategories(adapter).filter(c => c.name === '停车费').length).toBe(0);
+
+    // 两条支出都归到「停车」
+    const costs = adapter.list<Cost>('costs').filter(c => !c.deleted);
+    expect(costs.length).toBe(2);
+    for (const c of costs) {
+      expect(c.categorySourceId).toBe('mp:category:停车');
+    }
+  });
+
+  it('「高速费」归并为「高速」（无「高速」时原地改名）', () => {
+    const adapter = new StorageAdapter(memory());
+    adapter.insert(
+      'categories',
+      cat({ sourceId: 'mp:category:高速费', name: '高速费', icon: 'toll', sortOrder: 2 })
+    );
+    adapter.insert('costs', costOf('mp:category:高速费'));
+
+    seedPresetCategories(adapter);
+
+    const renamed = getCategory(adapter, 'mp:category:高速费');
+    expect(renamed!.name).toBe('高速');
 
     const costs = adapter.list<Cost>('costs').filter(c => !c.deleted);
-    expect(costs[0].categorySourceId).toBe('custom-parking-fee');
+    expect(costs[0].categorySourceId).toBe('mp:category:高速费');
+  });
+
+  it('「高速」与「高速费」并存时归并到「高速」', () => {
+    const adapter = new StorageAdapter(memory());
+    adapter.insert(
+      'categories',
+      cat({ sourceId: 'mp:category:高速', name: '高速', icon: 'toll', sortOrder: 2 })
+    );
+    adapter.insert(
+      'categories',
+      cat({ sourceId: 'old-toll-fee', name: '高速费', isPreset: false, icon: '🛣️' })
+    );
+    adapter.insert('costs', costOf('old-toll-fee'));
+
+    seedPresetCategories(adapter);
+
+    expect(listCategories(adapter).filter(c => c.name === '高速').length).toBe(1);
+    expect(listCategories(adapter).filter(c => c.name === '高速费').length).toBe(0);
+
+    const costs = adapter.list<Cost>('costs').filter(c => !c.deleted);
+    expect(costs[0].categorySourceId).toBe('mp:category:高速');
   });
 });
 
@@ -150,7 +193,8 @@ describe('自定义类别不得与预设重名', () => {
   it('与支出预设重名被拦下', () => {
     const s = setup();
     expect(hasCategoryName(s, '洗车')).toBe(true);
-    expect(hasCategoryName(s, '高速费')).toBe(true);
+    expect(hasCategoryName(s, '高速')).toBe(true);
+    expect(hasCategoryName(s, '停车')).toBe(true);
   });
 
   it('与系统预设重名同样被拦下（避免与自动归类撞名）', () => {
@@ -186,7 +230,7 @@ describe('种子幂等', () => {
     seedPresetCategories(s);
     const names = listCategories(s).map(c => c.name);
     expect(new Set(names).size).toBe(names.length);
-    expect(names.filter(n => n === '停车费').length).toBe(1);
+    expect(names.filter(n => n === '停车').length).toBe(1);
   });
 });
 
@@ -209,13 +253,13 @@ describe('复审修复：排序不得与隐藏的系统预设交换', () => {
   it('可见预设下移一位，只与相邻的可见预设交换', () => {
     const s = setup();
     const names = () => listSpendCategories(s).map(c => c.name);
-    expect(names()).toEqual(['停车费', '洗车', '高速费', '保险']);
+    expect(names()).toEqual(['停车', '高速', '保险', '洗车']);
 
     const insurance = listSpendCategories(s).find(c => c.name === '保险')!;
     expect(moveCategoryBy(s, insurance.sourceId, -1)).toBe(true);
 
     // 修复前：兄弟集含系统预设，会与看不见的行交换，界面纹丝不动
-    expect(names()).toEqual(['停车费', '洗车', '保险', '高速费']);
+    expect(names()).toEqual(['停车', '保险', '高速', '洗车']);
   });
 
   it('可见预设上移到底后不再变化（不会挪到系统预设位置）', () => {
@@ -223,25 +267,25 @@ describe('复审修复：排序不得与隐藏的系统预设交换', () => {
     const first = listSpendCategories(s)[0];
     expect(moveCategoryBy(s, first.sourceId, -1)).toBe(false);
     expect(listSpendCategories(s).map(c => c.name)).toEqual([
-      '停车费',
-      '洗车',
-      '高速费',
-      '保险'
+      '停车',
+      '高速',
+      '保险',
+      '洗车'
     ]);
   });
 
   it('最后一个可见预设继续下移应返回 false（不能与隐藏的系统预设交换）', () => {
     const s = setup();
     const last = listSpendCategories(s)[3];
-    expect(last.name).toBe('保险');
+    expect(last.name).toBe('洗车');
 
     // 修复前：兄弟集含系统预设，会与「加油」交换 → 返回 true 但界面纹丝不动
     expect(moveCategoryBy(s, last.sourceId, 1)).toBe(false);
     expect(listSpendCategories(s).map(c => c.name)).toEqual([
-      '停车费',
-      '洗车',
-      '高速费',
-      '保险'
+      '停车',
+      '高速',
+      '保险',
+      '洗车'
     ]);
   });
 

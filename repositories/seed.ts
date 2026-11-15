@@ -22,10 +22,21 @@ const SYSTEM_PRESETS: Array<Pick<Category, 'name' | 'icon' | 'presetType'>> = [
  * 加油/充电/保养/维修不在此列，它们走各自的录入表单。
  */
 const SPEND_PRESETS: Array<Pick<Category, 'name' | 'icon' | 'presetType'>> = [
-  { name: '停车费', icon: 'p', presetType: '' },
-  { name: '洗车', icon: 'wash', presetType: '' },
-  { name: '高速费', icon: 'toll', presetType: '' },
-  { name: '保险', icon: 'shield', presetType: '' }
+  { name: '停车', icon: 'p', presetType: '' },
+  { name: '高速', icon: 'toll', presetType: '' },
+  { name: '保险', icon: 'shield', presetType: '' },
+  { name: '洗车', icon: 'wash', presetType: '' }
+];
+
+/**
+ * 支出预设的「曾用名」→ 规范名。
+ *
+ * 历史版本曾把这两个建成「停车费 / 高速费」，现统一规范为「停车 / 高速」，
+ * 因此升级时要把旧名类别的支出记录归并到规范名上，否则同一类消费会分列两处。
+ */
+const SPEND_PRESET_ALIASES: Array<{ canonical: string; aliases: string[] }> = [
+  { canonical: '停车', aliases: ['停车费'] },
+  { canonical: '高速', aliases: ['高速费'] }
 ];
 
 /** 是否系统预设（不出现在支出类别选择与类别管理里） */
@@ -84,38 +95,51 @@ function mergeCategoryInto(adapter: StorageAdapter, from: Category, to: Category
 }
 
 /**
- * 「停车」→「停车费」改名（旧库升级）。
+ * 把「曾用名」类别归并到规范名（旧库升级）。
  *
- * 保留原 sourceId：支出记录靠 sourceId 关联，换 id 就得重指全部历史支出，
- * 风险远大于收益（sourceId 对用户不可见）。
- * 若已存在「停车费」（用户自定义过同名类别），则把「停车」并入它再软删，
- * 避免升级后出现两个「停车费」。
+ * - 规范名已存在 → 每个别名类别的支出改指向规范类别，别名软删
+ * - 规范名不存在 → 取第一个别名**原地改名**，其余并入
+ *
+ * 原地改名而不换 sourceId：支出记录靠 sourceId 关联，换 id 就要迁移全部
+ * 历史支出且容易漏；sourceId 对用户不可见，改名不影响任何展示。
  */
-function renameLegacyParking(adapter: StorageAdapter): void {
+function normalizePresetName(
+  adapter: StorageAdapter,
+  canonical: string,
+  aliases: string[]
+): void {
   const all = adapter.list<Category>('categories').filter(c => !c.deleted);
-  const legacy = all.find(c => c.isPreset && c.name === '停车');
-  if (!legacy) return;
+  const olds = all.filter(c => aliases.indexOf(c.name) >= 0);
+  if (!olds.length) return;
 
-  const target = all.find(c => c.name === '停车费');
-  if (target && target.sourceId !== legacy.sourceId) {
-    mergeCategoryInto(adapter, legacy, target);
+  const target = all.find(c => c.name === canonical);
+  if (target) {
+    for (const old of olds) mergeCategoryInto(adapter, old, target);
     return;
   }
 
-  legacy.name = '停车费';
-  legacy.isPreset = true;
-  legacy.presetType = '';
-  legacy.updatedAt = Date.now();
-  adapter.update('categories', legacy);
+  // 规范名还没有：第一个原地改名成规范名（它承接全部历史支出），其余并入它
+  const first = olds[0];
+  first.name = canonical;
+  first.isPreset = true;
+  first.presetType = '';
+  first.updatedAt = Date.now();
+  adapter.update('categories', first);
+
+  for (let i = 1; i < olds.length; i++) {
+    mergeCategoryInto(adapter, olds[i], first);
+  }
 }
 
 export function seedPresetCategories(adapter: StorageAdapter): void {
   // 0. 先做同名预设去重（自愈历史重复数据）
   dedupePresetCategories(adapter);
 
-  // 0.5 「停车」改名为「停车费」，必须在补齐预设之前做，
-  //     否则会先插入一条新的「停车费」，与旧「停车」并存。
-  renameLegacyParking(adapter);
+  // 0.5 归并「曾用名」到规范名（停车费→停车、高速费→高速）。
+  //     必须在补齐预设之前做，否则会先插入一条规范名的新类别，与旧名并存。
+  for (const item of SPEND_PRESET_ALIASES) {
+    normalizePresetName(adapter, item.canonical, item.aliases);
+  }
 
   const all = adapter.list<Category>('categories').filter(c => !c.deleted);
 
