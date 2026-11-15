@@ -4,12 +4,11 @@
     <view class="picker-title">选择图标</view>
 
     <!-- 分栏：用普通 view 而非 scroll-view。
-         5 个分栏收窄内边距后总宽 632rpx < 可用 686rpx，本来就不需要滚动；
-         而 scroll-view 的 overflow:hidden 会把略高的气泡顶部裁掉，
-         横向滑动在 enable-flex 下也不可靠。wrap 仅作极端字号下的兜底。 -->
+         两字标签后总宽足够，不需要滚动；scroll-view 的 overflow:hidden
+         会裁掉略高的气泡，enable-flex 下横向滑动也不可靠。 -->
     <view class="tab-bar">
       <view
-        wx:for="{{groups}}"
+        wx:for="{{tabs}}"
         wx:key="key"
         class="tab {{item.key === activeKey ? 'tab-on' : ''}}"
         hover-class="hover-dim"
@@ -17,9 +16,28 @@
         bindtap="onTab">{{item.label}}</view>
     </view>
 
-    <!-- 当前分栏的图标 -->
+    <!-- 图标区：固定高度（正好两行），数量多时上下滚动。
+         固定高度是为了切分栏时面板不上下跳动。 -->
     <scroll-view class="icon-scroll" scroll-y show-scrollbar="{{false}}">
-      <view class="icon-grid">
+      <block wx:if="{{isCustomTab}}">
+        <view wx:if="{{customIcons.length === 0}}" class="custom-empty">
+          <view class="custom-empty-title">还没有上传过图标</view>
+          <view class="custom-empty-desc">点下方「＋ 自定义图标」上传，会自动裁成正方形</view>
+        </view>
+        <view wx:else class="icon-grid">
+          <image
+            wx:for="{{customIcons}}"
+            wx:key="*this"
+            class="icon-img-item"
+            src="{{item}}"
+            mode="aspectFill"
+            data-icon="{{item}}"
+            bindtap="onSelect"
+            bindlongpress="onLongPressCustom" />
+        </view>
+      </block>
+
+      <view wx:else class="icon-grid">
         <view
           hover-class="hover-dim"
           wx:for="{{icons}}"
@@ -29,6 +47,8 @@
           bindtap="onSelect">{{item}}</view>
       </view>
     </scroll-view>
+
+    <view wx:if="{{isCustomTab && customIcons.length > 0}}" class="longpress-hint">长按图标可删除</view>
 
     <view hover-class="hover-dim" class="custom-btn" bindtap="onCustom">＋ 自定义图标（上传图片）</view>
     <view class="custom-hint">任意尺寸图片都会裁成正方形，图标更清晰</view>

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>图标选择器分栏对比</title>
+<title>图标选择器 · 分栏高度固定</title>
 <!--
-  一次性对比页：分栏气泡的两种实现。
-  左 = scroll-view 方案（当前线上）：overflow:hidden 裁掉气泡顶部 + 横向滑动不可靠
-  右 = 普通 view + flex-wrap（本次修复）：不需要滚动，气泡完整居中
+  一次性原型：验证「切分栏时面板高度不跳动」。
+  三个面板都是同一套尺寸，图标区固定 208rpx（= 104px，正好两行），
+  内容多则内部滚动，内容少则留白——面板总高恒定。
   数值按 375px 宽换算：1rpx = 0.5px
 -->
 <style>
@@ -19,121 +19,148 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-    background:#E9ECF2;display:flex;flex-wrap:wrap;justify-content:center;gap:28px;
+    background:#E9ECF2;display:flex;flex-wrap:wrap;justify-content:center;gap:26px;
     padding:28px 16px 40px;align-items:flex-start;color:var(--t1);
   }
   .col{width:375px;}
   .col h2{font-size:13px;font-weight:600;margin-bottom:4px;}
-  .col p{font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:10px;min-height:36px;}
+  .col p{font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:10px;min-height:32px;}
 
   .panel{
     background:var(--card);border-radius:12px;padding:16px;
     box-shadow:0 8px 28px rgba(15,23,42,.14);
+    display:flex;flex-direction:column;
   }
-  .title{text-align:center;font-size:16px;font-weight:600;margin-bottom:12px;}
+  .title{flex-shrink:0;text-align:center;font-size:16px;font-weight:600;margin-bottom:12px;}
 
-  /* ---------- 左：scroll-view 方案（有裁切与滑动问题） ---------- */
-  .tabbar-scroll{
-    display:flex;
-    white-space:nowrap;
-    overflow:hidden;      /* 模拟 scroll-view 的 overflow:hidden */
-    height:32px;          /* 模拟 scroll-view 定高 64rpx */
-    align-items:center;
+  .tab-bar{flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;}
+  .tab{
+    flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    height:28px;line-height:1;padding:0 10px;margin:0 4px 4px 0;
+    border-radius:999px;background:var(--fill);color:var(--t2);font-size:12px;
   }
-  .tabbar-scroll .tab{
-    flex:0 0 auto;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    /* 内容比容器高 4px，顶部被 overflow:hidden 裁掉 */
-    height:36px;
-    line-height:1;
-    padding:0 12px;
-    margin-right:12px;
-    border-radius:999px;
-    background:var(--fill);
-    color:var(--t2);
-    font-size:12px;
-  }
-  .tabbar-scroll .tab.on{background:var(--primary-light);color:var(--primary);font-weight:600;}
+  .tab.on{background:var(--primary-light);color:var(--primary);font-weight:600;}
 
-  /* ---------- 右：普通 view + flex-wrap（本次修复） ---------- */
-  .tabbar-fixed{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
+  /* 固定 104px = 208rpx，正好两行（44 + 4×2 = 52px/行） */
+  .icon-scroll{
+    flex-shrink:0;height:104px;margin-top:6px;overflow-y:auto;
+    /* 原型里用虚线标出可视范围，便于确认高度一致 */
+    outline:1px dashed #cfd6e2;outline-offset:0;
   }
-  .tabbar-fixed .tab{
-    flex:0 0 auto;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    height:28px;          /* 56rpx */
-    line-height:1;
-    padding:0 8px;        /* 16rpx */
-    margin:0 4px 4px 0;   /* 8rpx */
-    border-radius:999px;
-    background:var(--fill);
-    color:var(--t2);
-    font-size:12px;
-  }
-  .tabbar-fixed .tab.on{background:var(--primary-light);color:var(--primary);font-weight:600;}
-
-  .grid{display:flex;flex-wrap:wrap;margin-top:10px;}
+  .icon-grid{display:flex;flex-wrap:wrap;}
   .item{
     width:44px;height:44px;display:flex;align-items:center;justify-content:center;
     font-size:24px;border-radius:8px;margin:4px;background:var(--bg);
   }
+  .item-img{
+    width:44px;height:44px;border-radius:8px;margin:4px;background:var(--bg);
+    object-fit:cover;display:block;
+  }
+  .empty{
+    height:104px;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:4px;text-align:center;
+  }
+  .empty-title{font-size:13px;color:var(--t2);}
+  .empty-desc{font-size:11px;color:var(--t3);padding:0 12px;line-height:1.5;}
+
+  .longpress{flex-shrink:0;text-align:center;font-size:10px;color:var(--t3);}
   .custom{
-    margin-top:10px;text-align:center;padding:10px 0 4px;font-size:14px;
+    flex-shrink:0;margin-top:4px;text-align:center;padding:10px 0 4px;font-size:14px;
     color:var(--primary);border-top:1px solid var(--divider);
   }
-  .hint{text-align:center;font-size:11px;color:var(--t3);}
-  .mark{font-size:11px;color:#C2410C;margin-top:6px;}
+  .hint{flex-shrink:0;text-align:center;font-size:11px;color:var(--t3);}
+  .cancel{flex-shrink:0;margin-top:4px;text-align:center;padding:8px 0;font-size:14px;color:var(--t3);}
 </style>
 </head>
 <body>
 
 <div class="col">
-  <h2>修复前（scroll-view）</h2>
-  <p>容器定高 32px，气泡实际 36px，overflow:hidden 把顶部裁掉 4px——看起来就是「被上面遮住一点」。横向滑动在 enable-flex 下也不可靠。</p>
+  <h2>能源（6 个 · 一行）</h2>
+  <p>内容少也保持一样高，下方留白。</p>
   <div class="panel">
     <div class="title">选择图标</div>
-    <div class="tabbar-scroll">
-      <div class="tab on">加油充电</div>
-      <div class="tab">洗美维修</div>
-      <div class="tab">通行规费</div>
-      <div class="tab">车型车色</div>
-      <div class="tab">其他</div>
+    <div class="tab-bar">
+      <div class="tab on">能源</div><div class="tab">养护</div><div class="tab">通行</div>
+      <div class="tab">车型</div><div class="tab">其他</div><div class="tab">自定义</div>
     </div>
-    <div class="mark">↑ 气泡上沿被切掉，且第 5 个溢出容器外无法滑动</div>
-    <div class="grid">
-      <div class="item">🛢️</div><div class="item">⛽</div><div class="item">🔋</div>
-      <div class="item">⚡</div><div class="item">🔌</div><div class="item">🪫</div>
+    <div class="icon-scroll">
+      <div class="icon-grid">
+        <div class="item">🛢️</div><div class="item">⛽</div><div class="item">🔋</div>
+        <div class="item">⚡</div><div class="item">🔌</div><div class="item">🪫</div>
+      </div>
     </div>
     <div class="custom">＋ 自定义图标（上传图片）</div>
     <div class="hint">任意尺寸图片都会裁成正方形</div>
+    <div class="cancel">取消</div>
   </div>
 </div>
 
 <div class="col">
-  <h2>修复后（普通 view + flex-wrap）</h2>
-  <p>内边距收到 16rpx，5 个分栏总宽 632rpx，小于面板可用 686rpx——本来就不需要滚动。wrap 只作极端字号下的兜底。</p>
+  <h2>养护（15 个 · 3 行，可滚动）</h2>
+  <p>超出两行部分上下滚动，面板高度不变。</p>
   <div class="panel">
     <div class="title">选择图标</div>
-    <div class="tabbar-fixed">
-      <div class="tab on">加油充电</div>
-      <div class="tab">洗美维修</div>
-      <div class="tab">通行规费</div>
-      <div class="tab">车型车色</div>
-      <div class="tab">其他</div>
+    <div class="tab-bar">
+      <div class="tab">能源</div><div class="tab on">养护</div><div class="tab">通行</div>
+      <div class="tab">车型</div><div class="tab">其他</div><div class="tab">自定义</div>
     </div>
-    <div class="grid">
-      <div class="item">🛢️</div><div class="item">⛽</div><div class="item">🔋</div>
-      <div class="item">⚡</div><div class="item">🔌</div><div class="item">🪫</div>
+    <div class="icon-scroll">
+      <div class="icon-grid">
+        <div class="item">🧽</div><div class="item">🧼</div><div class="item">🚿</div>
+        <div class="item">🧴</div><div class="item">✨</div><div class="item">🪣</div>
+        <div class="item">🪟</div><div class="item">🔧</div><div class="item">🛠️</div>
+        <div class="item">🪛</div><div class="item">🔩</div><div class="item">🛞</div>
+        <div class="item">🧰</div><div class="item">⚙️</div><div class="item">🔨</div>
+      </div>
     </div>
     <div class="custom">＋ 自定义图标（上传图片）</div>
     <div class="hint">任意尺寸图片都会裁成正方形</div>
+    <div class="cancel">取消</div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>自定义（上传过的图标）</h2>
+  <p>上传后自动进入此分栏；长按可删除。</p>
+  <div class="panel">
+    <div class="title">选择图标</div>
+    <div class="tab-bar">
+      <div class="tab">能源</div><div class="tab">养护</div><div class="tab">通行</div>
+      <div class="tab">车型</div><div class="tab">其他</div><div class="tab on">自定义</div>
+    </div>
+    <div class="icon-scroll">
+      <div class="icon-grid">
+        <div class="item-img" style="background:linear-gradient(135deg,#3B6FF6,#7BA6FF)"></div>
+        <div class="item-img" style="background:linear-gradient(135deg,#22C55E,#7FE0A0)"></div>
+        <div class="item-img" style="background:linear-gradient(135deg,#F59E0B,#FBCB6B)"></div>
+        <div class="item-img" style="background:linear-gradient(135deg,#EF4444,#FCA5A5)"></div>
+      </div>
+    </div>
+    <div class="longpress">长按图标可删除</div>
+    <div class="custom">＋ 自定义图标（上传图片）</div>
+    <div class="hint">任意尺寸图片都会裁成正方形</div>
+    <div class="cancel">取消</div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>自定义（空态）</h2>
+  <p>空态也撑满同样高度，面板不会突然变矮。</p>
+  <div class="panel">
+    <div class="title">选择图标</div>
+    <div class="tab-bar">
+      <div class="tab">能源</div><div class="tab">养护</div><div class="tab">通行</div>
+      <div class="tab">车型</div><div class="tab">其他</div><div class="tab on">自定义</div>
+    </div>
+    <div class="icon-scroll">
+      <div class="empty">
+        <div class="empty-title">还没有上传过图标</div>
+        <div class="empty-desc">点下方「＋ 自定义图标」上传，会自动裁成正方形</div>
+      </div>
+    </div>
+    <div class="custom">＋ 自定义图标（上传图片）</div>
+    <div class="hint">任意尺寸图片都会裁成正方形</div>
+    <div class="cancel">取消</div>
   </div>
 </div>
 

@@ -30,7 +30,7 @@
 
 /* 分栏
    1) 不用 scroll-view：它的 overflow:hidden 会把比容器高的气泡顶部裁掉，
-      enable-flex 下横向滑动也不可靠。5 个分栏收窄内边距后本来就不需要滚动。
+      enable-flex 下横向滑动也不可靠。两字标签后本来就不需要滚动。
    2) wrap 仅作兜底：个别机型 CJK 字宽略大于字号时自动换行，不溢出。
    3) 定高 + flex 居中：文字位置不依赖字体默认行高，也不会被父容器 stretch。 */
 .tab-bar {
@@ -48,7 +48,7 @@
   height: 56rpx;
   /* line-height:1 配合上面的 flex 居中，文字才真正居中 */
   line-height: 1;
-  padding: 0 16rpx;
+  padding: 0 20rpx;
   margin: 0 8rpx 8rpx 0;
   border-radius: var(--r-pill);
   background: var(--color-fill);
@@ -62,11 +62,12 @@
   font-weight: 600;
 }
 
-/* 图标区：可纵向滚动，最多占面板一半高度 */
+/* 图标区：固定高度，正好两行（88 + 8×2 = 104rpx / 行 → 208rpx）。
+   固定而非 max-height：否则切换分栏时图标数量不同，面板会上下跳动。 */
 .icon-scroll {
-  flex-shrink: 1;
-  max-height: 560rpx;
-  margin-top: 16rpx;
+  flex-shrink: 0;
+  height: 208rpx;
+  margin-top: 12rpx;
 }
 .icon-grid {
   display: flex;
@@ -82,6 +83,42 @@
   border-radius: 16rpx;
   margin: 8rpx;
   background: var(--color-bg);
+}
+/* 自定义图标用图片渲染，必须显式尺寸 + 圆角，避免原图比例把格子撑变形 */
+.icon-img-item {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 16rpx;
+  margin: 8rpx;
+  background: var(--color-bg);
+}
+
+/* 自定义分栏空态：撑满固定高度，保证面板高度不因空态而变矮 */
+.custom-empty {
+  height: 208rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  text-align: center;
+}
+.custom-empty-title {
+  font-size: 26rpx;
+  color: var(--color-text-2);
+}
+.custom-empty-desc {
+  font-size: 22rpx;
+  color: var(--color-text-3);
+  padding: 0 24rpx;
+  line-height: 1.5;
+}
+
+.longpress-hint {
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 20rpx;
+  color: var(--color-text-3);
 }
 
 .custom-btn {

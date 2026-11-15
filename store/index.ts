@@ -31,5 +31,7 @@ export const TABLES = {
   costs: 'costs',
   repairRecords: 'repairRecords',
   fuelRecords: 'fuelRecords',
-  fuelConsumptions: 'fuelConsumptions'
+  fuelConsumptions: 'fuelConsumptions',
+  /** 自定义图标登记表：只为「图标选择器」的自定义分栏提供列表，不参与业务导出 */
+  customIcons: 'customIcons'
 } as const;

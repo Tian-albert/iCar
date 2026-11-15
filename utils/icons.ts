@@ -14,12 +14,12 @@ export interface IconGroup {
 export const ICON_GROUPS: IconGroup[] = [
   {
     key: 'energy',
-    label: '加油充电',
+    label: '能源',
     icons: ['🛢️', '⛽', '🔋', '⚡', '🔌', '🪫']
   },
   {
     key: 'care',
-    label: '洗美维修',
+    label: '养护',
     icons: [
       '🧽', '🧼', '🚿', '🧴', '✨', '🪣', '🪟',
       '🔧', '🛠️', '🪛', '🔩', '🛞', '🧰', '⚙️', '🔨'
@@ -27,12 +27,12 @@ export const ICON_GROUPS: IconGroup[] = [
   },
   {
     key: 'fee',
-    label: '通行规费',
+    label: '通行',
     icons: ['🅿️', '🛣️', '🎫', '🚦', '🏁', '🛡️', '🧾', '📄', '💳', '💰', '📋']
   },
   {
     key: 'car',
-    label: '车型车色',
+    label: '车型',
     // emoji 的车型自带固有色：🚗蓝轿车 / 🚙蓝SUV / 🚐白MPV / 🛻蓝灰皮卡 /
     // 🏎️红跑车 / 🚕黄出租 / 🚚蓝货车 / 🚌黄巴士。要任意颜色请用自定义上传。
     icons: ['🚗', '🚙', '🚐', '🛻', '🏎️', '🚕', '🚚', '🚌', '🛵', '🏍️', '🚲', '🛴']

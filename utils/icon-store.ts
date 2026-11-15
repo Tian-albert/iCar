@@ -7,6 +7,7 @@
 // 只动本模块命名规则内的文件（icon-数字.png），其它一概不碰。
 import { StorageAdapter } from '../repositories/storage.adapter';
 import { Car, Category, Maintain } from '../types/models';
+import { listRegisteredPaths } from '../services/custom-icon.service';
 
 /** 本模块管理的文件名前缀 */
 export const ICON_FILE_PREFIX = 'icon-';
@@ -53,10 +54,14 @@ export function cleanupOrphanIcons(storage: StorageAdapter): number {
     const fs = wx.getFileSystemManager();
     const dir = wx.env.USER_DATA_PATH;
 
+    // 保留集 = 实体引用的图标 ∪ 自定义图标登记表。
+    // 后者是用户的「图标库」，即使当前没被任何实体使用也必须留着，
+    // 否则选择器的自定义分栏会变成一堆点不开的空白。
     const icons: Array<string | undefined> = [
       ...storage.list<Car>('cars').map(c => c.icon),
       ...storage.list<Category>('categories').map(c => c.icon),
-      ...storage.list<Maintain>('maintains').map(m => m.icon)
+      ...storage.list<Maintain>('maintains').map(m => m.icon),
+      ...listRegisteredPaths(storage)
     ];
 
     const keep = buildKeepSet(icons);
