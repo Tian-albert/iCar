@@ -66,37 +66,61 @@ Page({
   onImport() {
     this.doImport(this.data.jsonText);
   },
+  /** 先让用户选导入方式，再执行 */
   doImport(json: string) {
     const text = (json || '').trim();
     if (!text) {
       wx.showToast({ title: '请先粘贴或选择备份数据', icon: 'none' });
       return;
     }
-    wx.showModal({
-      title: '导入数据',
-      content: '将合并到现有数据（相同记录按更新时间较新者覆盖），确定导入吗？',
-      confirmColor: '#3B6FF6',
+
+    wx.showActionSheet({
+      itemList: ['合并导入（保留现有数据）', '覆盖导入（清空现有数据）'],
       success: res => {
-        if (!res.confirm) return;
-        wx.showLoading({ title: '正在导入', mask: true });
-        let result: ReturnType<typeof importBundle>;
-        try {
-          result = importBundle(getStorage(), text);
-        } catch {
-          wx.hideLoading();
-          wx.showToast({ title: '导入失败，数据格式异常', icon: 'none' });
+        if (res.tapIndex === 0) {
+          this.runImport(text, 'merge');
           return;
         }
-        wx.hideLoading();
-        if (result.ok) {
-          wx.showToast({
-            title: `导入成功：新增${result.added} 更新${result.updated} 跳过${result.skipped}`,
-            icon: 'none'
+        if (res.tapIndex === 1) {
+          // 覆盖不可撤销，必须二次确认
+          wx.showModal({
+            title: '覆盖导入',
+            content:
+              '将先清空本机的车辆、记录与类别，再写入备份数据。此操作不可撤销，建议先导出一份当前数据。',
+            confirmText: '仍要覆盖',
+            confirmColor: '#F5474F',
+            success: r => {
+              if (r.confirm) this.runImport(text, 'replace');
+            }
           });
-        } else {
-          wx.showToast({ title: result.message || '导入失败', icon: 'none' });
         }
-      }
+      },
+      // 用户取消选择，不提示
+      fail: () => {}
+    });
+  },
+  runImport(json: string, mode: 'merge' | 'replace') {
+    wx.showLoading({ title: mode === 'replace' ? '正在覆盖' : '正在合并', mask: true });
+    let result: ReturnType<typeof importBundle>;
+    try {
+      result = importBundle(getStorage(), json, mode);
+    } catch {
+      wx.hideLoading();
+      wx.showToast({ title: '导入失败，数据格式异常', icon: 'none' });
+      return;
+    }
+    wx.hideLoading();
+
+    if (!result.ok) {
+      wx.showToast({ title: result.message || '导入失败', icon: 'none' });
+      return;
+    }
+    wx.showToast({
+      title:
+        mode === 'replace'
+          ? `覆盖完成：写入 ${result.added} 条`
+          : `合并完成：新增${result.added} 更新${result.updated} 跳过${result.skipped}`,
+      icon: 'none'
     });
   }
 });

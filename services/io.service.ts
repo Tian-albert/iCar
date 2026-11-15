@@ -40,11 +40,20 @@ export function exportBundle(storage: StorageAdapter): string {
   return JSON.stringify(manifest, null, 2);
 }
 
+/**
+ * 导入方式：
+ * - `merge`：合并到现有数据（同 id 按 updatedAt 较新者覆盖），本地多出的记录保留
+ * - `replace`：先清空本机业务数据，再整份写入（备份里没有的不会留下）
+ */
+export type ImportMode = 'merge' | 'replace';
+
 export interface ImportResult {
   ok: boolean;
   added: number;
   updated: number;
   skipped: number;
+  /** 覆盖导入时被清空的记录数 */
+  cleared: number;
   message?: string;
 }
 
@@ -122,12 +131,29 @@ function sanitizeImported(table: string, e: any): any | null {
   return out;
 }
 
-export function importBundle(storage: StorageAdapter, json: string): ImportResult {
+/** 物理清空若干表（含已软删的记录），返回清掉的条数 */
+function clearTables(storage: StorageAdapter, tables: string[]): number {
+  let removed = 0;
+  for (const table of tables) {
+    for (const e of storage.list<{ sourceId: string }>(table)) {
+      storage.hardDelete(table, e.sourceId);
+      removed++;
+    }
+  }
+  return removed;
+}
+
+export function importBundle(
+  storage: StorageAdapter,
+  json: string,
+  mode: ImportMode = 'merge'
+): ImportResult {
   const fail = (message: string): ImportResult => ({
     ok: false,
     added: 0,
     updated: 0,
     skipped: 0,
+    cleared: 0,
     message
   });
 
@@ -155,8 +181,16 @@ export function importBundle(storage: StorageAdapter, json: string): ImportResul
   let added = 0;
   let updated = 0;
   let skipped = 0;
+  let cleared = 0;
 
   try {
+    if (mode === 'replace') {
+      // 覆盖导入：先物理清空业务表与派生表，再整份写入。
+      // 不清 user —— openid / 会员 / 置顶 / 已初始化标记都是本机属性，
+      // 尤其 categoriesSeeded 若被清掉，下次启动会把用户删过的预设重新建出来。
+      cleared = clearTables(storage, BUSINESS_TABLES.concat(['fuelConsumptions']));
+    }
+
     // 业务表 Upsert：跳过软删记录与非法条目，避免已删数据复活或写入脏实体
     for (const table of BUSINESS_TABLES) {
       for (const e of (data[table] || []) as any[]) {
@@ -230,5 +264,5 @@ export function importBundle(storage: StorageAdapter, json: string): ImportResul
     return fail('导入过程中发生错误，数据可能未完整导入');
   }
 
-  return { ok: true, added, updated, skipped };
+  return { ok: true, added, updated, skipped, cleared };
 }

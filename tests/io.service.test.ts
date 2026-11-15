@@ -4,6 +4,8 @@ import { seedPresetCategories } from '../repositories/seed';
 import { createCar, getCar } from '../services/car.service';
 import { saveRefuel, listRefuels } from '../services/refuel.service';
 import { exportBundle, importBundle } from '../services/io.service';
+import { addCategory, listCategories, removeCategory } from '../services/cost.service';
+import { setPinnedCarId } from '../services/user.service';
 
 function createMemoryStorage(): StorageLike {
   const map = new Map<string, unknown>();
@@ -91,5 +93,105 @@ describe('F-03 导入校验与异常兜底', () => {
     expect(result.skipped).toBe(4);
     expect(b.get<any>('repairRecords', 'mp:repair:good')).not.toBeNull();
     expect(b.get<any>('repairRecords', 'mp:repair:gone')).toBeNull();
+  });
+});
+
+describe('导入方式：合并 / 覆盖', () => {
+  function buildSource() {
+    const a = new StorageAdapter(createMemoryStorage());
+    seedPresetCategories(a);
+    const car = createCar(a, {
+      name: '备份车',
+      mileages: 1000,
+      initDate: Date.now(),
+      energyType: 'fuel'
+    });
+    addCategory(a, '备份独有', '🧾');
+    return { adapter: a, car, bundle: exportBundle(a) };
+  }
+
+  function buildTarget() {
+    const b = new StorageAdapter(createMemoryStorage());
+    seedPresetCategories(b);
+    addCategory(b, '本机独有', '🧾');
+    return b;
+  }
+
+  it('合并：本机多余记录保留，备份记录并入', () => {
+    const { bundle } = buildSource();
+    const b = buildTarget();
+
+    const r = importBundle(b, bundle, 'merge');
+    expect(r.ok).toBe(true);
+    expect(r.cleared).toBe(0);
+
+    const names = listCategories(b).map(c => c.name);
+    expect(names).toContain('本机独有');
+    expect(names).toContain('备份独有');
+  });
+
+  it('覆盖：本机多余记录被清掉，只剩备份内容', () => {
+    const { bundle } = buildSource();
+    const b = buildTarget();
+
+    const r = importBundle(b, bundle, 'replace');
+    expect(r.ok).toBe(true);
+    expect(r.cleared).toBeGreaterThan(0);
+
+    const names = listCategories(b).map(c => c.name);
+    expect(names).not.toContain('本机独有');
+    expect(names).toContain('备份独有');
+  });
+
+  it('覆盖：被用户删过的预设不会被 seed 重新建出来', () => {
+    // 备份来源里用户删掉了「洗车」
+    const a = new StorageAdapter(createMemoryStorage());
+    seedPresetCategories(a);
+    const wash = listCategories(a).find(c => c.name === '洗车')!;
+    removeCategory(a, wash.sourceId);
+    const bundle = exportBundle(a);
+
+    const b = buildTarget();
+    // 本机（全新设备）启动时 seed 出来了「洗车」，覆盖导入应把它清掉
+    expect(listCategories(b).some(c => c.name === '洗车')).toBe(true);
+
+    importBundle(b, bundle, 'replace');
+
+    expect(listCategories(b).some(c => c.name === '洗车')).toBe(false);
+  });
+
+  it('覆盖：本机 user 属性不被备份覆盖（会员 / 置顶 / 已初始化标记）', () => {
+    const { bundle } = buildSource();
+    const b = buildTarget();
+    setPinnedCarId(b, 'keep-me');
+    const before = b.getUser()!;
+
+    importBundle(b, bundle, 'replace');
+
+    const after = b.getUser()!;
+    expect(after.pinnedCarId).toBe('keep-me');
+    expect(after.categoriesSeeded).toBe(true);
+    expect(after.memberLevel).toBe(before.memberLevel);
+  });
+
+  it('覆盖：车辆数据完整写入并重建派生数据', () => {
+    const { bundle, car } = buildSource();
+    const b = buildTarget();
+
+    importBundle(b, bundle, 'replace');
+
+    const cars = b.list('cars').filter((c: any) => !c.deleted);
+    expect(cars.length).toBe(1);
+    expect((cars[0] as any).name).toBe('备份车');
+    expect(getCar(b, car.sourceId)).toBeTruthy();
+  });
+
+  it('默认（不传 mode）仍是合并，兼容既有调用', () => {
+    const { bundle } = buildSource();
+    const b = buildTarget();
+    const r = importBundle(b, bundle);
+    expect(r.ok).toBe(true);
+    expect(r.cleared).toBe(0);
+    expect(listCategories(b).some(c => c.name === '本机独有')).toBe(true);
   });
 });

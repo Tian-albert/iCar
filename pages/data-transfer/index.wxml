@@ -9,6 +9,7 @@
   <view class="card">
     <view class="section-title">导入数据</view>
     <view class="tip">可粘贴导出的 JSON 文本，或直接从聊天记录中选择 .json 文件导入。</view>
+    <view class="tip">导入时可选「合并」或「覆盖」：合并保留本机现有数据，覆盖会先清空本机再写入备份。</view>
     <textarea class="json-input" placeholder="在此粘贴导出的 JSON 数据" value="{{jsonText}}" bindinput="onInput" />
     <button class="btn-secondary" bindtap="onImport">粘贴导入</button>
     <button class="btn-secondary file-btn" bindtap="onChooseFile">选择文件导入</button>
