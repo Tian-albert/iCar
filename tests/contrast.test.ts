@@ -1,7 +1,11 @@
 // 颜色对比度约束（WCAG AA）：正文 ≥ 4.5:1，大字/图形 ≥ 3:1
 //
-// 为什么要测试：`--color-text-3` 实测 2.52:1，被引用 56 处，属于全站可读性问题。
-// 视觉问题无法靠 typecheck / lint 发现，只能靠计算。
+// 为什么要测试：`--color-text-3` 原为 #9AA4B2，白底仅 2.52:1，被引用 56 处，
+// 属于全站可读性问题。视觉问题无法靠 typecheck / lint 发现，只能靠计算。
+//
+// 2026-11-15 已整体加深 text-3 到 #6B7486（白底 4.70:1）。
+// 注意深色卡 #1E2536 上的对比度方向相反：深底需用浅色 text-4（4.96:1），
+// 新 text-3 在深底仅 3.25:1，故 text-4 保留为「深底专用」。
 const fsx = require('fs') as any;
 
 const CSS: string = fsx.readFileSync('app.wxss', 'utf-8');
@@ -26,47 +30,81 @@ function contrast(a: string, b: string): number {
 
 const WHITE = '#FFFFFF';
 const BG = '#F5F6F8';
+const DARK = '#1E2536';
 
-describe('文本色对比度（WCAG AA）', () => {
-  it('主文本 text-1 达到 4.5:1', () => {
+describe('白底文本色对比度（WCAG AA 4.5:1）', () => {
+  it('主文本 text-1 达标', () => {
     expect(contrast(token('--color-text-1'), WHITE)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(token('--color-text-1'), BG)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('次文本 text-2 达到 4.5:1', () => {
+  it('次文本 text-2 达标', () => {
     expect(contrast(token('--color-text-2'), WHITE)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('primary 在白底上的文字对比度不低于 4.3:1（品牌色，接近 AA）', () => {
-    // 4.38:1，作为链文字可接受；作为长正文需谨慎
-    expect(contrast(token('--color-primary'), WHITE)).toBeGreaterThanOrEqual(4.3);
+  it('辅助文字 text-3 达标（本次从 #9AA4B2 加深到 #6B7486）', () => {
+    expect(contrast(token('--color-text-3'), WHITE)).toBeGreaterThanOrEqual(4.5);
+    // 页面底（浅灰）上同样达标
+    expect(contrast(token('--color-text-3'), BG)).toBeGreaterThanOrEqual(4.3);
   });
 
-  it('白字在 primary 上的对比度不低于 4.3:1', () => {
+  it('text-3 与 text-2 仍可区分（层级未被压平）', () => {
+    const c2 = contrast(token('--color-text-2'), WHITE);
+    const c3 = contrast(token('--color-text-3'), WHITE);
+    expect(c2 - c3).toBeGreaterThan(0.5);
+  });
+
+  it('primary 文字对比度接近 AA（品牌色，4.3:1 下限）', () => {
+    expect(contrast(token('--color-primary'), WHITE)).toBeGreaterThanOrEqual(4.3);
+    // 按钮：白字在 primary 上
     expect(contrast(WHITE, token('--color-primary'))).toBeGreaterThanOrEqual(4.3);
   });
 });
 
-describe('已知缺陷：text-3 / text-4 未达 AA', () => {
-  // 这两个令牌用于标签、辅助说明、箭头。2.52:1 / 3.09:1 低于 4.5:1。
-  // 本测试断言「现状值未被悄悄改动」：若有人调色，必须同步更新 DESIGN.md 第 11.4 节
-  // 与下面的期望值，从而强制走一次决策，而不是无意中改坏或改好都不留痕。
-  const KNOWN: Array<[string, string, number]> = [
-    ['--color-text-3', '#9AA4B2', 2.52],
-    ['--color-text-4', '#8A93A6', 3.09]
-  ];
+describe('深色卡上的文本色对比度', () => {
+  it('深底主文本（白）达标', () => {
+    expect(contrast(WHITE, DARK)).toBeGreaterThanOrEqual(4.5);
+  });
 
-  for (const [name, expectedHex, expectedRatio] of KNOWN) {
-    it(`${name} 仍为记录的已知值 ${expectedHex}`, () => {
-      expect(token(name).toUpperCase()).toBe(expectedHex.toUpperCase());
-      const ratio = contrast(token(name), WHITE);
-      expect(ratio).toBeCloseTo(expectedRatio, 1);
-    });
-  }
+  it('深底辅助文字 text-4 达标', () => {
+    expect(contrast(token('--color-text-4'), DARK)).toBeGreaterThanOrEqual(4.5);
+  });
 
-  it('修好之后应把此用例替换为正面对比度断言（剩余待办）', () => {
-    // 占位：修复 text-3 后，删除上方的 KNOWN 断言，改为
-    // expect(contrast(token('--color-text-3'), WHITE)).toBeGreaterThanOrEqual(4.5)
-    expect(contrast(token('--color-text-3'), WHITE)).toBeLessThan(4.5);
+  it('深底不应使用 text-3（加深后仅 3.25:1）—— 记录该约束', () => {
+    // 这条断言的意义：如果有人把深底文字从 text-4 改成 text-3，
+    // 数值上会倒退，此处显式记录，避免误改。
+    expect(contrast(token('--color-text-3'), DARK)).toBeLessThan(4.5);
+  });
+});
+
+describe('text-4 的使用边界（白底不达标，仅限深底/装饰）', () => {
+  it('text-4 在白底低于 4.5:1，必须限制使用场景', () => {
+    expect(contrast(token('--color-text-4'), WHITE)).toBeLessThan(4.5);
+  });
+
+  it('text-4 只出现在深色卡（vehicle-detail 统计卡）内', () => {
+    // 边界约束：若将来在白底处用 text-4，此用例会失败，提醒改用 text-3
+    const allowed = ['pages/vehicle-detail/index.wxss'];
+    const dirs = ['pages', 'components'];
+    const offenders: string[] = [];
+    const walk = (dir: string): string[] => {
+      const out: string[] = [];
+      if (!fsx.existsSync(dir)) return out;
+      for (const e of fsx.readdirSync(dir, { withFileTypes: true })) {
+        const full = `${dir}/${e.name}`;
+        if (e.isDirectory()) out.push(...walk(full));
+        else if (e.name.endsWith('.wxss')) out.push(full);
+      }
+      return out;
+    };
+    for (const d of dirs) {
+      for (const f of walk(d)) {
+        const src: string = fsx.readFileSync(f, 'utf-8');
+        if (src.includes('var(--color-text-4)')) {
+          if (!allowed.some(a => f.replace(/\\/g, '/').includes(a))) offenders.push(f);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });

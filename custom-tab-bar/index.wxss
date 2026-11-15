@@ -27,7 +27,7 @@
 .tab-text {
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: #9AA4B2;
+  color: #6B7486;
 }
 .tab-active .tab-text {
   color: #3B6FF6;

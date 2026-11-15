@@ -24,7 +24,7 @@ export const CHART_THEME: ChartTheme = {
   /** --color-text-1 */
   text1: '#1F2430',
   /** --color-text-3 */
-  text3: '#9AA4B2',
+  text3: '#6B7486',
   /** 外标签专用色（--color-text-2 的图表变体） */
   label: '#4A5363',
   /** --chart-grid */

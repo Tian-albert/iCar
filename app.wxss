@@ -7,7 +7,8 @@ page {
   --color-card: #FFFFFF;
   --color-text-1: #1F2430;
   --color-text-2: #5A6272;
-  --color-text-3: #9AA4B2;
+  /* 辅助文字：白底 4.70:1，满足 WCAG AA 4.5:1（原 #9AA4B2 仅 2.52:1） */
+  --color-text-3: #6B7486;
   --color-danger: #F5474F;
   --color-success: #2BA84A;
   --color-success-bg: #E8F7EE;
@@ -39,6 +40,8 @@ page {
   --color-divider: #F0F1F4;
   --color-fill: #F2F3F5;
   --color-border: #E6EAF1;
+  /* 深色背景专用辅助文字 / 装饰（深底 #1E2536 上 4.96:1 达标）。
+     白底仅 3.09:1，**不得用于白底需阅读的文字** —— 白底请用 text-3。 */
   --color-text-4: #8A93A6;
   --color-primary-dark: #1D4ED8;
 
