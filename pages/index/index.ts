@@ -11,6 +11,7 @@ import { buildStats } from '../../domain/stats.service';
 import { listRefuels, getConsumptions } from '../../services/refuel.service';
 import { Car } from '../../types/models';
 import { displayIcon, isImageIcon } from '../../utils/icons';
+import { serviceDaysSince } from '../../utils/date';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { pickMainCar } from '../../services/overview.service';
 
@@ -37,9 +38,8 @@ interface HeroView {
   /** 平均油耗 / 电耗，取本年 */
   avgText: string;
   avgLabel: string;
-  /** 最紧急保养项剩余量 */
-  maintainText: string;
-  maintainLabel: string;
+  /** 已服役天数（购车日 → 今天）；购车日缺失时为 -- */
+  serviceDaysText: string;
   pinned: boolean;
 }
 
@@ -180,8 +180,9 @@ Page({
       const isEv = mainCar.energyType === 'ev';
       const avgValue = isEv ? snap.electricity.avgConsumption : snap.fuel.avgConsumption;
       const avgMileage = isEv ? snap.mileage.evMileage : snap.mileage.fuelMileage;
-      const progress = getMaintainProgress(storage, mainCar.sourceId, now);
-      const sum = maintainSummary(progress);
+
+      // 已服役天数 = 今天 − 购车日；缺失时为 null，显示 --
+      const serviceDays = serviceDaysSince(mainCar.initDate, now);
 
       hero = {
         carId: mainCar.sourceId,
@@ -194,8 +195,7 @@ Page({
         monthCostText: fmtMoney(monthCost),
         avgText: avgMileage > 0 ? avgValue.toFixed(2) : '--',
         avgLabel: isEv ? '平均电耗' : '平均油耗',
-        maintainText: sum.text,
-        maintainLabel: sum.label,
+        serviceDaysText: serviceDays === null ? '--' : fmtInt(serviceDays),
         pinned: pinnedId === mainCar.sourceId
       };
     }

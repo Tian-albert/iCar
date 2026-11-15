@@ -162,6 +162,49 @@ describe('置顶写入健壮性', () => {
   });
 });
 
+describe('已服役天数（购车日 → 今天）', () => {
+  const { serviceDaysSince } = require('../utils/date');
+
+  it('按整天计算', () => {
+    const now = new Date(2026, 10, 15, 10, 30).getTime();
+    const bought = new Date(2026, 7, 7).getTime(); // 8/7 → 11/15
+    expect(serviceDaysSince(bought, now)).toBe(100);
+  });
+
+  it('同一天不同时刻算 0 天（按本地日对齐）', () => {
+    const now = new Date(2026, 10, 15, 23, 59).getTime();
+    const bought = new Date(2026, 10, 15, 0, 1).getTime();
+    expect(serviceDaysSince(bought, now)).toBe(0);
+  });
+
+  it('购车日在未来时钳到 0，不出现负数', () => {
+    const now = new Date(2026, 10, 15).getTime();
+    const future = new Date(2027, 0, 1).getTime();
+    expect(serviceDaysSince(future, now)).toBe(0);
+  });
+
+  it('购车日缺失 / 非法返回 null（页面显示 --）', () => {
+    const now = Date.now();
+    expect(serviceDaysSince(0, now)).toBeNull();
+    expect(serviceDaysSince(-1, now)).toBeNull();
+    expect(serviceDaysSince(NaN, now)).toBeNull();
+  });
+
+  it('跨年计算正确（含闰年 2/29）', () => {
+    const now = new Date(2024, 2, 1).getTime(); // 2024-03-01
+    const bought = new Date(2024, 1, 1).getTime(); // 2024-02-01，闰年 2 月 29 天
+    expect(serviceDaysSince(bought, now)).toBe(29);
+  });
+
+  it('长年限不溢出（10 年）', () => {
+    const now = new Date(2026, 10, 15).getTime();
+    const bought = new Date(2016, 10, 15).getTime();
+    const days = serviceDaysSince(bought, now);
+    expect(days).toBeGreaterThan(3600);
+    expect(days).toBeLessThan(3700);
+  });
+});
+
 describe('Hero 指标口径', () => {
   it('燃油车取年平均油耗与燃油里程', () => {
     const { adapter, car } = setup('油车', 'fuel');

@@ -14,6 +14,19 @@ export function daysBetween(fromTs: number, toTs: number): number {
   return Math.floor((startOfDay(toTs) - startOfDay(fromTs)) / DAY_MS);
 }
 
+/**
+ * 已服役天数：购车日 → 今天。
+ *
+ * - 按本地日 00:00 对齐，同一天不同时刻算 0 天
+ * - 购车日缺失 / 非正数 → null（调用方显示 --）
+ * - 购车日在未来 → 钳到 0，不显示负数
+ */
+export function serviceDaysSince(initDate: number, now: number): number | null {
+  if (!(initDate > 0)) return null;
+  const days = daysBetween(initDate, now);
+  return days > 0 ? days : 0;
+}
+
 /** 格式化 "yyyy-MM-dd"（本地时区） */
 export function formatDate(ts: number): string {
   const d = new Date(ts);

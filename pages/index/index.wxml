@@ -49,9 +49,10 @@
           <view class="hm-val">{{hero.avgText}}</view>
           <view class="hm-lbl">{{hero.avgLabel}}</view>
         </view>
+        <!-- 已服役天数：购车日 → 今天 -->
         <view class="hm-cell">
-          <view class="hm-val">{{hero.maintainText}}</view>
-          <view class="hm-lbl">{{hero.maintainLabel}}</view>
+          <view class="hm-val">{{hero.serviceDaysText}}</view>
+          <view class="hm-lbl">已服役（天）</view>
         </view>
       </view>
 
