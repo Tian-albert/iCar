@@ -98,15 +98,19 @@
         <view class="group-title">选择保养项目 <text class="required">*</text></view>
         <text class="manage-link" hover-class="hover-dim" bindtap="onManageMaintain">管理 ›</text>
       </view>
-      <view class="tag-wrap" wx:if="{{maintains.length > 0}}">
+      <!-- 图标栅格：与「记保养」页、以及支出类别保持同一套交互（点图标即选中） -->
+      <view class="mnt-grid" wx:if="{{maintains.length > 0}}">
         <view
           wx:for="{{maintains}}"
           wx:key="sourceId"
-          class="tag {{item.selected ? 'tag-selected' : ''}}"
+          class="mnt-item {{item.selected ? 'mnt-active' : ''}}"
           data-index="{{index}}"
           hover-class="hover-dim" bindtap="onMaintainToggle">
-          <view class="tag-name">{{item.name}}</view>
-          <view hover-class="hover-dim" class="tag-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
+          <image wx:if="{{item.isImage}}" class="mnt-icon-img" src="{{item.icon}}" mode="aspectFill" />
+          <view wx:else class="mnt-icon">{{item.emoji}}</view>
+          <view class="mnt-name">{{item.name}}</view>
+          <!-- 周期是独立操作，catchtap 阻止冒泡，避免点一下同时改了选中态 -->
+          <view hover-class="hover-dim" class="mnt-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
         </view>
       </view>
       <view wx:else class="tip">暂无保养项，点右上角「管理 ›」添加</view>

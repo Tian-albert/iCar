@@ -24,6 +24,10 @@ interface TabItem {
 interface MaintainOption {
   sourceId: string;
   name: string;
+  /** 自定义上传的图片图标：必须走 <image>，否则会把 wxfile:// 路径当文字渲染 */
+  icon: string;
+  emoji: string;
+  isImage: boolean;
   cycleText: string;
   selected: boolean;
 }
@@ -106,6 +110,9 @@ Page({
     const maintains = listMaintains(storage, car.sourceId).map(m => ({
       sourceId: m.sourceId,
       name: m.name,
+      icon: m.icon || '',
+      emoji: displayIcon(m.icon || ''),
+      isImage: isImageIcon(m.icon || ''),
       cycleText: formatCycle(m),
       selected: false
     }));
@@ -184,6 +191,9 @@ Page({
     const list = listMaintains(getStorage(), this.data.carId).map(m => ({
       sourceId: m.sourceId,
       name: m.name,
+      icon: m.icon || '',
+      emoji: displayIcon(m.icon || ''),
+      isImage: isImageIcon(m.icon || ''),
       cycleText: formatCycle(m),
       selected: selectedIds.has(m.sourceId)
     }));

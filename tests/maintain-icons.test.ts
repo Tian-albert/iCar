@@ -205,3 +205,55 @@ describe('自定义保养项默认图标', () => {
     expect(ts).toContain("m.icon || '🔧'");
   });
 });
+
+describe('「记一笔」保养 Tab 同步为图标栅格', () => {
+  const wxml: string = fsx.readFileSync('pages/entry/index.wxml', 'utf-8');
+  const wxss: string = fsx.readFileSync('pages/entry/index.wxss', 'utf-8');
+  const ts: string = fsx.readFileSync('pages/entry/index.ts', 'utf-8');
+
+  it('渲染图标（emoji 与自定义图片两种）', () => {
+    expect(wxml).toContain('mnt-grid');
+    expect(wxml).toContain('{{item.emoji}}');
+    expect(wxml).toContain('item.isImage');
+    expect(wxml).toContain('src="{{item.icon}}"');
+  });
+
+  it('点整块即切换选中（与记保养页、支出类别一致）', () => {
+    expect(wxml).toMatch(/bindtap="onMaintainToggle"/);
+    expect(wxml).toContain('mnt-active');
+  });
+
+  it('编辑周期用 catchtap，避免同时切换选中态', () => {
+    expect(wxml).toMatch(/catchtap="onEditCycle"/);
+  });
+
+  it('数据里带上 icon / emoji / isImage（两处映射都要有）', () => {
+    expect(ts).toContain('displayIcon');
+    expect(ts).toContain('isImageIcon');
+    expect((ts.match(/isImage: isImageIcon/g) || []).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('旧的纯文字标签样式与结构已移除', () => {
+    expect(wxml).not.toContain('tag-wrap');
+    expect(wxml).not.toContain('tag-selected');
+    expect(wxss).not.toContain('.tag-wrap');
+    expect(wxss).not.toContain('.tag-selected');
+  });
+
+  it('栅格类名用 mnt- 前缀，避免与支出类别的 cat-* 冲突', () => {
+    // 本页「支出类别」已占用 .cat-item / .cat-name
+    expect(wxss).toContain('.mnt-item');
+    expect(wxss).toContain('.cat-item');
+    // 保养栅格不得复用 cat-*，否则会继承支出类别的横向单行尺寸
+    expect(wxml).not.toMatch(/mnt-item[^>]*cat-item/);
+  });
+
+  it('与记保养页的栅格尺寸一致（每行 3 个）', () => {
+    const formWxss: string = fsx.readFileSync('pages/maintain-form/index.wxss', 'utf-8');
+    const entryW = /\.mnt-item\s*\{[^}]*width:\s*(\d+)rpx/.exec(wxss);
+    const formW = /\.cat-item\s*\{[^}]*width:\s*(\d+)rpx/.exec(formWxss);
+    expect(entryW).toBeTruthy();
+    expect(formW).toBeTruthy();
+    expect(entryW![1]).toBe(formW![1]);
+  });
+});

@@ -124,37 +124,68 @@
   font-weight: 600;
   box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.08);
 }
-/* 保养项标签 */
-.tag-wrap {
+/* 保养项栅格
+   刻意用 mnt- 前缀而非 cat-：本页下方「支出类别」已占用 .cat-item / .cat-name，
+   且它是横向单行滚动、尺寸完全不同，复用类名会互相污染。
+   尺寸与 pages/maintain-form 的保养栅格保持一致（见 docs/prototype/maintain-picker.html）。 */
+.mnt-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
-  padding: 16rpx 0 24rpx;
+  padding: 8rpx 0 24rpx;
 }
-.tag {
-  padding: 16rpx 28rpx;
+.mnt-item {
+  flex: 0 0 auto;
+  /* 卡片内宽 638rpx：3 × 196 + 2 × 16 = 620rpx，留 18rpx 余量防换行抖动 */
+  width: 196rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 12rpx 14rpx;
   border-radius: var(--radius-card);
-  background: var(--color-fill);
-  text-align: center;
-  min-width: 140rpx;
+  background: var(--color-bg);
+  border: 2rpx solid transparent;
 }
-.tag-selected {
+.mnt-active {
   background: var(--color-primary-light);
-  border: 2rpx solid var(--color-primary);
+  border-color: var(--color-primary);
 }
-.tag-name {
-  font-size: 28rpx;
-  color: var(--color-text-2);
+.mnt-icon {
+  font-size: 44rpx;
+  line-height: 1;
 }
-.tag-selected .tag-name {
+/* 自定义图片图标：与 emoji 同尺寸，避免布局跳动 */
+.mnt-icon-img {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 8rpx;
+}
+.mnt-name {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--color-text-1);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mnt-active .mnt-name {
   color: var(--color-primary);
+  font-weight: 600;
 }
-.tag-cycle {
+.mnt-cycle {
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: 20rpx;
   color: var(--color-text-3);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.tag-selected .tag-cycle {
+.mnt-active .mnt-cycle {
   color: var(--color-primary);
   opacity: 0.8;
 }
