@@ -137,7 +137,7 @@ describe('旧数据回填', () => {
     expect(item.icon).toBe('🧴');
   });
 
-  it('非模板名称的自定义保养项保持不动', () => {
+  it('非模板名称的自定义保养项兜底为扳手（不留空导致显示 📌）', () => {
     const { adapter, car } = setup();
     adapter.insert('maintains', {
       sourceId: 'custom-2',
@@ -160,7 +160,33 @@ describe('旧数据回填', () => {
     ensureMaintainTemplates(adapter, car.sourceId);
 
     const item = listMaintains(adapter, car.sourceId).find(m => m.sourceId === 'custom-2')!;
-    expect(item.icon).toBe('');
+    expect(item.icon).toBe('🔧');
+  });
+
+  it('改过名的旧项也兜底为扳手，而非永远 📌', () => {
+    const { adapter, car } = setup();
+    adapter.insert('maintains', {
+      sourceId: 'renamed-1',
+      sourcePlatform: 'mp',
+      carSourceId: car.sourceId,
+      name: '机油机滤(全合成)',
+      icon: '',
+      cycleMileages: 10000,
+      cycleDays: 360,
+      cycleMonths: 12,
+      cycleUnit: 'month',
+      cycleValue: 12,
+      mileageSource: 'total',
+      sortOrder: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      deleted: false
+    } as any);
+
+    ensureMaintainTemplates(adapter, car.sourceId);
+
+    const item = listMaintains(adapter, car.sourceId).find(m => m.sourceId === 'renamed-1')!;
+    expect(item.icon).toBe('🔧');
   });
 });
 
@@ -295,5 +321,41 @@ describe('栅格为三列固定尺寸 + 最多两行滚动', () => {
     expect(entryWxss).toMatch(/\.mnt-cycle\s*\{[^}]*line-height:\s*28rpx/);
     expect(formWxss).toMatch(/\.cat-name\s*\{[^}]*line-height:\s*34rpx/);
     expect(formWxss).toMatch(/\.cat-cycle\s*\{[^}]*line-height:\s*28rpx/);
+  });
+});
+
+describe('复审修复：栅格高度不得被 border 撑破', () => {
+  const entryWxss: string = fsx.readFileSync('pages/entry/index.wxss', 'utf-8');
+  const formWxss: string = fsx.readFileSync('pages/maintain-form/index.wxss', 'utf-8');
+
+  it('单元格不使用 border', () => {
+    // border 会计入 auto 高度：156 + 4 = 160rpx，两行 336rpx 超出 328rpx 容器，
+    // 第二行底部被裁 8rpx，且能滚出 8rpx
+    for (const [css, cls] of [
+      [entryWxss, 'mnt'],
+      [formWxss, 'cat']
+    ] as Array<[string, string]>) {
+      const m = new RegExp(`\\.${cls}-item\\s*\\{[^}]*\\}`).exec(css);
+      expect(m).toBeTruthy();
+      expect(m![0]).not.toMatch(/border:\s*\d+rpx/);
+    }
+  });
+
+  it('选中环改用 inset box-shadow（不占布局尺寸）', () => {
+    expect(entryWxss).toMatch(/box-shadow:\s*inset 0 0 0 2rpx/);
+    expect(formWxss).toMatch(/box-shadow:\s*inset 0 0 0 2rpx/);
+  });
+
+  it('无边框后高度仍然是 156rpx，两行 328rpx 与容器一致', () => {
+    expect(20 + 44 + 10 + 34 + 6 + 28 + 14).toBe(156);
+    expect(156 * 2 + 16).toBe(328);
+  });
+});
+
+describe('复审修复：记保养页有空态指引', () => {
+  const wxml: string = fsx.readFileSync('pages/maintain-form/index.wxml', 'utf-8');
+  it('保养项为空时给出「点管理添加」提示', () => {
+    expect(wxml).toContain('maintains.length > 0');
+    expect(wxml).toContain('暂无保养项');
   });
 });

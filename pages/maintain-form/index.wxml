@@ -7,6 +7,7 @@
     <!-- 三列固定尺寸栅格，最多显示两行（6 项），超出上下滚动。
          ≤3 项时只有一行，不定高。与「记一笔」保养 Tab 一致。 -->
     <scroll-view
+      wx:if="{{maintains.length > 0}}"
       class="cat-scroll {{maintains.length > 3 ? 'cat-scroll-fixed' : ''}}"
       scroll-y
       show-scrollbar="{{false}}">
@@ -26,6 +27,7 @@
         </view>
       </view>
     </scroll-view>
+    <view wx:else class="tip">暂无保养项，点右上角「管理 ›」添加</view>
   </view>
 
   <view class="card">

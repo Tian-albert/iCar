@@ -11,7 +11,8 @@ import {
   listCategories,
   hasCategoryName,
   setCategoryIcon,
-  getCategory
+  getCategory,
+  moveCategoryBy
 } from '../services/cost.service';
 import { Category, Cost } from '../types/models';
 
@@ -201,5 +202,101 @@ describe('类别管理页的配套改动', () => {
     // 之前写死 updateCategory(..., '🧾')，改名会把图标冲掉
     expect(ts).toContain('getCategory');
     expect(ts).not.toMatch(/updateCategory\(getStorage\(\), id, name, '🧾'\)/);
+  });
+});
+
+describe('复审修复：排序不得与隐藏的系统预设交换', () => {
+  it('可见预设下移一位，只与相邻的可见预设交换', () => {
+    const s = setup();
+    const names = () => listSpendCategories(s).map(c => c.name);
+    expect(names()).toEqual(['停车费', '洗车', '高速费', '保险']);
+
+    const insurance = listSpendCategories(s).find(c => c.name === '保险')!;
+    expect(moveCategoryBy(s, insurance.sourceId, -1)).toBe(true);
+
+    // 修复前：兄弟集含系统预设，会与看不见的行交换，界面纹丝不动
+    expect(names()).toEqual(['停车费', '洗车', '保险', '高速费']);
+  });
+
+  it('可见预设上移到底后不再变化（不会挪到系统预设位置）', () => {
+    const s = setup();
+    const first = listSpendCategories(s)[0];
+    expect(moveCategoryBy(s, first.sourceId, -1)).toBe(false);
+    expect(listSpendCategories(s).map(c => c.name)).toEqual([
+      '停车费',
+      '洗车',
+      '高速费',
+      '保险'
+    ]);
+  });
+
+  it('最后一个可见预设继续下移应返回 false（不能与隐藏的系统预设交换）', () => {
+    const s = setup();
+    const last = listSpendCategories(s)[3];
+    expect(last.name).toBe('保险');
+
+    // 修复前：兄弟集含系统预设，会与「加油」交换 → 返回 true 但界面纹丝不动
+    expect(moveCategoryBy(s, last.sourceId, 1)).toBe(false);
+    expect(listSpendCategories(s).map(c => c.name)).toEqual([
+      '停车费',
+      '洗车',
+      '高速费',
+      '保险'
+    ]);
+  });
+
+  it('系统预设自身的 sortOrder 不被可见预设的重排改动', () => {
+    const s = setup();
+    const fuelBefore = listCategories(s).find(c => c.name === '加油')!.sortOrder;
+    const insurance = listSpendCategories(s).find(c => c.name === '保险')!;
+    moveCategoryBy(s, insurance.sourceId, -2);
+    expect(listCategories(s).find(c => c.name === '加油')!.sortOrder).toBe(fuelBefore);
+  });
+});
+
+describe('复审修复：同名自定义类别要升级为系统预设', () => {
+  it('库里已有自定义「加油」时，升级为 presetType=refuel（否则保存加油会抛错）', () => {
+    const adapter = new StorageAdapter(memory());
+    adapter.insert(
+      'categories',
+      cat({ sourceId: 'custom-fuel', name: '加油', isPreset: false, icon: '⛽' })
+    );
+
+    seedPresetCategories(adapter);
+
+    const fuel = listCategories(adapter).find(c => c.name === '加油')!;
+    expect(fuel.isPreset).toBe(true);
+    expect(fuel.presetType).toBe('refuel');
+    // 不产生第二条同名类别
+    expect(listCategories(adapter).filter(c => c.name === '加油').length).toBe(1);
+  });
+
+  it('同名自定义「洗车」则让位给用户（不强制升级为支出预设）', () => {
+    const adapter = new StorageAdapter(memory());
+    adapter.insert(
+      'categories',
+      cat({ sourceId: 'custom-wash', name: '洗车', isPreset: false, icon: '🧽' })
+    );
+
+    seedPresetCategories(adapter);
+
+    const wash = listCategories(adapter).filter(c => c.name === '洗车');
+    expect(wash.length).toBe(1);
+    expect(wash[0].isPreset).toBe(false);
+  });
+});
+
+describe('复审修复：编辑支出时不得改选系统预设', () => {
+  const ts: string = fsx.readFileSync('pages/cost-form/index.ts', 'utf-8');
+
+  it('新建与编辑都只提供支出类别', () => {
+    // 修复前编辑态用 listCategories（全量），可把手工支出改成「加油」
+    expect(ts).not.toMatch(/recordId\s*\?\s*listCategories\(storage\)/);
+    expect(ts).toContain('listSpendCategories(storage)');
+  });
+
+  it('原类别若已隐藏或是系统预设，仍要补进候选（否则被判为不可用而锁死）', () => {
+    expect(ts).toContain('getCategory');
+    expect(ts).toMatch(/base\.concat\(\[original\]\)/);
   });
 });

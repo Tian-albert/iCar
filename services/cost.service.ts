@@ -144,7 +144,12 @@ export function addCategory(storage: StorageAdapter, name: string, icon: string)
 export function moveCategory(storage: StorageAdapter, sourceId: string, direction: 'up' | 'down'): boolean {
   const cat = getCategory(storage, sourceId);
   if (!cat) return false;
-  const siblings = listCategories(storage).filter(c => c.isPreset === cat.isPreset);
+  // 只与「同一可见分组」的兄弟换位。系统预设（presetType 非空：加油/充电/保养/维修）
+  // 在类别管理页不展示，若把它们算进兄弟集，拖动会与看不见的行交换：
+  // sortOrder 变了、返回 true，但界面纹丝不动，用户会觉得拖不动。
+  const siblings = listCategories(storage).filter(
+    c => c.isPreset === cat.isPreset && !c.presetType
+  );
   const idx = siblings.findIndex(c => c.sourceId === sourceId);
   const target = direction === 'up' ? idx - 1 : idx + 1;
   if (idx < 0 || target < 0 || target >= siblings.length) return false;
@@ -177,7 +182,12 @@ export function moveCategoryBy(
   if (!steps) return false;
   const cat = getCategory(storage, sourceId);
   if (!cat) return false;
-  const siblings = listCategories(storage).filter(c => c.isPreset === cat.isPreset);
+  // 只与「同一可见分组」的兄弟换位。系统预设（presetType 非空：加油/充电/保养/维修）
+  // 在类别管理页不展示，若把它们算进兄弟集，拖动会与看不见的行交换：
+  // sortOrder 变了、返回 true，但界面纹丝不动，用户会觉得拖不动。
+  const siblings = listCategories(storage).filter(
+    c => c.isPreset === cat.isPreset && !c.presetType
+  );
   const idx = siblings.findIndex(c => c.sourceId === sourceId);
   if (idx < 0) return false;
   const target = Math.min(siblings.length - 1, Math.max(0, idx + steps));

@@ -6,7 +6,8 @@ import {
   updateCost,
   listCategories,
   listSpendCategories,
-  resolveCategorySelection
+  resolveCategorySelection,
+  getCategory
 } from '../../services/cost.service';
 import { getCar } from '../../services/car.service';
 import { displayIcon, isImageIcon } from '../../utils/icons';
@@ -66,8 +67,26 @@ Page({
   },
   loadCategories(recordId?: string) {
     const storage = getStorage();
-    // 编辑态加载全量类别（含已隐藏），保证原类别能被精确定位
-    const source = recordId ? listCategories(storage) : listSpendCategories(storage);
+    // 一律只给「支出类别」。编辑态若放开全量，用户能把手工支出改成
+    // 加油/充电/保养/维修 —— 这四个由专用表单生成流水，改成它们等于同一笔消费记两遍。
+    const base = listSpendCategories(storage);
+    let source = base;
+
+    let originalCategoryId = this.data.originalCategoryId;
+    if (recordId) {
+      const cost = storage.get<Cost>('costs', recordId);
+      originalCategoryId = cost?.categorySourceId ?? '';
+      // 原类别可能已隐藏、或本身就是系统预设（历史数据）：必须补进候选，
+      // 否则 resolveCategorySelection 会判为「原类别已不可用」而锁死选择。
+      if (
+        originalCategoryId &&
+        !base.some(c => c.sourceId === originalCategoryId)
+      ) {
+        const original = getCategory(storage, originalCategoryId);
+        if (original) source = base.concat([original]);
+      }
+    }
+
     const cats = source.map(c => ({
       sourceId: c.sourceId,
       name: c.name,
@@ -77,12 +96,6 @@ Page({
       isImage: isImageIcon(c.icon || ''),
       isPreset: c.isPreset
     }));
-
-    let originalCategoryId = this.data.originalCategoryId;
-    if (recordId) {
-      const cost = storage.get<Cost>('costs', recordId);
-      originalCategoryId = cost?.categorySourceId ?? '';
-    }
     const result = resolveCategorySelection(cats, originalCategoryId, !!recordId);
     this.setData({
       categories: cats,

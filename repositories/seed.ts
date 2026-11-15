@@ -167,7 +167,9 @@ export function seedPresetCategories(adapter: StorageAdapter): void {
   // 3. 确保系统预设与支出预设都存在（仅按未删除记录判断，避免"软删后不再重建"）
   const ensure = (
     list: Array<Pick<Category, 'name' | 'icon' | 'presetType'>>,
-    baseOrder: number
+    baseOrder: number,
+    /** 同名自定义类别是否升级为预设（仅系统预设需要，见下方注释） */
+    upgradeSameName: boolean
   ) => {
     const current = adapter.list<Category>('categories').filter(c => !c.deleted);
     const presets = current.filter(c => c.isPreset);
@@ -177,8 +179,23 @@ export function seedPresetCategories(adapter: StorageAdapter): void {
 
     for (const preset of list) {
       if (current.some(c => c.name === preset.name && c.isPreset)) continue;
-      // 同名自定义类别已存在时不再插入，避免与用户的类别重名
-      if (current.some(c => c.name === preset.name)) continue;
+
+      const sameName = current.find(c => c.name === preset.name);
+      if (sameName) {
+        // 同名自定义类别已存在，不再插入以免重名。但两类预设处理不同：
+        // - 支出预设：让位即可，用户自建的那个本来就承担同样用途；
+        // - 系统预设：**必须升级**。refuel / maintain-record / repair 靠 presetType
+        //   找类别，若库里只有同名自定义类别（presetType 为空），
+        //   保存加油会直接抛「预设支出类别缺失」——功能不可用。
+        if (upgradeSameName && preset.presetType) {
+          sameName.isPreset = true;
+          sameName.presetType = preset.presetType;
+          sameName.updatedAt = Date.now();
+          adapter.update('categories', sameName);
+        }
+        continue;
+      }
+
       const now = Date.now();
       adapter.insert<Category>('categories', {
         ...preset,
@@ -194,6 +211,6 @@ export function seedPresetCategories(adapter: StorageAdapter): void {
     }
   };
 
-  ensure(SPEND_PRESETS, 0);
-  ensure(SYSTEM_PRESETS, 100);
+  ensure(SPEND_PRESETS, 0, false);
+  ensure(SYSTEM_PRESETS, 100, true);
 }

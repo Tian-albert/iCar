@@ -50,6 +50,9 @@ export interface MaintainProgressItem {
   urgent: boolean;
 }
 
+/** 匹配不到模板时的兜底图标（扳手，与维护语义一致） */
+export const FALLBACK_MAINTAIN_ICON = '🔧';
+
 /**
  * 给「图标为空」的保养项按名称补上模板图标。
  *
@@ -61,8 +64,9 @@ function backfillMaintainIcons(storage: StorageAdapter, list: Maintain[]): void 
   for (const m of list) {
     if (m.icon && m.icon.trim()) continue;
     const tpl = DEFAULT_TEMPLATES.find(t => t.name === m.name);
-    if (!tpl || !tpl.icon) continue;
-    m.icon = tpl.icon;
+    // 匹配不到模板（用户改过名、或自建项）：兜底给扳手。
+    // 若留空，displayIcon('') 会统一显示 📌，三列栅格里完全认不出来。
+    m.icon = tpl && tpl.icon ? tpl.icon : FALLBACK_MAINTAIN_ICON;
     m.updatedAt = now;
     storage.update('maintains', m);
   }
