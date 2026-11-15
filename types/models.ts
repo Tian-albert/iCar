@@ -158,6 +158,14 @@ export interface User extends BaseEntity {
   lastPulledAt: number;
   /** 置顶车辆 sourceId（'' 表示未置顶） */
   pinnedCarId: string;
+  /**
+   * 支出预设是否已初始化过。
+   *
+   * 预设只在首次安装（或升级到本版本后的第一次启动）创建一次，之后完全交给用户管理：
+   * 用户删掉的不会被重建，改过名的也不会再冒出原名。
+   * 系统预设（加油/充电/保养/维修）不受此标记约束，始终确保存在。
+   */
+  categoriesSeeded: boolean;
 }
 
 /** 导出数据全集（对应 manifest.json 的 data 字段） */

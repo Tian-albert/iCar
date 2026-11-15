@@ -143,9 +143,8 @@ describe('置顶功能必须有 UI 入口（曾因重写页面丢失）', () => 
 
 describe('置顶写入健壮性', () => {
   it('user 记录缺失时也能写入（不静默失败）', () => {
+    // 不调用 seed：现在 seed 会顺带创建已初始化的 user，掩盖「user 缺失」的场景
     const adapter = new StorageAdapter(createMemoryStorage());
-    seedPresetCategories(adapter);
-    // 故意不初始化 user
     expect(adapter.getUser()).toBeNull();
 
     setPinnedCarId(adapter, 'car-xyz');

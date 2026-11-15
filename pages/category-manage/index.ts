@@ -31,8 +31,7 @@ interface CatView {
 
 Page({
   data: {
-    presets: [] as CatView[],
-    customs: [] as CatView[],
+    categories: [] as CatView[],
     pickerShow: false,
     pickingId: '',
     dragging: false,
@@ -63,10 +62,10 @@ Page({
       visible: c.visible !== false
     }));
     this.setData({
-      // 系统预设（加油/充电/保养/维修）不在此展示：它们不是支出类别，
+      // 预设与自定义已合并为一组，操作完全一致。
+      // 系统预设（加油/充电/保养/维修）仍不在此展示：它们不是支出类别，
       // 由各自表单自动生成支出，列在这里只会让用户以为可以重复记。
-      presets: view.filter(v => v.isPreset && !v.isSystem),
-      customs: view.filter(v => !v.isPreset)
+      categories: view.filter(v => !v.isSystem)
     });
   },
   onPickIcon(e: WechatMiniprogram.TouchEvent) {

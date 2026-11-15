@@ -54,11 +54,18 @@ describe('cost.service 记支出', () => {
 });
 
 describe('cost.service 类别管理', () => {
-  it('预设类别不可删除', () => {
+  it('支出预设可以删除，系统预设不可删除', () => {
     const { adapter } = setup();
-    const preset = listCategories(adapter).find(c => c.isPreset)!;
-    const r = removeCategory(adapter, preset.sourceId);
+
+    // 支出预设与自定义一致：可删（seed 不会重建，见 category-presets.test）
+    const spend = listCategories(adapter).find(c => c.isPreset && !c.presetType)!;
+    expect(removeCategory(adapter, spend.sourceId).ok).toBe(true);
+
+    // 系统预设保护：它们靠 presetType 承载自动归类
+    const sys = listCategories(adapter).find(c => c.presetType)!;
+    const r = removeCategory(adapter, sys.sourceId);
     expect(r.ok).toBe(false);
+    expect(r.message).toContain('系统分类');
   });
 
   it('自定义类别：空可删，有支出则拒绝', () => {
@@ -110,12 +117,13 @@ describe('cost.service 类别管理', () => {
 });
 
 describe('cost.service 类别排序', () => {
-  it('自定义类别 sortOrder 递增，下移/上移可调整顺序', () => {
+  it('新增类别接在支出类别末尾，下移/上移可调整顺序', () => {
     const { adapter } = setup();
     const a = addCategory(adapter, '快递费', 'p');
     const b = addCategory(adapter, '过路费', 'ticket');
-    expect(a.sortOrder).toBe(0);
-    expect(b.sortOrder).toBe(1);
+    // 4 个支出预设占 0-3，新增从 4 开始（同一序列编号）
+    expect(a.sortOrder).toBe(4);
+    expect(b.sortOrder).toBe(5);
 
     moveCategory(adapter, a.sourceId, 'down');
     let names = listCategories(adapter)
@@ -130,18 +138,27 @@ describe('cost.service 类别排序', () => {
     expect(names).toEqual(['快递费', '过路费']);
   });
 
-  it('首项上移 / 末项下移无效果，预设组不受自定义排序影响', () => {
+  it('支出类别首末项拖动无效果；拖动可跨越预设与自定义', () => {
     const { adapter } = setup();
     const a = addCategory(adapter, '快递费', 'p');
-    addCategory(adapter, '过路费', 'ticket');
+    const spendNames = () =>
+      listCategories(adapter)
+        .filter(c => !c.presetType)
+        .map(c => c.name);
 
-    moveCategory(adapter, a.sourceId, 'up'); // 已是首项
-    const customs = listCategories(adapter).filter(c => !c.isPreset);
-    expect(customs[0].name).toBe('快递费');
+    expect(spendNames()).toEqual(['停车', '高速', '保险', '洗车', '快递费']);
 
-    // 预设组仍保持 4 个且在前
-    const all = listCategories(adapter);
-    expect(all.slice(0, 4).every(c => c.isPreset)).toBe(true);
+    // 首项上移无效果
+    const first = listCategories(adapter).filter(c => !c.presetType)[0];
+    expect(moveCategory(adapter, first.sourceId, 'up')).toBe(false);
+
+    // 合并分组后预设与自定义同属一个序列：自定义项上移会与预设交换
+    expect(moveCategory(adapter, a.sourceId, 'up')).toBe(true);
+    expect(spendNames()).toEqual(['停车', '高速', '保险', '快递费', '洗车']);
+
+    // 末项下移无效果
+    const last = listCategories(adapter).filter(c => !c.presetType).slice(-1)[0];
+    expect(moveCategory(adapter, last.sourceId, 'down')).toBe(false);
   });
 });
 
@@ -237,9 +254,14 @@ describe('cost.service 批量拖动换位（R-12）', () => {
     addCategory(adapter, 'C', 'p');
 
     expect(moveCategoryBy(adapter, a.sourceId, 2)).toBe(true);
+
+    // 命名只看自定义项，但换位发生在整个支出序列内
     const customs = listCategories(adapter).filter(c => !c.isPreset);
     expect(customs.map(c => c.name)).toEqual(['B', 'C', 'A']);
-    expect(customs.map(c => c.sortOrder)).toEqual([0, 1, 2]);
+
+    // 整个支出序列的 sortOrder 连续（0..n-1），不只是自定义那一段
+    const spend = listCategories(adapter).filter(c => !c.presetType);
+    expect(spend.map(c => c.sortOrder)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 
   it('拖到边界外只移动到端点，不产生越界', () => {

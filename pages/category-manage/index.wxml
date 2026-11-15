@@ -1,28 +1,14 @@
 <view class="page">
-  <view class="section-title">预设分类</view>
+  <view class="section-title">支出类别</view>
   <view class="tip">点图标可更换，长按右侧 ≡ 上下拖动排序</view>
   <view class="tip-note">加油 / 充电 / 保养 / 维修 由各自记录页自动归类，不在此设置</view>
-  <view class="card">
-    <view wx:for="{{presets}}" wx:key="sourceId" class="row {{dragging && dragId === item.sourceId ? 'drag-row' : ''}}">
-      <image wx:if="{{item.isImage}}" class="row-icon-img" src="{{item.icon}}" data-id="{{item.sourceId}}" bindtap="onPickIcon" />
-      <view hover-class="hover-dim" wx:else class="row-icon" data-id="{{item.sourceId}}" bindtap="onPickIcon">{{item.emoji}}</view>
-      <view class="row-name">{{item.name}}</view>
-      <switch checked="{{item.visible}}" color="#3B6FF6" data-id="{{item.sourceId}}" bindchange="onToggleVisible" />
-      <view
-        class="drag-handle {{dragging && dragId === item.sourceId ? 'drag-handle-active' : ''}}"
-        data-id="{{item.sourceId}}"
-        bindtouchstart="onHandleTouchStart"
-        catchlongpress="onDragStart"
-        catchtouchmove="onDragMove"
-        bindtouchend="onDragEnd"
-        bindtouchcancel="onDragEnd">≡</view>
-    </view>
-  </view>
 
-  <view class="section-title">自定义分类</view>
-  <view class="tip">点图标可更换，长按右侧 ≡ 上下拖动排序</view>
+  <!-- 预设与自定义已合并为一组，每行的操作完全一致 -->
   <view class="card">
-    <view wx:for="{{customs}}" wx:key="sourceId" class="row {{dragging && dragId === item.sourceId ? 'drag-row' : ''}}">
+    <view
+      wx:for="{{categories}}"
+      wx:key="sourceId"
+      class="row {{dragging && dragId === item.sourceId ? 'drag-row' : ''}}">
       <image wx:if="{{item.isImage}}" class="row-icon-img" src="{{item.icon}}" data-id="{{item.sourceId}}" bindtap="onPickIcon" />
       <view hover-class="hover-dim" wx:else class="row-icon" data-id="{{item.sourceId}}" bindtap="onPickIcon">{{item.emoji}}</view>
       <view class="row-name">{{item.name}}</view>
@@ -38,7 +24,7 @@
         bindtouchend="onDragEnd"
         bindtouchcancel="onDragEnd">≡</view>
     </view>
-    <view wx:if="{{customs.length === 0}}" class="empty">暂无自定义分类</view>
+    <view wx:if="{{categories.length === 0}}" class="empty">暂无支出类别</view>
   </view>
 
   <view class="footer">

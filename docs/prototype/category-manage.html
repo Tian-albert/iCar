@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>支出类别管理 · 合并为一组</title>
+<!--
+  1:1 还原 pages/category-manage（375px 宽，1rpx = 0.5px）。
+  左：现状（预设 / 自定义 两组）；右：改后（统一一组，每行操作一致）。
+-->
+<style>
+  :root{
+    --card:#FFFFFF; --bg:#F5F6F8; --fill:#F2F3F5;
+    --primary:#3B6FF6; --primary-light:#EEF3FE;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --divider:#F0F1F4;
+    --danger:#F5474F;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;display:flex;flex-wrap:wrap;justify-content:center;gap:26px;
+    padding:28px 16px 40px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:375px;}
+  .col h2{font-size:13px;font-weight:600;margin-bottom:4px;}
+  .col p{font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:10px;min-height:34px;}
+
+  .phone{background:var(--bg);border-radius:14px;overflow:hidden;
+    box-shadow:0 10px 30px rgba(15,23,42,.16);}
+  .navbar{height:44px;display:flex;align-items:center;justify-content:center;
+    background:var(--bg);font-size:16px;font-weight:600;border-bottom:1px solid var(--divider);}
+  .page{padding:12px;}
+
+  .section-title{margin:12px 0 4px;font-size:14px;font-weight:600;}
+  .tip{margin-bottom:8px;font-size:11px;color:var(--t3);}
+  .tip-note{margin:6px 4px 12px;font-size:11px;line-height:1.5;color:var(--t3);}
+
+  .card{background:var(--card);border-radius:12px;padding:0 16px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);}
+
+  /* 行：与 .row 一致（min-height 54px = 108rpx） */
+  .row{display:flex;align-items:center;min-height:54px;
+    border-bottom:.5px solid var(--divider);}
+  .row:last-child{border-bottom:none;}
+  .row-icon{font-size:22px;margin-right:12px;line-height:1;}
+  .row-icon-img{width:26px;height:26px;margin-right:12px;border-radius:4px;}
+  .row-name{flex:1;font-size:14px;min-width:0;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;}
+  .act{font-size:12px;margin-right:10px;flex-shrink:0;}
+  .act.edit{color:var(--primary);}
+  .act.delete{color:var(--danger);}
+  .drag-handle{width:28px;height:28px;line-height:28px;text-align:center;
+    margin-left:6px;font-size:18px;color:var(--t3);background:var(--fill);
+    border-radius:4px;flex-shrink:0;}
+
+  /* 微信 switch 尺寸约 52×32，按同尺寸占位 */
+  .sw{width:52px;height:32px;border-radius:16px;background:#D8DCE3;
+    position:relative;flex-shrink:0;}
+  .sw::after{content:'';position:absolute;top:2px;left:2px;width:28px;height:28px;
+    border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18);}
+  .sw.on{background:var(--primary);}
+  .sw.on::after{left:auto;right:2px;}
+
+  .empty{padding:20px 0;text-align:center;font-size:14px;color:var(--t3);}
+  .footer{margin-top:20px;}
+  .btn{background:var(--primary);color:#fff;text-align:center;
+    padding:11px 0;border-radius:999px;font-size:16px;font-weight:600;}
+
+  .note{font-size:11px;color:var(--t2);line-height:1.8;padding:0 4px;}
+  .warn{margin-top:10px;padding:10px 12px;border-radius:10px;
+    background:#FFF4E5;color:#8A5300;font-size:11px;line-height:1.75;}
+  .warn b{color:#7A4A00;}
+</style>
+</head>
+<body>
+
+<div class="col">
+  <h2>现状：分「预设 / 自定义」两组</h2>
+  <p>预设行只有图标可换、开关、拖动——<b>不能改名、不能删除</b>。</p>
+  <div class="phone">
+    <div class="navbar">支出类别管理</div>
+    <div class="page">
+      <div class="section-title">预设分类</div>
+      <div class="tip">点图标可更换，长按右侧 ≡ 上下拖动排序</div>
+      <div class="tip-note">加油 / 充电 / 保养 / 维修 由各自记录页自动归类，不在此设置</div>
+      <div class="card">
+        <div class="row"><span class="row-icon">🅿️</span><span class="row-name">停车</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+        <div class="row"><span class="row-icon">🛣️</span><span class="row-name">高速</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+        <div class="row"><span class="row-icon">🛡️</span><span class="row-name">保险</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+        <div class="row"><span class="row-icon">🧼</span><span class="row-name">洗车</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+      </div>
+
+      <div class="section-title">自定义分类</div>
+      <div class="tip">点图标可更换，长按右侧 ≡ 上下拖动排序</div>
+      <div class="card">
+        <div class="row"><span class="row-icon">📮</span><span class="row-name">快递费</span><span class="act edit">编辑</span><span class="act delete">删除</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+        <div class="row"><span class="row-icon">🎨</span><span class="row-name">改装</span><span class="act edit">编辑</span><span class="act delete">删除</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+      </div>
+
+      <div class="footer"><div class="btn">＋ 添加类别</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>改后：统一为一组</h2>
+  <p>取消分组标题，6 个类别在同一列表；每行操作完全一致。</p>
+  <div class="phone">
+    <div class="navbar">支出类别管理</div>
+    <div class="page">
+      <div class="section-title">支出类别</div>
+      <div class="tip">点图标可更换，长按右侧 ≡ 上下拖动排序</div>
+      <div class="tip-note">加油 / 充电 / 保养 / 维修 由各自记录页自动归类，不在此设置</div>
+      <div class="card">
+        <div class="row"><span class="row-icon">🅿️</span><span class="row-name">停车</span><span class="act edit">编辑</span><span class="act delete">删除</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+        <div class="row"><span class="row-icon">🛣️</span><span class="row-name">高速</span><span class="act edit">编辑</span><span class="act delete">删除</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+        <div class="row"><span class="row-icon">🛡️</span><span class="row-name">保险</span><span class="act edit">编辑</span><span class="act delete">删除</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+        <div class="row"><span class="row-icon">🧼</span><span class="row-name">洗车</span><span class="act edit">编辑</span><span class="act delete">删除</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+        <div class="row"><span class="row-icon">📮</span><span class="row-name">快递费</span><span class="act edit">编辑</span><span class="act delete">删除</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+        <div class="row"><span class="row-icon">🎨</span><span class="row-name">改装</span><span class="act edit">编辑</span><span class="act delete">删除</span><span class="sw on"></span><span class="drag-handle">≡</span></div>
+      </div>
+
+      <div class="footer"><div class="btn">＋ 添加类别</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>空态（全部删完）</h2>
+  <p>与现有自定义组的空态一致，不另做样式。</p>
+  <div class="phone">
+    <div class="navbar">支出类别管理</div>
+    <div class="page">
+      <div class="section-title">支出类别</div>
+      <div class="tip">点图标可更换，长按右侧 ≡ 上下拖动排序</div>
+      <div class="card"><div class="empty">暂无支出类别</div></div>
+      <div class="footer"><div class="btn">＋ 添加类别</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>需要你先决定的副作用</h2>
+  <p>合并只是 UI 层，但「删除 / 改名」会撞上启动时的补建逻辑。</p>
+  <div class="phone" style="padding:14px 16px;">
+    <div class="note">
+      当前 <b>seedPresetCategories</b> 每次启动都会检查：<br>
+      「停车 / 高速 / 保险 / 洗车」若不存在就补建。
+    </div>
+    <div class="warn">
+      <b>① 删除预设</b>：删掉「洗车」后，下次启动会被重新建出来。<br>
+      用户会看到「删了又回来」。
+    </div>
+    <div class="warn">
+      <b>② 改名预设</b>：把「高速」改成「过路费」，下次启动会再建一个「高速」。<br>
+      结果是两个类别并存，旧的支出还挂在被改名的那个上。
+    </div>
+    <div class="note" style="margin-top:12px;">
+      要真正做到「操作一致」，需要改成
+      <b>预设只在首次安装时创建一次</b>（记录一个已初始化的标记），
+      之后完全交给用户管理。这会同时影响「导入旧备份」时的补建行为。
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -12,7 +12,9 @@ import {
   hasCategoryName,
   setCategoryIcon,
   getCategory,
-  moveCategoryBy
+  moveCategoryBy,
+  removeCategory,
+  updateCategory
 } from '../services/cost.service';
 import { Category, Cost } from '../types/models';
 
@@ -237,9 +239,12 @@ describe('种子幂等', () => {
 describe('类别管理页的配套改动', () => {
   const ts: string = fsx.readFileSync('pages/category-manage/index.ts', 'utf-8');
 
-  it('系统预设不展示在本页', () => {
+  it('系统预设不展示在本页；预设与自定义合并为一组', () => {
     expect(ts).toContain('isSystemPreset');
-    expect(ts).toMatch(/presets:[\s\S]{0,80}!v\.isSystem/);
+    expect(ts).toMatch(/categories:\s*view\.filter\(v => !v\.isSystem\)/);
+    // 不再按 isPreset 拆成两组
+    expect(ts).not.toContain('presets:');
+    expect(ts).not.toContain('customs:');
   });
 
   it('改名不覆盖用户设置的图标', () => {
@@ -342,5 +347,94 @@ describe('复审修复：编辑支出时不得改选系统预设', () => {
   it('原类别若已隐藏或是系统预设，仍要补进候选（否则被判为不可用而锁死）', () => {
     expect(ts).toContain('getCategory');
     expect(ts).toMatch(/base\.concat\(\[original\]\)/);
+  });
+});
+
+describe('支出预设只初始化一次，之后完全交给用户', () => {
+  it('首次 seed 会写入 categoriesSeeded 标记', () => {
+    const s = setup();
+    expect(s.getUser()!.categoriesSeeded).toBe(true);
+  });
+
+  it('删除预设后再 seed 不会重建', () => {
+    const s = setup();
+    const wash = listCategories(s).find(c => c.name === '洗车')!;
+    expect(removeCategory(s, wash.sourceId).ok).toBe(true);
+
+    seedPresetCategories(s);
+
+    // 旧实现每次启动都会补建，用户会看到「删了又回来」
+    expect(listCategories(s).some(c => c.name === '洗车')).toBe(false);
+  });
+
+  it('重命名预设后不会再冒出原名', () => {
+    const s = setup();
+    const toll = listCategories(s).find(c => c.name === '高速')!;
+    updateCategory(s, toll.sourceId, '过路费', toll.icon);
+
+    seedPresetCategories(s);
+
+    const names = listCategories(s).map(c => c.name);
+    expect(names).toContain('过路费');
+    expect(names).not.toContain('高速');
+  });
+
+  it('系统预设缺失时仍会自动补建（不受标记约束）', () => {
+    const s = setup();
+    const fuel = listCategories(s).find(c => c.presetType === 'refuel')!;
+    s.hardDelete('categories', fuel.sourceId);
+    expect(listCategories(s).some(c => c.presetType === 'refuel')).toBe(false);
+
+    seedPresetCategories(s);
+
+    // 自动归类依赖它，必须无条件恢复
+    const again = listCategories(s).find(c => c.name === '加油')!;
+    expect(again.presetType).toBe('refuel');
+  });
+
+  it('二次 seed 不改动既有顺序', () => {
+    const s = setup();
+    const before = listCategories(s).filter(c => !c.presetType).map(c => c.name);
+    seedPresetCategories(s);
+    const after = listCategories(s).filter(c => !c.presetType).map(c => c.name);
+    expect(after).toEqual(before);
+  });
+
+  it('老库升级只跑一次初始化（之后不再补建）', () => {
+    // 模拟老库：没有 categoriesSeeded 标记
+    const adapter = new StorageAdapter(memory());
+    adapter.setUser({
+      sourceId: 'mp:user:default',
+      sourcePlatform: 'mp',
+      openid: '',
+      nickname: '',
+      avatarUrl: '',
+      remindEnabled: true,
+      reminderSentCount: 0,
+      memberLevel: 'free',
+      memberExpireAt: 0,
+      appLockEnabled: false,
+      appLockPin: '',
+      lastPulledAt: 0,
+      pinnedCarId: '',
+      categoriesSeeded: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      deleted: false
+    } as any);
+
+    seedPresetCategories(adapter);
+    expect(listSpendCategories(adapter).map(c => c.name)).toEqual([
+      '停车',
+      '高速',
+      '保险',
+      '洗车'
+    ]);
+
+    // 删掉一个，再启动就不会回来了
+    const ins = listCategories(adapter).find(c => c.name === '保险')!;
+    removeCategory(adapter, ins.sourceId);
+    seedPresetCategories(adapter);
+    expect(listCategories(adapter).some(c => c.name === '保险')).toBe(false);
   });
 });

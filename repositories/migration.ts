@@ -15,7 +15,8 @@ const DEFAULT_USER: UserSeed = {
   appLockEnabled: false,
   appLockPin: '',
   lastPulledAt: 0,
-  pinnedCarId: ''
+  pinnedCarId: '',
+  categoriesSeeded: false
 };
 
 /** v1 -> v1.1：新增 User 实体 */

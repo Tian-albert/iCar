@@ -61,11 +61,9 @@ export function listCategories(storage: StorageAdapter): Category[] {
   return storage
     .list<Category>('categories')
     .filter(c => !c.deleted)
-    .sort((a, b) => {
-      // 预设组在前，组内按 sortOrder 升序
-      if (a.isPreset !== b.isPreset) return a.isPreset ? -1 : 1;
-      return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
-    });
+    // 单一排序：类别管理页已合并为一组，预设/自定义不再分段。
+    // 若仍按「预设在前」排，用户把预设拖到自定义项下面会立刻弹回原位。
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.createdAt - b.createdAt);
 }
 
 /**
@@ -119,7 +117,8 @@ export function getCategory(storage: StorageAdapter, sourceId: string): Category
 
 export function addCategory(storage: StorageAdapter, name: string, icon: string): Category {
   const now = Date.now();
-  const siblings = listCategories(storage).filter(c => !c.isPreset);
+  // 与「可见的支出类别」同一序列编号（系统预设另处一段，不参与）
+  const siblings = listCategories(storage).filter(c => !c.presetType);
   const sortOrder = siblings.length ? Math.max(...siblings.map(c => c.sortOrder ?? 0)) + 1 : 0;
   const cat: Category = {
     sourceId: genId('category'),
@@ -144,12 +143,11 @@ export function addCategory(storage: StorageAdapter, name: string, icon: string)
 export function moveCategory(storage: StorageAdapter, sourceId: string, direction: 'up' | 'down'): boolean {
   const cat = getCategory(storage, sourceId);
   if (!cat) return false;
-  // 只与「同一可见分组」的兄弟换位。系统预设（presetType 非空：加油/充电/保养/维修）
-  // 在类别管理页不展示，若把它们算进兄弟集，拖动会与看不见的行交换：
-  // sortOrder 变了、返回 true，但界面纹丝不动，用户会觉得拖不动。
-  const siblings = listCategories(storage).filter(
-    c => c.isPreset === cat.isPreset && !c.presetType
-  );
+  // 兄弟集 = 全部「支出类别」（系统预设之外）。类别管理页已合并为一组，
+  // 预设与自定义必须在同一序列内换位，否则拖到对方区间会被弹回。
+  // 系统预设不展示也不参与；对它调用直接失败。
+  if (cat.presetType) return false;
+  const siblings = listCategories(storage).filter(c => !c.presetType);
   const idx = siblings.findIndex(c => c.sourceId === sourceId);
   const target = direction === 'up' ? idx - 1 : idx + 1;
   if (idx < 0 || target < 0 || target >= siblings.length) return false;
@@ -182,12 +180,11 @@ export function moveCategoryBy(
   if (!steps) return false;
   const cat = getCategory(storage, sourceId);
   if (!cat) return false;
-  // 只与「同一可见分组」的兄弟换位。系统预设（presetType 非空：加油/充电/保养/维修）
-  // 在类别管理页不展示，若把它们算进兄弟集，拖动会与看不见的行交换：
-  // sortOrder 变了、返回 true，但界面纹丝不动，用户会觉得拖不动。
-  const siblings = listCategories(storage).filter(
-    c => c.isPreset === cat.isPreset && !c.presetType
-  );
+  // 兄弟集 = 全部「支出类别」（系统预设之外）。类别管理页已合并为一组，
+  // 预设与自定义必须在同一序列内换位，否则拖到对方区间会被弹回。
+  // 系统预设不展示也不参与；对它调用直接失败。
+  if (cat.presetType) return false;
+  const siblings = listCategories(storage).filter(c => !c.presetType);
   const idx = siblings.findIndex(c => c.sourceId === sourceId);
   if (idx < 0) return false;
   const target = Math.min(siblings.length - 1, Math.max(0, idx + steps));
@@ -209,7 +206,9 @@ export function moveCategoryBy(
 
 export function updateCategory(storage: StorageAdapter, sourceId: string, name: string, icon: string): void {
   const cat = getCategory(storage, sourceId);
-  if (!cat || cat.isPreset) return;
+  // 预设与自定义现在同等对待，只有系统预设（加油/充电/保养/维修）不可改名：
+  // 它们由专用表单按 presetType 自动归类，改名会让用户以为能改归属。
+  if (!cat || cat.presetType) return;
   cat.name = name.trim();
   cat.icon = icon;
   cat.updatedAt = Date.now();
@@ -242,7 +241,9 @@ export interface RemoveResult {
 export function removeCategory(storage: StorageAdapter, sourceId: string): RemoveResult {
   const cat = getCategory(storage, sourceId);
   if (!cat) return { ok: false, message: '类别不存在' };
-  if (cat.isPreset) return { ok: false, message: '预设分类不能删除' };
+  // 支出预设与自定义一致，允许删除（删除后不会被 seed 重建）；
+  // 系统预设仍保护：它们靠 presetType 承载自动归类，删了加油/保养就无法归类。
+  if (cat.presetType) return { ok: false, message: '系统分类不能删除' };
   const count = listCosts(storage).filter(c => c.categorySourceId === sourceId).length;
   if (count > 0) return { ok: false, message: `该类别下有 ${count} 条支出记录，请先修改类别` };
   storage.softDelete('categories', sourceId);

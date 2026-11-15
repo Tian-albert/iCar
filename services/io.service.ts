@@ -3,7 +3,7 @@ import { StorageAdapter } from '../repositories/storage.adapter';
 import { Car } from '../types/models';
 import { rebuildConsumptionsForCar } from './refuel.service';
 import { syncMileages } from './car.service';
-import { dedupePresetCategories } from '../repositories/seed';
+import { dedupePresetCategories, normalizeSpendCategoryAliases } from '../repositories/seed';
 
 /** 业务表（fuelConsumptions 为派生数据，导入时不 Upsert，由 rebuild 重算） */
 const BUSINESS_TABLES = [
@@ -214,6 +214,9 @@ export function importBundle(storage: StorageAdapter, json: string): ImportResul
 
     // 导入可能带入同名预设（sourceId 与本地不同），合并去重后再重建派生数据
     dedupePresetCategories(storage);
+    // 旧备份可能带「停车费 / 高速费」这类曾用名。启动时的归并只在首次初始化跑，
+    // 导入这条路径必须自己补一次，否则会和本地的「停车 / 高速」并存。
+    normalizeSpendCategoryAliases(storage);
 
     // 重建派生数据：区间 + 里程
     const cars = storage.list<Car>('cars').filter(c => !c.deleted);
