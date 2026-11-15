@@ -84,6 +84,15 @@
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.62);
 }
+/* 主车取消置顶：低调文字按钮，不抢「记一笔」的视觉权重 */
+.hero-unpin {
+  flex-shrink: 0;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 21rpx;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.1);
+}
 
 /* 三个关键指标 */
 .hero-metrics {
@@ -214,6 +223,14 @@
 }
 .cc-state.bad {
   color: var(--color-danger);
+}
+/* 置顶：文字按钮，比 📍 图标语义明确（📍 是"位置"不是"置顶"） */
+.cc-pin {
+  padding: 8rpx 14rpx;
+  border-radius: 8rpx;
+  font-size: 21rpx;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 /* 每车一步记账：不冒泡，避免误触进详情 */
 .cc-plus {

@@ -31,6 +31,13 @@
           </view>
           <view class="hero-sub">{{hero.energyLabel}} · 已行驶 {{hero.mileagesText}} km</view>
         </view>
+        <!-- 主车取消置顶：catchtap 不冒泡到进详情 -->
+        <view
+          wx:if="{{hero.pinned}}"
+          class="hero-unpin"
+          hover-class="hero-dim"
+          data-id="{{hero.carId}}"
+          catchtap="onTogglePin">取消置顶</view>
       </view>
 
       <view class="hero-metrics">
@@ -77,6 +84,12 @@
           <view class="cc-state {{item.state}}">
             <text class="cc-dot {{item.state}}"></text>{{item.stateText}}
           </view>
+          <!-- 置顶：catchtap 不冒泡到进详情 -->
+          <view
+            class="cc-pin"
+            hover-class="hover-dim"
+            data-id="{{item.sourceId}}"
+            catchtap="onTogglePin">置顶</view>
           <view
             class="cc-plus"
             hover-class="cc-plus-dim"

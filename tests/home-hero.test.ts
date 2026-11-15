@@ -105,6 +105,42 @@ describe('主车选择：置顶优先，否则第一辆', () => {
   });
 });
 
+describe('置顶功能必须有 UI 入口（曾因重写页面丢失）', () => {
+  const wxml = require('fs').readFileSync('pages/index/index.wxml', 'utf-8') as string;
+  const ts = require('fs').readFileSync('pages/index/index.ts', 'utf-8') as string;
+
+  it('页面存在 onTogglePin 方法', () => {
+    expect(ts).toContain('onTogglePin');
+    expect(ts).toContain('setPinnedCarId');
+  });
+
+  it('WXML 里至少有一处调用 onTogglePin', () => {
+    // 方法存在但没绑定 = 功能等于不存在（这正是上次的 bug）
+    // 必须精确匹配事件属性，不能只 toContain('onTogglePin')
+    // —— 否则 onTogglePinDISABLED 这类改名也会命中，测试形同虚设
+    const hits = wxml.match(/catchtap="onTogglePin"|bindtap="onTogglePin"/g) || [];
+    expect(hits.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('其他车卡片有「置顶」入口', () => {
+    expect(wxml).toMatch(/cc-pin[\s\S]{0,120}catchtap="onTogglePin"/);
+    expect(wxml).toContain('>置顶<');
+  });
+
+  it('主车有「取消置顶」入口', () => {
+    expect(wxml).toContain('取消置顶');
+    expect(wxml).toMatch(/hero-unpin[\s\S]{0,140}catchtap="onTogglePin"/);
+  });
+
+  it('所有置顶入口都用 catchtap（bindtap 会冒泡误进详情页）', () => {
+    const all = wxml.match(/(catchtap|bindtap)="onTogglePin"/g) || [];
+    expect(all.length).toBeGreaterThan(0);
+    for (const a of all) {
+      expect(a.startsWith('catchtap')).toBe(true);
+    }
+  });
+});
+
 describe('置顶写入健壮性', () => {
   it('user 记录缺失时也能写入（不静默失败）', () => {
     const adapter = new StorageAdapter(createMemoryStorage());
