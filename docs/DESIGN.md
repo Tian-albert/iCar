@@ -155,6 +155,7 @@ ctx.fillStyle = '#3B6FF6';
 - 不要用暗色营销站风格：本项目是浅色工具型小程序，暗色仅用于 `--color-dark-card` 那张统计卡
 - 不要照搬 Web 设计系统：Geist/SF Pro 等专有字体、112px 巨标题、全屏摄影、断点响应式都不适用
 - 不要在自定义组件里假设能读到页面级 class（样式隔离）
+- **不要在 `observers` 里无条件 `setData`**：observers 在首次接收属性时就触发（早于 `ready`），此时首帧未完成，会报 `Expected updated data but get first rendering data`。正确写法是在 `ready()` 里置 `this._ready = true`，observers 首行 `if (!this._ready) return`，初始绘制交给 `ready()`
 - 不要只改颜色不改状态：点了没反馈比颜色不统一更伤体验
 
 ## 9. 图表标签避让（2026-11-08）

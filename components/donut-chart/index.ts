@@ -20,12 +20,19 @@ Component({
   },
   observers: {
     'segments, total'() {
-      this.setData({ activeIndex: -1 });
+      // observers 在组件**首次接收属性**时就会触发，早于 ready()。
+      // 此时首次渲染尚未完成，调用 setData 会与首帧数据竞争，
+      // 渲染层报 "Expected updated data but get first rendering data"。
+      // 因此初始绘制统一交给 ready()，这里只处理「就绪后属性变化」。
+      if (!(this as any)._ready) return;
+      // 选中态已是初始值时不必 setData（避免无意义的重渲染）
+      if (this.data.activeIndex !== -1) this.setData({ activeIndex: -1 });
       this.draw();
     }
   },
   lifetimes: {
     ready() {
+      (this as any)._ready = true;
       this.draw();
     }
   },

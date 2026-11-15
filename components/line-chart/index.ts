@@ -15,12 +15,17 @@ Component({
   },
   observers: {
     points() {
-      this.setData({ activeIndex: -1 });
+      // 见 donut-chart 同名注释：首次接收属性时 setData 会与首帧渲染竞争，
+      // 导致渲染层报 "Expected updated data but get first rendering data"。
+      // 初始绘制交给 ready()，这里只处理就绪后的属性变化。
+      if (!(this as any)._ready) return;
+      if (this.data.activeIndex !== -1) this.setData({ activeIndex: -1 });
       this.draw();
     }
   },
   lifetimes: {
     ready() {
+      (this as any)._ready = true;
       this.draw();
     }
   },
