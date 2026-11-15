@@ -128,16 +128,22 @@
    刻意用 mnt- 前缀而非 cat-：本页下方「支出类别」已占用 .cat-item / .cat-name，
    且它是横向单行滚动、尺寸完全不同，复用类名会互相污染。
    尺寸与 pages/maintain-form 的保养栅格保持一致（见 docs/prototype/maintain-picker.html）。 */
+.mnt-scroll {
+  margin: 8rpx 0 16rpx;
+}
+/* 超过两行才定高并滚动：卡片内宽 638rpx，两列 = 311×2 + 16 = 638；
+   单元格高 156rpx，两行 = 156×2 + 16 = 328rpx */
+.mnt-scroll-fixed {
+  height: 328rpx;
+}
 .mnt-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
-  padding: 8rpx 0 24rpx;
 }
 .mnt-item {
   flex: 0 0 auto;
-  /* 卡片内宽 638rpx：3 × 196 + 2 × 16 = 620rpx，留 18rpx 余量防换行抖动 */
-  width: 196rpx;
+  width: 311rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -164,6 +170,8 @@
 .mnt-name {
   margin-top: 10rpx;
   font-size: 24rpx;
+  /* 显式行高：格子高度才确定（20+44+10+34+6+28+14 = 156rpx） */
+  line-height: 34rpx;
   color: var(--color-text-1);
   text-align: center;
   max-width: 100%;
@@ -178,6 +186,7 @@
 .mnt-cycle {
   margin-top: 6rpx;
   font-size: 20rpx;
+  line-height: 28rpx;
   color: var(--color-text-3);
   text-align: center;
   max-width: 100%;

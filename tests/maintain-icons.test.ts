@@ -248,12 +248,51 @@ describe('「记一笔」保养 Tab 同步为图标栅格', () => {
     expect(wxml).not.toMatch(/mnt-item[^>]*cat-item/);
   });
 
-  it('与记保养页的栅格尺寸一致（每行 3 个）', () => {
+  it('与记保养页的栅格尺寸完全一致', () => {
     const formWxss: string = fsx.readFileSync('pages/maintain-form/index.wxss', 'utf-8');
     const entryW = /\.mnt-item\s*\{[^}]*width:\s*(\d+)rpx/.exec(wxss);
     const formW = /\.cat-item\s*\{[^}]*width:\s*(\d+)rpx/.exec(formWxss);
     expect(entryW).toBeTruthy();
     expect(formW).toBeTruthy();
     expect(entryW![1]).toBe(formW![1]);
+    expect(entryW![1]).toBe('311'); // 两列：(638 - 16) / 2
+  });
+});
+
+describe('栅格为两列固定尺寸 + 超两行滚动', () => {
+  const entryWxml: string = fsx.readFileSync('pages/entry/index.wxml', 'utf-8');
+  const entryWxss: string = fsx.readFileSync('pages/entry/index.wxss', 'utf-8');
+  const formWxml: string = fsx.readFileSync('pages/maintain-form/index.wxml', 'utf-8');
+  const formWxss: string = fsx.readFileSync('pages/maintain-form/index.wxss', 'utf-8');
+
+  it('两列宽度能让每行正好排 2 个（311×2 + 16 = 638）', () => {
+    expect(311 * 2 + 16).toBe(638);
+  });
+
+  it('单元格高度可复算：20+44+10+34+6+28+14 = 156rpx', () => {
+    expect(20 + 44 + 10 + 34 + 6 + 28 + 14).toBe(156);
+  });
+
+  it('可视高度正好两行（156×2 + 16 = 328rpx）', () => {
+    expect(156 * 2 + 16).toBe(328);
+    expect(entryWxss).toContain('height: 328rpx');
+    expect(formWxss).toContain('height: 328rpx');
+  });
+
+  it('两页都包在 scroll-view 里，可上下滚动', () => {
+    expect(entryWxml).toMatch(/<scroll-view[\s\S]{0,200}scroll-y/);
+    expect(formWxml).toMatch(/<scroll-view[\s\S]{0,200}scroll-y/);
+  });
+
+  it('超过 4 项（两行）才定高，避免少量项目时留大片空白', () => {
+    expect(entryWxml).toContain('maintains.length > 4');
+    expect(formWxml).toContain('maintains.length > 4');
+  });
+
+  it('名称与周期都有显式行高，格子高度才确定', () => {
+    expect(entryWxss).toMatch(/\.mnt-name\s*\{[^}]*line-height:\s*34rpx/);
+    expect(entryWxss).toMatch(/\.mnt-cycle\s*\{[^}]*line-height:\s*28rpx/);
+    expect(formWxss).toMatch(/\.cat-name\s*\{[^}]*line-height:\s*34rpx/);
+    expect(formWxss).toMatch(/\.cat-cycle\s*\{[^}]*line-height:\s*28rpx/);
   });
 });

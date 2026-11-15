@@ -3,11 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>记一笔 · 保养 Tab</title>
+<title>记一笔 · 保养 Tab（两列栅格）</title>
 <!--
   1:1 还原「记一笔 → 保养 Tab」（375px 宽，1rpx = 0.5px）。
-  保养项栅格的尺寸与 pages/maintain-form 完全一致，
-  类名用 mnt- 前缀（本页 .cat-* 已被「支出类别」占用）。
+  两列固定尺寸栅格：每格 311×156rpx，两行可视高度 328rpx，超出上下滚动。
 -->
 <style>
   :root{
@@ -27,7 +26,6 @@
     background:var(--bg);font-size:16px;font-weight:600;border-bottom:1px solid var(--divider);}
   .page{padding:12px;}
 
-  /* 分段器 */
   .seg-tabs{display:flex;background:var(--grid);border-radius:999px;padding:3px;margin-bottom:12px;}
   .seg{flex:1;text-align:center;padding:8px 0;font-size:14px;color:var(--t2);border-radius:999px;}
   .seg-active{background:var(--card);color:var(--primary);font-weight:600;}
@@ -40,28 +38,28 @@
   .required{color:var(--danger);}
   .manage-link{font-size:13px;color:var(--primary);}
 
-  /* 保养项栅格：与 maintain-form 一致 */
-  .mnt-grid{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 12px;}
+  /* 两列固定尺寸栅格：可视两行，超出滚动 */
+  .mnt-scroll{margin:4px 0 8px;max-height:164px;overflow-y:auto;} /* 328rpx */
+  .mnt-grid{display:flex;flex-wrap:wrap;gap:8px;}                 /* 16rpx */
   .mnt-item{
-    flex:0 0 auto;width:98px;              /* 196rpx */
+    flex:0 0 auto;width:155.5px;                                  /* 311rpx */
     display:flex;flex-direction:column;align-items:center;
-    padding:10px 6px 7px;
+    padding:10px 6px 7px;                                         /* 20/12/14rpx */
     border-radius:12px;background:var(--fill);border:1px solid transparent;
   }
   .mnt-active{background:var(--primary-light);border-color:var(--primary);}
-  .mnt-icon{font-size:22px;line-height:1;}
-  .mnt-name{margin-top:5px;font-size:12px;text-align:center;
-    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mnt-icon{font-size:22px;line-height:1;}                        /* 44rpx */
+  .mnt-name{margin-top:5px;font-size:12px;line-height:17px;        /* 34rpx */
+    text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .mnt-active .mnt-name{color:var(--primary);font-weight:600;}
-  .mnt-cycle{margin-top:3px;font-size:10px;color:var(--t3);text-align:center;
-    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mnt-cycle{margin-top:3px;font-size:10px;line-height:14px;       /* 28rpx */
+    color:var(--t3);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .mnt-active .mnt-cycle{color:var(--primary);opacity:.8;}
 
   .form-row{display:flex;align-items:center;justify-content:space-between;
     padding:9px 0;font-size:14px;border-bottom:1px solid var(--divider);}
   .form-row:last-child{border-bottom:none;}
   .form-label{font-size:14px;color:var(--t3);}
-  .form-value{font-size:14px;color:var(--t1);}
   .placeholder{color:var(--t3);}
 
   .footer{padding:8px 0 4px;}
@@ -89,36 +87,39 @@
         <div class="group-title">选择保养项目 <span class="required">*</span></div>
         <span class="manage-link">管理 ›</span>
       </div>
-      <div class="mnt-grid">
-        <div class="mnt-item mnt-active">
-          <div class="mnt-icon">🛢️</div>
-          <div class="mnt-name">机油机滤</div>
-          <div class="mnt-cycle">10000km / 1年 ›</div>
-        </div>
-        <div class="mnt-item">
-          <div class="mnt-icon">❄️</div>
-          <div class="mnt-name">空调滤芯</div>
-          <div class="mnt-cycle">20000km / 2年 ›</div>
-        </div>
-        <div class="mnt-item mnt-active">
-          <div class="mnt-icon">💨</div>
-          <div class="mnt-name">空气滤芯</div>
-          <div class="mnt-cycle">20000km ›</div>
-        </div>
-        <div class="mnt-item">
-          <div class="mnt-icon">🛑</div>
-          <div class="mnt-name">刹车油</div>
-          <div class="mnt-cycle">40000km / 4年 ›</div>
-        </div>
-        <div class="mnt-item">
-          <div class="mnt-icon">⚡</div>
-          <div class="mnt-name">火花塞</div>
-          <div class="mnt-cycle">50000km ›</div>
-        </div>
-        <div class="mnt-item">
-          <div class="mnt-icon">⚙️</div>
-          <div class="mnt-name">变速箱油</div>
-          <div class="mnt-cycle">60000km ›</div>
+
+      <div class="mnt-scroll">
+        <div class="mnt-grid">
+          <div class="mnt-item mnt-active">
+            <div class="mnt-icon">🛢️</div>
+            <div class="mnt-name">机油机滤</div>
+            <div class="mnt-cycle">10000km / 1年 ›</div>
+          </div>
+          <div class="mnt-item">
+            <div class="mnt-icon">❄️</div>
+            <div class="mnt-name">空调滤芯</div>
+            <div class="mnt-cycle">20000km / 2年 ›</div>
+          </div>
+          <div class="mnt-item mnt-active">
+            <div class="mnt-icon">💨</div>
+            <div class="mnt-name">空气滤芯</div>
+            <div class="mnt-cycle">20000km ›</div>
+          </div>
+          <div class="mnt-item">
+            <div class="mnt-icon">🛑</div>
+            <div class="mnt-name">刹车油</div>
+            <div class="mnt-cycle">40000km / 4年 ›</div>
+          </div>
+          <div class="mnt-item">
+            <div class="mnt-icon">⚡</div>
+            <div class="mnt-name">火花塞</div>
+            <div class="mnt-cycle">50000km ›</div>
+          </div>
+          <div class="mnt-item">
+            <div class="mnt-icon">⚙️</div>
+            <div class="mnt-name">变速箱油</div>
+            <div class="mnt-cycle">60000km ›</div>
+          </div>
         </div>
       </div>
     </div>
@@ -138,8 +139,9 @@
     <div class="footer"><div class="btn-primary">保存</div></div>
 
     <div class="note">
-      <b>与「记保养」页的差异：</b>仅多一个顶部分段器，保养项栅格完全相同。<br>
-      <b>检查点：</b>每行 3 个、周期文案单行不换行、选中态为浅蓝底 + 蓝边 + 名称变蓝。
+      <b>两列固定尺寸：</b>每格 311×156rpx，可视两行（328rpx），
+      第 3 行需<b>上下拖动</b>查看 —— 上面这块可以滚，试试滚动。<br>
+      <b>与「记保养」页一致：</b>两处栅格尺寸完全相同，只是外层多一个分段器。
     </div>
 
   </div>

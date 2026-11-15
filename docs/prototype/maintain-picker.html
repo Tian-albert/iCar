@@ -34,10 +34,12 @@
   .required{color:var(--danger);}
   .manage-link{font-size:13px;color:var(--primary);}
 
-  /* 与 pages/maintain-form/index.wxss 的 .cat-* 保持一致 */
-  .cat-grid{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 12px;}
+  /* 与 pages/maintain-form/index.wxss 的 .cat-* 保持一致
+     两列固定尺寸：每格 311×156rpx，可视两行 328rpx，超出上下滚动 */
+  .cat-scroll{margin:4px 0 8px;max-height:164px;overflow-y:auto;}
+  .cat-grid{display:flex;flex-wrap:wrap;gap:8px;}
   .cat-item{
-    flex:0 0 auto;width:98px;              /* 196rpx */
+    flex:0 0 auto;width:155.5px;           /* 311rpx */
     display:flex;flex-direction:column;align-items:center;
     padding:10px 6px 7px;                  /* 20rpx 12rpx 14rpx */
     border-radius:12px;background:var(--fill);
@@ -45,10 +47,10 @@
   }
   .cat-active{background:var(--primary-light);border-color:var(--primary);}
   .cat-icon{font-size:22px;line-height:1;}  /* 44rpx */
-  .cat-name{margin-top:5px;font-size:12px;text-align:center;
+  .cat-name{margin-top:5px;font-size:12px;line-height:17px;text-align:center;
     max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .cat-active .cat-name{color:var(--primary);font-weight:600;}
-  .cat-cycle{margin-top:3px;font-size:10px;color:var(--t3);text-align:center;
+  .cat-cycle{margin-top:3px;font-size:10px;line-height:14px;color:var(--t3);text-align:center;
     max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   .note{font-size:11px;color:var(--t2);padding:0 4px 12px;line-height:1.7;}
@@ -67,6 +69,7 @@
         <span class="manage-link">管理 ›</span>
       </div>
 
+      <div class="cat-scroll">
       <div class="cat-grid">
         <div class="cat-item cat-active">
           <div class="cat-icon">🛢️</div>
@@ -99,7 +102,8 @@
           <div class="cat-cycle">60000km ›</div>
         </div>
       </div>
-      <div class="ruler">↑ 三列排布，共 2 行；橙字标尺行仅示意，不入代码</div>
+      </div>
+      <div class="ruler">↑ 两列固定尺寸，可视两行；第 3 行需上下滚动（橙字仅示意，不入代码）</div>
     </div>
 
     <div class="card">

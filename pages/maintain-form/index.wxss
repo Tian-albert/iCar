@@ -23,17 +23,23 @@
 .required {
   color: var(--color-danger);
 }
-/* 保养项选择：与「支出」类别选择同一套栅格（图标 + 名称 + 点选高亮） */
+/* 保养项选择：两列固定尺寸栅格（图标 + 名称 + 点选高亮） */
+.cat-scroll {
+  margin: 8rpx 0 16rpx;
+}
+/* 超过两行才定高并滚动：卡片内宽 638rpx，两列 = 311×2 + 16 = 638；
+   单元格高 156rpx，两行 = 156×2 + 16 = 328rpx */
+.cat-scroll-fixed {
+  height: 328rpx;
+}
 .cat-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
-  padding: 8rpx 0 24rpx;
 }
 .cat-item {
   flex: 0 0 auto;
-  /* 卡片内宽 638rpx：3 × 196 + 2 × 16 = 620rpx，留 18rpx 余量，避免换行抖动 */
-  width: 196rpx;
+  width: 311rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -60,6 +66,8 @@
 .cat-name {
   margin-top: 10rpx;
   font-size: 24rpx;
+  /* 显式行高：格子高度才确定（20+44+10+34+6+28+14 = 156rpx） */
+  line-height: 34rpx;
   color: var(--color-text-1);
   text-align: center;
   overflow: hidden;
@@ -74,6 +82,7 @@
 .cat-cycle {
   margin-top: 6rpx;
   font-size: 20rpx;
+  line-height: 28rpx;
   color: var(--color-text-3);
   text-align: center;
   max-width: 100%;

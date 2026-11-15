@@ -98,21 +98,28 @@
         <view class="group-title">选择保养项目 <text class="required">*</text></view>
         <text class="manage-link" hover-class="hover-dim" bindtap="onManageMaintain">管理 ›</text>
       </view>
-      <!-- 图标栅格：与「记保养」页、以及支出类别保持同一套交互（点图标即选中） -->
-      <view class="mnt-grid" wx:if="{{maintains.length > 0}}">
-        <view
-          wx:for="{{maintains}}"
-          wx:key="sourceId"
-          class="mnt-item {{item.selected ? 'mnt-active' : ''}}"
-          data-index="{{index}}"
-          hover-class="hover-dim" bindtap="onMaintainToggle">
-          <image wx:if="{{item.isImage}}" class="mnt-icon-img" src="{{item.icon}}" mode="aspectFill" />
-          <view wx:else class="mnt-icon">{{item.emoji}}</view>
-          <view class="mnt-name">{{item.name}}</view>
-          <!-- 周期是独立操作，catchtap 阻止冒泡，避免点一下同时改了选中态 -->
-          <view hover-class="hover-dim" class="mnt-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
+      <!-- 图标栅格：两列固定尺寸，超过两行（4 项）时上下滚动。
+           超过 4 项才定高，避免只有两三项时留一大片空白。 -->
+      <scroll-view
+        wx:if="{{maintains.length > 0}}"
+        class="mnt-scroll {{maintains.length > 4 ? 'mnt-scroll-fixed' : ''}}"
+        scroll-y
+        show-scrollbar="{{false}}">
+        <view class="mnt-grid">
+          <view
+            wx:for="{{maintains}}"
+            wx:key="sourceId"
+            class="mnt-item {{item.selected ? 'mnt-active' : ''}}"
+            data-index="{{index}}"
+            hover-class="hover-dim" bindtap="onMaintainToggle">
+            <image wx:if="{{item.isImage}}" class="mnt-icon-img" src="{{item.icon}}" mode="aspectFill" />
+            <view wx:else class="mnt-icon">{{item.emoji}}</view>
+            <view class="mnt-name">{{item.name}}</view>
+            <!-- 周期是独立操作，catchtap 阻止冒泡，避免点一下同时改了选中态 -->
+            <view hover-class="hover-dim" class="mnt-cycle" data-id="{{item.sourceId}}" catchtap="onEditCycle">{{item.cycleText}} ›</view>
+          </view>
         </view>
-      </view>
+      </scroll-view>
       <view wx:else class="tip">暂无保养项，点右上角「管理 ›」添加</view>
     </view>
 
