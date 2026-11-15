@@ -98,11 +98,11 @@
         <view class="group-title">选择保养项目 <text class="required">*</text></view>
         <text class="manage-link" hover-class="hover-dim" bindtap="onManageMaintain">管理 ›</text>
       </view>
-      <!-- 图标栅格：两列固定尺寸，超过两行（4 项）时上下滚动。
-           超过 4 项才定高，避免只有两三项时留一大片空白。 -->
+      <!-- 图标栅格：三列固定尺寸，最多显示两行（6 项），超出上下滚动。
+           ≤3 项时只有一行，不定高，避免留一大片空白。 -->
       <scroll-view
         wx:if="{{maintains.length > 0}}"
-        class="mnt-scroll {{maintains.length > 4 ? 'mnt-scroll-fixed' : ''}}"
+        class="mnt-scroll {{maintains.length > 3 ? 'mnt-scroll-fixed' : ''}}"
         scroll-y
         show-scrollbar="{{false}}">
         <view class="mnt-grid">

@@ -23,12 +23,14 @@
 .required {
   color: var(--color-danger);
 }
-/* 保养项选择：两列固定尺寸栅格（图标 + 名称 + 点选高亮） */
+/* 保养项选择：三列固定尺寸栅格（图标 + 名称 + 点选高亮） */
 .cat-scroll {
   margin: 8rpx 0 16rpx;
 }
-/* 超过两行才定高并滚动：卡片内宽 638rpx，两列 = 311×2 + 16 = 638；
-   单元格高 156rpx，两行 = 156×2 + 16 = 328rpx */
+/* 最多显示两行，超出上下滚动。卡片内宽 638rpx：
+   3 × 200 + 2 × 16 = 632rpx，留 6rpx 余量避免亚像素舍入换行。
+   单元格高 156rpx → 两行 = 156 × 2 + 16 = 328rpx。
+   ≤3 项时只有一行，不加这个类，高度随内容收缩。 */
 .cat-scroll-fixed {
   height: 328rpx;
 }
@@ -39,7 +41,7 @@
 }
 .cat-item {
   flex: 0 0 auto;
-  width: 311rpx;
+  width: 200rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

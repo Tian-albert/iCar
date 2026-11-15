@@ -4,9 +4,10 @@
       <view class="group-title">选择保养项目 <text class="required">*</text></view>
       <text hover-class="hover-dim" class="manage-link" bindtap="onManageMaintain">管理 ›</text>
     </view>
-    <!-- 两列固定尺寸栅格，超过两行（4 项）时上下滚动。与「记一笔」保养 Tab 一致。 -->
+    <!-- 三列固定尺寸栅格，最多显示两行（6 项），超出上下滚动。
+         ≤3 项时只有一行，不定高。与「记一笔」保养 Tab 一致。 -->
     <scroll-view
-      class="cat-scroll {{maintains.length > 4 ? 'cat-scroll-fixed' : ''}}"
+      class="cat-scroll {{maintains.length > 3 ? 'cat-scroll-fixed' : ''}}"
       scroll-y
       show-scrollbar="{{false}}">
       <view class="cat-grid">

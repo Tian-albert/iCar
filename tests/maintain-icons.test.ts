@@ -255,25 +255,26 @@ describe('「记一笔」保养 Tab 同步为图标栅格', () => {
     expect(entryW).toBeTruthy();
     expect(formW).toBeTruthy();
     expect(entryW![1]).toBe(formW![1]);
-    expect(entryW![1]).toBe('311'); // 两列：(638 - 16) / 2
+    expect(entryW![1]).toBe('200'); // 三列，留 6rpx 余量防换行
   });
 });
 
-describe('栅格为两列固定尺寸 + 超两行滚动', () => {
+describe('栅格为三列固定尺寸 + 最多两行滚动', () => {
   const entryWxml: string = fsx.readFileSync('pages/entry/index.wxml', 'utf-8');
   const entryWxss: string = fsx.readFileSync('pages/entry/index.wxss', 'utf-8');
   const formWxml: string = fsx.readFileSync('pages/maintain-form/index.wxml', 'utf-8');
   const formWxss: string = fsx.readFileSync('pages/maintain-form/index.wxss', 'utf-8');
 
-  it('两列宽度能让每行正好排 2 个（311×2 + 16 = 638）', () => {
-    expect(311 * 2 + 16).toBe(638);
+  it('三列能排下且不溢出（200×3 + 16×2 = 632 ≤ 638）', () => {
+    expect(200 * 3 + 16 * 2).toBe(632);
+    expect(632).toBeLessThanOrEqual(638);
   });
 
   it('单元格高度可复算：20+44+10+34+6+28+14 = 156rpx', () => {
     expect(20 + 44 + 10 + 34 + 6 + 28 + 14).toBe(156);
   });
 
-  it('可视高度正好两行（156×2 + 16 = 328rpx）', () => {
+  it('可视高度正好两行（156×2 + 16 = 328rpx），即 6 项', () => {
     expect(156 * 2 + 16).toBe(328);
     expect(entryWxss).toContain('height: 328rpx');
     expect(formWxss).toContain('height: 328rpx');
@@ -284,9 +285,9 @@ describe('栅格为两列固定尺寸 + 超两行滚动', () => {
     expect(formWxml).toMatch(/<scroll-view[\s\S]{0,200}scroll-y/);
   });
 
-  it('超过 4 项（两行）才定高，避免少量项目时留大片空白', () => {
-    expect(entryWxml).toContain('maintains.length > 4');
-    expect(formWxml).toContain('maintains.length > 4');
+  it('超过 3 项才定高（≤3 项只占一行），超过 6 项才需要滚动', () => {
+    expect(entryWxml).toContain('maintains.length > 3');
+    expect(formWxml).toContain('maintains.length > 3');
   });
 
   it('名称与周期都有显式行高，格子高度才确定', () => {

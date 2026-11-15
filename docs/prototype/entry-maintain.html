@@ -38,11 +38,11 @@
   .required{color:var(--danger);}
   .manage-link{font-size:13px;color:var(--primary);}
 
-  /* 两列固定尺寸栅格：可视两行，超出滚动 */
+  /* 三列固定尺寸栅格：最多两行，超出滚动（3×100 + 2×8 = 316 ≤ 卡片内宽 319） */
   .mnt-scroll{margin:4px 0 8px;max-height:164px;overflow-y:auto;} /* 328rpx */
   .mnt-grid{display:flex;flex-wrap:wrap;gap:8px;}                 /* 16rpx */
   .mnt-item{
-    flex:0 0 auto;width:155.5px;                                  /* 311rpx */
+    flex:0 0 auto;width:100px;                                    /* 200rpx */
     display:flex;flex-direction:column;align-items:center;
     padding:10px 6px 7px;                                         /* 20/12/14rpx */
     border-radius:12px;background:var(--fill);border:1px solid transparent;
@@ -139,8 +139,9 @@
     <div class="footer"><div class="btn-primary">保存</div></div>
 
     <div class="note">
-      <b>两列固定尺寸：</b>每格 311×156rpx，可视两行（328rpx），
+      <b>三列固定尺寸：</b>每格 200×156rpx，最多显示两行（328rpx / 6 项），
       第 3 行需<b>上下拖动</b>查看 —— 上面这块可以滚，试试滚动。<br>
+      <b>≤3 项时：</b>只占一行，高度随内容收缩，不留空白。<br>
       <b>与「记保养」页一致：</b>两处栅格尺寸完全相同，只是外层多一个分段器。
     </div>
 
