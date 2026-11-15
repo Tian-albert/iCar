@@ -239,11 +239,17 @@ Page({
     wx.navigateTo({ url: `/pages/statistics/index?id=${hero.carId}&range=year` });
   },
 
-  /** Hero：保养（管理保养项） */
+  /**
+   * Hero：保养 → 记保养。
+   *
+   * 这里进的是「记一笔保养」而不是「保养项管理」：Hero 的动作区对应的是
+   * 高频使用场景（记一笔 / 统计 / 保养 / 记录），管理保养项属于低频配置，
+   * 应该从记保养页的「管理 ›」进，而不是占用首页位置。
+   */
   onOpenMaintain() {
     const hero = this.data.hero;
     if (!hero) return;
-    wx.navigateTo({ url: `/pages/maintain-manage/index?id=${hero.carId}` });
+    wx.navigateTo({ url: `/pages/maintain-form/index?carId=${hero.carId}` });
   },
 
   /** Hero：记录（该车全部记录） */

@@ -320,3 +320,30 @@ describe('保养摘要取值规则', () => {
     expect(urgent.remainDays).toBe(45);
   });
 });
+
+describe('Hero 动作区的跳转目标', () => {
+  const ts: string = require('fs').readFileSync('pages/index/index.ts', 'utf-8');
+  const formTs: string = require('fs').readFileSync('pages/maintain-form/index.ts', 'utf-8');
+
+  it('「保养」进记保养页，而不是保养项管理页', () => {
+    const block = /onOpenMaintain\(\)[\s\S]{0,500}?\n  \},/.exec(ts);
+    expect(block).toBeTruthy();
+    expect(block![0]).toContain('/pages/maintain-form/index?carId=');
+    expect(block![0]).not.toContain('maintain-manage');
+  });
+
+  it('跳转参数名与记保养页读取的参数一致', () => {
+    expect(ts).toContain('/pages/maintain-form/index?carId=');
+    expect(formTs).toContain('options.carId');
+  });
+
+  it('保养项管理仍能从记保养页进入（改完不会变成孤岛）', () => {
+    expect(formTs).toContain('maintain-manage');
+  });
+
+  it('其余动作跳转未被误改', () => {
+    expect(ts).toContain('/pages/entry/index?carId=');
+    expect(ts).toContain('/pages/statistics/index?id=');
+    expect(ts).toContain('/pages/records/index?id=');
+  });
+});
