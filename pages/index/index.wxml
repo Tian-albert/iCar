@@ -1,32 +1,89 @@
 <view class="page">
-  <!-- 顶部 -->
-  <view class="top-bar">
-    <view class="top-title">我的车辆</view>
-  </view>
-
   <!-- 空态 -->
-  <view wx:if="{{cars.length === 0}}" class="empty">
-    <view class="empty-icon">🚗</view>
-    <view class="empty-title">还没有车辆</view>
-    <view class="empty-desc">先添加你的爱车，开始记录加油、保养与支出</view>
+  <view wx:if="{{carCount === 0}}" class="empty-state">
+    <view class="empty-state-icon">🚗</view>
+    <view class="empty-state-title">还没有车辆</view>
+    <view class="empty-state-desc">先添加你的爱车，开始记录加油、保养与支出</view>
+    <view class="empty-state-action" hover-class="hover-dim" bindtap="onAddCar">＋ 添加车辆</view>
   </view>
 
-  <!-- 车辆列表 -->
-  <view hover-class="hover-dim" wx:for="{{cars}}" wx:key="sourceId" class="car-card" data-id="{{item.sourceId}}" bindtap="onTapCar">
-    <image wx:if="{{item.isImage}}" class="car-icon-img" src="{{item.icon}}" />
-    <text wx:else class="car-icon">{{item.emoji}}</text>
-    <view class="car-info">
-      <view class="car-name">
-        {{item.name}}
-        <text wx:if="{{item.pinned}}" class="pin-tag">置顶</text>
-      </view>
-      <view class="car-mileage">{{item.mileages}} km</view>
+  <block wx:else>
+    <!-- 顶部：标题 + 添加车辆（低频动作收进右上角） -->
+    <view class="top-bar">
+      <view class="top-title">我的车辆</view>
+      <view class="top-add" hover-class="hover-dim" bindtap="onAddCar">＋</view>
     </view>
-    <view hover-class="hover-dim" class="pin-btn {{item.pinned ? 'pin-active' : ''}}" data-id="{{item.sourceId}}" catchtap="onTogglePin">{{item.pinned ? '📌' : '📍'}}</view>
-    <view class="car-arrow">›</view>
-  </view>
 
-  <view class="footer">
-    <button class="btn-primary" bindtap="onAddCar">＋ 添加车辆</button>
-  </view>
+    <view class="overview">
+      {{carCount}} 辆车 · 总里程 {{totalMileageText}} km
+      <text wx:if="{{pendingCount > 0}}" class="ov-warn"> · {{pendingCount}} 项待保养</text>
+    </view>
+
+    <!-- 主车 Hero -->
+    <view wx:if="{{hero}}" class="hero">
+      <view class="hero-top" hover-class="hero-dim" data-id="{{hero.carId}}" bindtap="onTapCar">
+        <image wx:if="{{hero.isImage}}" class="hero-icon-img" src="{{hero.icon}}" />
+        <text wx:else class="hero-icon">{{hero.emoji}}</text>
+        <view class="hero-info">
+          <view class="hero-name">
+            {{hero.name}}
+            <text wx:if="{{hero.pinned}}" class="hero-pin">置顶</text>
+          </view>
+          <view class="hero-sub">{{hero.energyLabel}} · 已行驶 {{hero.mileagesText}} km</view>
+        </view>
+      </view>
+
+      <view class="hero-metrics">
+        <view class="hm-cell">
+          <view class="hm-val">¥{{hero.monthCostText}}</view>
+          <view class="hm-lbl">本月支出</view>
+        </view>
+        <view class="hm-cell">
+          <view class="hm-val">{{hero.avgText}}</view>
+          <view class="hm-lbl">{{hero.avgLabel}}</view>
+        </view>
+        <view class="hm-cell">
+          <view class="hm-val">{{hero.maintainText}}</view>
+          <view class="hm-lbl">{{hero.maintainLabel}}</view>
+        </view>
+      </view>
+
+      <view class="hero-cta" hover-class="hero-cta-dim" bindtap="onAddEntry">＋ 记一笔</view>
+
+      <view class="hero-actions">
+        <view class="ha-item" hover-class="hero-dim" bindtap="onOpenStatistics">统计</view>
+        <view class="ha-item" hover-class="hero-dim" bindtap="onOpenMaintain">保养</view>
+        <view class="ha-item" hover-class="hero-dim" bindtap="onOpenRecords">记录</view>
+      </view>
+    </view>
+
+    <!-- 其他车辆：每车一步记账 -->
+    <block wx:if="{{others.length > 0}}">
+      <view class="sec-title">其他车辆</view>
+      <view
+        wx:for="{{others}}"
+        wx:key="sourceId"
+        class="cc-card"
+        hover-class="hover-dim"
+        data-id="{{item.sourceId}}"
+        bindtap="onTapCar">
+        <image wx:if="{{item.isImage}}" class="cc-icon-img" src="{{item.icon}}" />
+        <text wx:else class="cc-icon">{{item.emoji}}</text>
+        <view class="cc-body">
+          <view class="cc-name">{{item.name}}</view>
+          <view class="cc-sub">{{item.mileages}} km · 本月 ¥{{item.monthCostText}}</view>
+        </view>
+        <view class="cc-right">
+          <view class="cc-state {{item.state}}">
+            <text class="cc-dot {{item.state}}"></text>{{item.stateText}}
+          </view>
+          <view
+            class="cc-plus"
+            hover-class="cc-plus-dim"
+            data-id="{{item.sourceId}}"
+            catchtap="onQuickEntry">＋</view>
+        </view>
+      </view>
+    </block>
+  </block>
 </view>

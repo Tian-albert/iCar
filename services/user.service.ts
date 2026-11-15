@@ -19,10 +19,25 @@ export function getPinnedCarId(storage: StorageAdapter): string {
   return storage.getUser()?.pinnedCarId ?? '';
 }
 
-/** 设置置顶车辆（传 '' 取消置顶） */
+/**
+ * 设置置顶车辆（传 '' 取消置顶）。
+ *
+ * user 记录正常由迁移创建；但若缺失（如导入异常数据后），原实现直接 return
+ * 会静默失败 —— 用户点置顶毫无反应且不报错。这里改为缺则补建，保证操作生效。
+ */
 export function setPinnedCarId(storage: StorageAdapter, carId: string): void {
-  const user = storage.getUser();
-  if (!user) return;
+  const existing = storage.getUser();
+  const user: User =
+    existing ||
+    ({
+      sourceId: 'user-local',
+      sourcePlatform: 'mp',
+      remindEnabled: true,
+      pinnedCarId: '',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      deleted: false
+    } as User);
   user.pinnedCarId = carId;
   user.updatedAt = Date.now();
   storage.setUser(user);
