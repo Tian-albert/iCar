@@ -11,11 +11,15 @@ import {
 import { getCar } from '../../services/car.service';
 import { formatDate } from '../../utils/date';
 import { round2 } from '../../utils/number';
+import { displayIcon, isImageIcon } from '../../utils/icons';
 import { MaintainHandle, MaintainLog } from '../../types/models';
 
 interface MaintainView {
   sourceId: string;
   name: string;
+  icon: string;
+  emoji: string;
+  isImage: boolean;
   cycleText: string;
   selected: boolean;
 }
@@ -52,6 +56,9 @@ Page({
     const maintains = listMaintains(storage, car.sourceId).map(m => ({
       sourceId: m.sourceId,
       name: m.name,
+      icon: m.icon || '',
+      emoji: displayIcon(m.icon || ''),
+      isImage: isImageIcon(m.icon || ''),
       cycleText: formatCycle(m),
       selected: selectedIds.includes(m.sourceId)
     }));
@@ -80,6 +87,9 @@ Page({
     const list = listMaintains(getStorage(), this.data.carId).map(m => ({
       sourceId: m.sourceId,
       name: m.name,
+      icon: m.icon || '',
+      emoji: displayIcon(m.icon || ''),
+      isImage: isImageIcon(m.icon || ''),
       cycleText: formatCycle(m),
       selected: selectedIds.has(m.sourceId)
     }));

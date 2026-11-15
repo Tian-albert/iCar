@@ -6,13 +6,31 @@ import { genId } from '../utils/id';
 import { syncMileages } from './car.service';
 
 /** 默认保养项模板（设计报告 4.2.3 CRV 模板） */
-const DEFAULT_TEMPLATES: Array<Pick<Maintain, 'name' | 'cycleMileages' | 'cycleDays' | 'cycleMonths' | 'cycleUnit' | 'cycleValue'>> = [
-  { name: '机油机滤', cycleMileages: 10000, cycleDays: 360, cycleMonths: 12, cycleUnit: 'month', cycleValue: 12 },
-  { name: '空调滤芯', cycleMileages: 20000, cycleDays: 720, cycleMonths: 24, cycleUnit: 'month', cycleValue: 24 },
-  { name: '空气滤芯', cycleMileages: 20000, cycleDays: 0, cycleMonths: 0, cycleUnit: '', cycleValue: 0 },
-  { name: '刹车油', cycleMileages: 40000, cycleDays: 1440, cycleMonths: 48, cycleUnit: 'month', cycleValue: 48 },
-  { name: '火花塞', cycleMileages: 50000, cycleDays: 0, cycleMonths: 0, cycleUnit: '', cycleValue: 0 },
-  { name: '变速箱油', cycleMileages: 60000, cycleDays: 0, cycleMonths: 0, cycleUnit: '', cycleValue: 0 }
+/**
+ * 默认保养项模板。
+ *
+ * icon 按「项目实际是什么」选，而不是统一用 🔧 ——
+ * 保养记录表单要用图标栅格选项目，全部一样就失去了快速识别的意义。
+ * 均为 Emoji 12 及更早字符，避免旧 Android 显示成方框。
+ */
+const DEFAULT_TEMPLATES: Array<
+  Pick<
+    Maintain,
+    'name' | 'icon' | 'cycleMileages' | 'cycleDays' | 'cycleMonths' | 'cycleUnit' | 'cycleValue'
+  >
+> = [
+  // 机油机滤：油桶
+  { name: '机油机滤', icon: '🛢️', cycleMileages: 10000, cycleDays: 360, cycleMonths: 12, cycleUnit: 'month', cycleValue: 12 },
+  // 空调滤芯：空调制冷
+  { name: '空调滤芯', icon: '❄️', cycleMileages: 20000, cycleDays: 720, cycleMonths: 24, cycleUnit: 'month', cycleValue: 24 },
+  // 空气滤芯：进气
+  { name: '空气滤芯', icon: '💨', cycleMileages: 20000, cycleDays: 0, cycleMonths: 0, cycleUnit: '', cycleValue: 0 },
+  // 刹车油：制动
+  { name: '刹车油', icon: '🛑', cycleMileages: 40000, cycleDays: 1440, cycleMonths: 48, cycleUnit: 'month', cycleValue: 48 },
+  // 火花塞：点火
+  { name: '火花塞', icon: '⚡', cycleMileages: 50000, cycleDays: 0, cycleMonths: 0, cycleUnit: '', cycleValue: 0 },
+  // 变速箱油：齿轮
+  { name: '变速箱油', icon: '⚙️', cycleMileages: 60000, cycleDays: 0, cycleMonths: 0, cycleUnit: '', cycleValue: 0 }
 ];
 
 export interface MaintainForm {
@@ -32,10 +50,31 @@ export interface MaintainProgressItem {
   urgent: boolean;
 }
 
-/** 为车辆 seed 默认保养项模板（幂等：已有保养项则跳过） */
+/**
+ * 给「图标为空」的保养项按名称补上模板图标。
+ *
+ * 老版本建模板时 icon 一律写空字符串，界面靠 displayIcon('') 兜底成 📌，
+ * 所有项目看起来一模一样。这里按名称回填，用户自己换过的图标不动。
+ */
+function backfillMaintainIcons(storage: StorageAdapter, list: Maintain[]): void {
+  const now = Date.now();
+  for (const m of list) {
+    if (m.icon && m.icon.trim()) continue;
+    const tpl = DEFAULT_TEMPLATES.find(t => t.name === m.name);
+    if (!tpl || !tpl.icon) continue;
+    m.icon = tpl.icon;
+    m.updatedAt = now;
+    storage.update('maintains', m);
+  }
+}
+
+/** 为车辆 seed 默认保养项模板（幂等：已有保养项则只补齐图标） */
 export function ensureMaintainTemplates(storage: StorageAdapter, carSourceId: string): void {
   const existing = listMaintains(storage, carSourceId);
-  if (existing.length > 0) return;
+  if (existing.length > 0) {
+    backfillMaintainIcons(storage, existing);
+    return;
+  }
   const now = Date.now();
   for (const tpl of DEFAULT_TEMPLATES) {
     const maintain: Maintain = {
@@ -43,7 +82,7 @@ export function ensureMaintainTemplates(storage: StorageAdapter, carSourceId: st
       sourcePlatform: 'mp',
       carSourceId,
       name: tpl.name,
-      icon: '',
+      icon: tpl.icon,
       cycleMileages: tpl.cycleMileages,
       cycleDays: tpl.cycleDays,
       cycleMonths: tpl.cycleMonths,

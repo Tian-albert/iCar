@@ -21,7 +21,8 @@ Page({
     timeRange: [MONTH_VALUES, UNIT_OPTIONS] as (string | number)[][],
     timeValue: [0, 0] as number[], // [数值索引, 单位索引]
     timeText: '1月',
-    icon: '',
+    // 默认给扳手图标：留空会让列表里显示成 📌，与「保养项」语义不符
+    icon: '🔧',
     iconText: '🔧',
     isImage: false,
     pickerShow: false
@@ -46,9 +47,10 @@ Page({
           timeRange: [values, UNIT_OPTIONS],
           timeValue: [vi, unitIndex],
           timeText: `${values[vi]}${useYear ? '年' : '月'}`,
-          icon: m.icon,
-          iconText: iconEmoji(m.icon),
-          isImage: isImageIcon(m.icon)
+          // 旧数据显示 icon 为空时补 🔧，否则保存会把空值继续带下去
+          icon: m.icon || '🔧',
+          iconText: iconEmoji(m.icon || '🔧'),
+          isImage: isImageIcon(m.icon || '')
         });
       }
     }

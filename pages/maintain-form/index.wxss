@@ -23,32 +23,63 @@
 .required {
   color: var(--color-danger);
 }
-.tag-wrap {
+/* 保养项选择：与「支出」类别选择同一套栅格（图标 + 名称 + 点选高亮） */
+.cat-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
   padding: 8rpx 0 24rpx;
 }
-.tag {
-  padding: 16rpx 28rpx;
+.cat-item {
+  flex: 0 0 auto;
+  /* 卡片内宽 638rpx：3 × 196 + 2 × 16 = 620rpx，留 18rpx 余量，避免换行抖动 */
+  width: 196rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 12rpx 14rpx;
   border-radius: var(--radius-card);
-  background: var(--color-fill);
-  color: var(--color-text-2);
-  text-align: center;
-  min-width: 140rpx;
+  background: var(--color-bg);
+  border: 2rpx solid transparent;
 }
-.tag-selected {
+.cat-active {
   background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+.cat-icon {
+  font-size: 44rpx;
+  line-height: 1;
+}
+/* 自定义图片图标：与 emoji 同尺寸，避免布局跳动 */
+.cat-icon-img {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 8rpx;
+}
+.cat-name {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--color-text-1);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.cat-active .cat-name {
   color: var(--color-primary);
-  border: 2rpx solid var(--color-primary);
+  font-weight: 600;
 }
-.tag-name {
-  font-size: 28rpx;
-}
-.tag-cycle {
+.cat-cycle {
   margin-top: 6rpx;
-  font-size: 22rpx;
-  opacity: 0.7;
+  font-size: 20rpx;
+  color: var(--color-text-3);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .form-row {
   display: flex;
