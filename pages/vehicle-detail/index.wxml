@@ -59,7 +59,8 @@
   <view class="section-title" id="sec-costs">近期支出</view>
   <view class="card cost-card" wx:if="{{recentCosts.length > 0}}">
     <view wx:for="{{recentCosts}}" wx:key="sourceId" class="cost-row">
-      <view class="cost-icon">{{item.emoji}}</view>
+      <image wx:if="{{item.isImage}}" class="cost-icon-img" src="{{item.icon}}" mode="aspectFill" />
+      <view wx:else class="cost-icon">{{item.emoji}}</view>
       <view class="cost-main">
         <view class="cost-name">{{item.name}}</view>
         <view class="cost-sub">{{item.dateText}} {{item.remark}}</view>

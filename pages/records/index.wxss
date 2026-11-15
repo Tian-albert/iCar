@@ -112,6 +112,14 @@
   font-size: 36rpx;
   margin-right: 12rpx;
 }
+/* 自定义图片图标：与 emoji 同尺寸 */
+.cost-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 12rpx;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+}
 .cost-name {
   font-size: 28rpx;
   color: var(--color-text-1);

@@ -4,7 +4,7 @@ import { listRefuels, getConsumptions, removeRefuel } from '../../services/refue
 import { listMaintains, listMaintainHandles, listMaintainLogs, removeMaintainHandle } from '../../services/maintain-record.service';
 import { listRepairs, removeRepair } from '../../services/repair.service';
 import { listCosts, listCategories, removeCost } from '../../services/cost.service';
-import { iconEmoji } from '../../utils/icons';
+import { displayIcon, isImageIcon } from '../../utils/icons';
 import { getCar } from '../../services/car.service';
 import { formatDateTime } from '../../utils/date';
 import { Cost, FuelConsumption, RefuelLog } from '../../types/models';
@@ -151,7 +151,10 @@ Page({
       .filter(c => !c.fuelRecordSourceId && !c.maintainHandleSourceId && !c.repairSourceId)
       .map(c => ({
         sourceId: c.sourceId,
-        emoji: iconEmoji(catMap.get(c.categorySourceId)?.icon ?? 'ticket'),
+        emoji: displayIcon(catMap.get(c.categorySourceId)?.icon ?? 'ticket'),
+        // 自定义图片图标必须走 <image>，否则会把 wxfile:// 路径当文字渲染
+        icon: catMap.get(c.categorySourceId)?.icon ?? '',
+        isImage: isImageIcon(catMap.get(c.categorySourceId)?.icon ?? ''),
         name: catMap.get(c.categorySourceId)?.name ?? '其他',
         dateText: formatDateTime(c.costDate),
         remark: c.remark,

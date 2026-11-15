@@ -41,6 +41,13 @@
 .cat-emoji {
   font-size: 52rpx;
 }
+/* 自定义图片图标：与 emoji 同尺寸，避免布局跳动 */
+.cat-emoji-img {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 10rpx;
+  margin: 0 auto;
+}
 .cat-name {
   margin-top: 8rpx;
   font-size: 24rpx;

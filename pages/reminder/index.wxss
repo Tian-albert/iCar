@@ -146,6 +146,20 @@
   height: 208rpx;
   flex-shrink: 0;
 }
+/* 无支出时收起画布（节点保留以便后续绘制），把空间让给空态文案 */
+.donut-canvas.donut-idle {
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+.cost-empty {
+  flex: 1;
+  padding: 48rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--color-text-3);
+  line-height: 1.6;
+}
 .legend {
   flex: 1;
   min-width: 0;

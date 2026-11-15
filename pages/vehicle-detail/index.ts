@@ -5,7 +5,7 @@ import { listRefuels, getConsumptions, getLatestConsumption } from '../../servic
 import { listCosts, listCategories } from '../../services/cost.service';
 import { getMaintainProgress, ensureMaintainTemplates } from '../../services/maintain-record.service';
 import { buildStats } from '../../domain/stats.service';
-import { iconEmoji, displayIcon, isImageIcon } from '../../utils/icons';
+import { displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDateTime, formatDate } from '../../utils/date';
 import { FuelConsumption, RefuelLog } from '../../types/models';
 
@@ -104,13 +104,11 @@ Page({
     if (!selector) return;
     // 只滚一次，之后用户手动滚动不受影响
     this.setData({ targetSection: '' });
-    wx.nextTick(() => {
-      wx.pageScrollTo({
-        selector,
-        duration: 260,
-        // 节点不存在（如该车无记录导致区块未渲染）时静默失败即可
-        fail: () => {}
-      });
+    wx.pageScrollTo({
+      selector,
+      duration: 260,
+      // 节点不存在时静默失败即可，不弹错误打断用户
+      fail: () => {}
     });
   },
   load() {
@@ -160,7 +158,10 @@ Page({
       const cat = catMap.get(c.categorySourceId);
       return {
         sourceId: c.sourceId,
-        emoji: iconEmoji(cat?.icon ?? 'ticket'),
+        emoji: displayIcon(cat?.icon ?? 'ticket'),
+        // 自定义图片图标必须走 <image>，否则会把 wxfile:// 路径当文字渲染
+        icon: cat?.icon ?? '',
+        isImage: isImageIcon(cat?.icon ?? ''),
         name: cat?.name ?? '其他',
         dateText: formatDate(c.costDate),
         remark: c.remark,
@@ -191,10 +192,11 @@ Page({
       recentCosts,
       maintainProgress,
       maintainTotal: allProgress.length
+    }, () => {
+      // 必须放在 setData 回调里：setData 是异步渲染，直接调用时目标节点
+      // 可能还没创建，pageScrollTo 会静默失败，用户停在首屏。
+      this.scrollToSection();
     });
-
-    // 渲染完成后再滚动到概览页指定的区块
-    this.scrollToSection();
   },
   /** 展开 / 收起悬浮菜单 */
   onToggleFab() {

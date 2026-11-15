@@ -79,7 +79,7 @@
         <text wx:else class="cc-icon">{{item.emoji}}</text>
         <view class="cc-body">
           <view class="cc-name">{{item.name}}</view>
-          <view class="cc-sub">{{item.mileages}} km · 本月 ¥{{item.monthCostText}}</view>
+          <view class="cc-sub">{{item.mileagesText}} km · 本月 ¥{{item.monthCostText}}</view>
         </view>
         <view class="cc-right">
           <view class="cc-state {{item.state}}">

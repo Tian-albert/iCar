@@ -48,8 +48,9 @@
     <view class="sec-title">今年花费 · 按车</view>
     <view class="card">
       <view class="cost-wrap">
-        <canvas type="2d" id="overviewDonut" class="donut-canvas"></canvas>
-        <view class="legend">
+        <!-- 无支出时收起画布但不卸载：节点保留，数据回来后仍可直接绘制 -->
+        <canvas type="2d" id="overviewDonut" class="donut-canvas {{hasYearCost ? '' : 'donut-idle'}}"></canvas>
+        <view wx:if="{{hasYearCost}}" class="legend">
           <view wx:for="{{carCosts}}" wx:key="carSourceId" class="lg-row">
             <view class="lg-dot" style="background: {{item.color}};"></view>
             <text class="lg-name">{{item.carName}}</text>
@@ -57,6 +58,7 @@
             <text class="lg-pct">{{item.percentText}}</text>
           </view>
         </view>
+        <view wx:else class="cost-empty">今年还没有支出记录，记一笔后即可查看各车花费占比</view>
       </view>
     </view>
 

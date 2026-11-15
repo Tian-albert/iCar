@@ -4,6 +4,7 @@ import { ensurePrivacyAuthorize } from '../../utils/privacy';
 import { getStorage } from '../../store/index';
 import {
   addCustomIcon,
+  countIconUsage,
   listCustomIconPaths,
   removeCustomIcon
 } from '../../services/custom-icon.service';
@@ -100,15 +101,34 @@ Component({
     /** 长按自定义图标：删除（图标库会越攒越多，必须留出口） */
     onLongPressCustom(e: WechatMiniprogram.TouchEvent) {
       const path = e.currentTarget.dataset.icon as string;
+      const storage = getStorage();
+
+      // 先查占用：删除登记不会把引用它的车辆/类别改回默认图标，
+      // 而是留下指向已删文件的孤立引用（表现为裂图）。所以占用中直接拒绝。
+      let used = 0;
+      try {
+        used = countIconUsage(storage, path);
+      } catch (err) {
+        used = 0;
+      }
+      if (used > 0) {
+        wx.showModal({
+          title: '该图标正在使用中',
+          content: `还有 ${used} 处在使用它，请先换成别的图标再删除。`,
+          showCancel: false,
+          confirmText: '知道了'
+        });
+        return;
+      }
+
       wx.showModal({
         title: '删除这个图标？',
-        content: '已使用该图标的车辆/类别会变回默认图标。',
+        content: '删除后不会再出现在图标库里。',
         confirmText: '删除',
-        confirmColor: '#F5474F',
         success: res => {
           if (!res.confirm) return;
           try {
-            removeCustomIcon(getStorage(), path);
+            removeCustomIcon(storage, path);
           } catch (err) {
             // 登记表异常不应阻塞交互
           }

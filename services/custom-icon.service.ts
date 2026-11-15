@@ -62,6 +62,24 @@ export function removeCustomIcon(storage: StorageAdapter, path: string): void {
   }
 }
 
+/**
+ * 统计某个图标被多少条业务数据引用。
+ *
+ * 删除登记前必须先查：若仍有实体在用这个路径，删掉登记并不会让它变回默认图标，
+ * 而是留下一个指向已删文件的孤立引用——UI 上表现为裂图。
+ */
+export function countIconUsage(storage: StorageAdapter, path: string): number {
+  if (!path) return 0;
+  const tables = ['cars', 'categories', 'maintains'];
+  let count = 0;
+  for (const table of tables) {
+    for (const e of storage.list<{ deleted?: boolean; icon?: string }>(table)) {
+      if (!e.deleted && e.icon === path) count++;
+    }
+  }
+  return count;
+}
+
 /** 是否已登记（供启动清理判断文件是否有主） */
 export function listRegisteredPaths(storage: StorageAdapter): string[] {
   return storage

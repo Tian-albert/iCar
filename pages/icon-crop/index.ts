@@ -37,7 +37,14 @@ Page({
   },
 
   onLoad(options: Record<string, string>) {
-    const src = decodeURIComponent(options.src || '');
+    // decodeURIComponent 在路径含非法 % 序列时会抛错；不兜住的话页面
+    // 会卡在「加载中…」，连失败提示都出不来
+    let src = '';
+    try {
+      src = decodeURIComponent(options.src || '');
+    } catch (e) {
+      src = options.src || '';
+    }
     if (!src) {
       this.setData({ loading: false, failed: true });
       return;
@@ -155,7 +162,21 @@ Page({
     });
   },
 
-  onTouchEnd() {
+  onTouchEnd(e: WechatMiniprogram.TouchEvent) {
+    const t = e && e.touches;
+    if (t && t.length === 1) {
+      // 双指抬起一指、剩下单指继续拖：必须用剩余手指的位置重置起点，
+      // 否则继续拖动时会按「捏合前的起点」算位移，画面瞬间跳一下。
+      (this as any)._start = {
+        offsetX: this.data.offsetX,
+        offsetY: this.data.offsetY,
+        zoom: this.data.zoom,
+        x: t[0].clientX,
+        y: t[0].clientY,
+        dist: 0
+      };
+      return;
+    }
     (this as any)._start = null;
   },
 
@@ -209,6 +230,18 @@ Page({
    */
   exportCropped(): Promise<string> {
     return new Promise((resolve, reject) => {
+      // 超时兜底：exec / img.onload / canvasToTempFilePath 任一环节不回调时，
+      // Promise 永不 settle，loading 遮罩（mask:true）会把整页锁死且无退出入口。
+      let settled = false;
+      let timer: any = null;
+      const finish = (fn: (v: any) => void, v: any) => {
+        if (settled) return;
+        settled = true;
+        if (timer) clearTimeout(timer);
+        fn(v);
+      };
+      timer = setTimeout(() => finish(reject, new Error('export timeout')), 10000);
+
       this.createSelectorQuery()
         .select('#cropCanvas')
         .fields({ node: true, size: true })
@@ -216,7 +249,7 @@ Page({
           try {
             const canvas = res && res[0] && res[0].node;
             if (!canvas) {
-              reject(new Error('canvas not found'));
+              finish(reject, new Error('canvas not found'));
               return;
             }
             canvas.width = CROP_OUTPUT_SIZE;
@@ -252,30 +285,31 @@ Page({
                   destWidth: CROP_OUTPUT_SIZE,
                   destHeight: CROP_OUTPUT_SIZE,
                   fileType: 'png',
-                  success: r => resolve(r.tempFilePath),
-                  fail: () => reject(new Error('export failed'))
+                  success: r => finish(resolve, r.tempFilePath),
+                  fail: () => finish(reject, new Error('export failed'))
                 });
               } catch (err) {
-                reject(err);
+                finish(reject, err);
               }
             };
-            img.onerror = () => reject(new Error('image load failed'));
+            img.onerror = () => finish(reject, new Error('image load failed'));
             img.src = this.data.src;
           } catch (err) {
-            reject(err);
+            finish(reject, err);
           }
         });
     });
   },
 
-  /** 把临时文件落到沙盒，避免重启后图标丢失 */
+  /**
+   * 把临时文件落到沙盒，避免重启后图标丢失。
+   *
+   * 失败时必须抛错而不是退回临时路径：临时文件重启后即失效，
+   * 若继续返回该路径、还会被登记进图标库，就会留下一个永远打不开的图标。
+   */
   persistIcon(tempPath: string): string {
     const dest = `${wx.env.USER_DATA_PATH}/icon-${Date.now()}.png`;
-    try {
-      wx.getFileSystemManager().copyFileSync(tempPath, dest);
-      return dest;
-    } catch (e) {
-      return tempPath;
-    }
+    wx.getFileSystemManager().copyFileSync(tempPath, dest);
+    return dest;
   }
 });

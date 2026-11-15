@@ -3,7 +3,7 @@
 // 布局：主车用深色 Hero 承载最高频动作（记一笔 / 统计 / 保养 / 记录），
 // 其余车保留「每车一步记账」的紧凑卡片，避免多车时记错车。
 import { getStorage } from '../../store/index';
-import { listCars, getCar } from '../../services/car.service';
+import { listCars } from '../../services/car.service';
 import { getPinnedCarId, setPinnedCarId } from '../../services/user.service';
 import { listCosts, listCategories } from '../../services/cost.service';
 import { getMaintainProgress } from '../../services/maintain-record.service';
@@ -21,6 +21,8 @@ interface CarView extends Car {
   isImage: boolean;
   /** 本月支出（紧凑卡片用） */
   monthCostText: string;
+  /** 里程（千分位，与 Hero 保持一致） */
+  mileagesText: string;
   /** 保养状态：ok 正常 / warn 临近 / bad 超期 */
   state: 'ok' | 'warn' | 'bad';
   stateText: string;
@@ -123,7 +125,6 @@ Page({
     const year = new Date(now).getFullYear();
     const monthStart = new Date(year, new Date(now).getMonth(), 1).getTime();
     const cats = listCategories(storage);
-    const catMap = new Map(cats.map(c => [c.sourceId, c]));
 
     const cars = listCars(storage);
     const pinnedId = getPinnedCarId(storage);
@@ -152,6 +153,7 @@ Page({
         emoji: displayIcon(c.icon || 'car'),
         isImage: isImageIcon(c.icon || ''),
         monthCostText: fmtMoney(monthCost),
+        mileagesText: fmtInt(c.mileages),
         state: sum.state,
         stateText: pending > 0 ? (sum.state === 'bad' ? '超期' : '临近') : '正常'
       };

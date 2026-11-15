@@ -11,7 +11,7 @@ import {
 } from '../../services/maintain-record.service';
 import { saveRepair } from '../../services/repair.service';
 import { saveCost, listSpendCategories } from '../../services/cost.service';
-import { iconEmoji } from '../../utils/icons';
+import { displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDate } from '../../utils/date';
 import { round2, parseAmountInput, AMOUNT_INPUT_ERROR } from '../../utils/number';
 import { EnergyType } from '../../types/models';
@@ -32,6 +32,9 @@ interface CategoryOption {
   sourceId: string;
   name: string;
   emoji: string;
+  /** 自定义上传的图片图标：必须走 <image>，否则会把 wxfile:// 路径当文字渲染 */
+  icon: string;
+  isImage: boolean;
 }
 
 const TABS: TabItem[] = [
@@ -163,7 +166,9 @@ Page({
     return listSpendCategories(getStorage()).map(c => ({
       sourceId: c.sourceId,
       name: c.name,
-      emoji: iconEmoji(c.icon)
+      emoji: displayIcon(c.icon),
+      icon: c.icon || '',
+      isImage: isImageIcon(c.icon || '')
     }));
   },
   refreshCategories() {

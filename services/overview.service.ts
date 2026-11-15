@@ -90,6 +90,27 @@ function startOfYear(now: number): number {
   return new Date(d.getFullYear(), 0, 1).getTime();
 }
 
+/**
+ * 百分比取整且保证合计为 100。
+ *
+ * 三项各 33.33% 时逐项四舍五入会显示 33+33+33=99%，与环图铺满一整圈矛盾。
+ * 把差额补给占比最大的一项（入参通常是按金额降序的数组）。
+ */
+export function toIntegerPercents(values: number[]): number[] {
+  const out = values.map(v => Math.round(isFinite(v) ? v : 0));
+  if (out.length === 0) return out;
+
+  const diff = 100 - out.reduce((sum, v) => sum + v, 0);
+  if (diff !== 0) {
+    let maxIndex = 0;
+    for (let i = 1; i < out.length; i++) {
+      if (out[i] > out[maxIndex]) maxIndex = i;
+    }
+    out[maxIndex] += diff;
+  }
+  return out;
+}
+
 /** 主车：置顶优先；没置顶过就取第一辆 */
 export function pickMainCar(cars: Car[], pinnedId: string): Car | null {
   if (cars.length === 0) return null;

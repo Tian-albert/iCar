@@ -9,7 +9,7 @@ import {
   resolveCategorySelection
 } from '../../services/cost.service';
 import { getCar } from '../../services/car.service';
-import { iconEmoji } from '../../utils/icons';
+import { displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDate } from '../../utils/date';
 import { round2 } from '../../utils/number';
 import { Cost } from '../../types/models';
@@ -71,7 +71,10 @@ Page({
     const cats = source.map(c => ({
       sourceId: c.sourceId,
       name: c.name,
-      emoji: iconEmoji(c.icon),
+      emoji: displayIcon(c.icon),
+      // 自定义图片图标必须走 <image>，否则会把 wxfile:// 路径当文字渲染
+      icon: c.icon || '',
+      isImage: isImageIcon(c.icon || ''),
       isPreset: c.isPreset
     }));
 

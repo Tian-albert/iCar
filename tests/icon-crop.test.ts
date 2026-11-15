@@ -207,6 +207,10 @@ describe('预设图标集', () => {
     expect(PRESET_ICONS.length).toBeGreaterThan(40);
   });
 
+  it('全局不重复（跨分组也不能重复，否则 key 冲突）', () => {
+    expect(new Set(PRESET_ICONS).size).toBe(PRESET_ICONS.length);
+  });
+
   it('同一分组内图标不重复（wx:key="*this" 要求唯一）', () => {
     for (const g of ICON_GROUPS) {
       expect(new Set(g.icons).size).toBe(g.icons.length);
@@ -214,9 +218,18 @@ describe('预设图标集', () => {
   });
 
   it('覆盖常见的支出场景（洗车 / 贴膜 / 停车 / 保险 / 罚款）', () => {
-    // 洗车 🧽、贴膜/玻璃 🪟、停车 🅿️、保险 🛡️、罚单/票据 🧾
-    for (const icon of ['🧽', '🪟', '🅿️', '🛡️', '🧾']) {
+    // 洗车 🧽、贴膜 🎞️、停车 🅿️、保险 🛡️、罚单/票据 🧾
+    for (const icon of ['🧽', '🎞️', '🅿️', '🛡️', '🧾']) {
       expect(PRESET_ICONS).toContain(icon);
+    }
+  });
+
+  it('不含会在旧 Android 上显示成方框的 Unicode 13 图标', () => {
+    // 这些字符在 Android 10 及更早系统上无字形，会渲染成「豆腐块」。
+    // 🛻（皮卡）是唯一保留项：没有更早的等价字符，且用户明确要皮卡。
+    const tofu = ['🪫', '🪣', '🪟', '🪛', '🪞', '🪙'];
+    for (const bad of tofu) {
+      expect(PRESET_ICONS).not.toContain(bad);
     }
   });
 

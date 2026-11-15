@@ -3,9 +3,13 @@
 // 与原「保养」页的区别：原页只显示置顶车，现在跨全部车汇总 ——
 // 保养总览、按车花费、最近流水、漏记提醒都是「统计页做不到」的跨车视角。
 import { getStorage } from '../../store/index';
-import { buildOverview, OverviewSnapshot } from '../../services/overview.service';
+import {
+  buildOverview,
+  toIntegerPercents,
+  OverviewSnapshot
+} from '../../services/overview.service';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
-import { renderDonut, DonutSegment } from '../../utils/chart-render';
+import { renderDonut, computeDonutLayout, DonutSegment } from '../../utils/chart-render';
 
 /** 环图逻辑尺寸（px，375 屏宽下 104px ≈ 208rpx） */
 const DONUT_SIZE = 104;
@@ -77,6 +81,8 @@ Page({
     pendingCount: 0,
     lastRecordText: '—',
     yearTotalText: '0',
+    /** 今年是否有支出：为 false 时环图区显示空态 */
+    hasYearCost: false,
     stale: null as { carName: string; days: number } | null,
     maintain: [] as MaintainView[],
     carCosts: [] as CarCostView[],
@@ -129,6 +135,9 @@ Page({
         color: c.color
       }));
 
+    // 图例的整数百分比必须合计 100，否则与环图铺满一圈矛盾
+    const intPercents = toIntegerPercents(snap.carCosts.map(c => c.percent));
+
     this.setData(
       {
         hasCar: true,
@@ -138,6 +147,7 @@ Page({
         pendingCount: snap.pendingCount,
         lastRecordText: daysAgoText(snap.metric.lastRecordDays),
         yearTotalText: fmtInt(snap.yearTotal),
+        hasYearCost: snap.yearTotal > 0,
         stale: snap.stale ? { carName: snap.stale.carName, days: snap.stale.days } : null,
         maintain: snap.maintain.map((m, i) => ({
           key: `${m.carSourceId}-${m.name}-${i}`,
@@ -147,11 +157,12 @@ Page({
           remainText: m.remainText,
           level: m.level
         })),
-        carCosts: snap.carCosts.map(c => ({
+        carCosts: snap.carCosts.map((c, i) => ({
           carSourceId: c.carSourceId,
           carName: c.carName,
           amountText: fmtInt(c.amount),
-          percentText: `${Math.round(c.percent)}%`,
+          // 整数百分比：逐项四舍五入后合计可能只有 99%，把误差补给占比最大的一项
+          percentText: `${intPercents[i]}%`,
           color: c.color
         })),
         recent: snap.recent.map((r, i) => ({
@@ -172,9 +183,6 @@ Page({
 
   /** 用共享 renderDonut 画环图（无外标签，中心显示今年合计） */
   drawDonut() {
-    const segments = this.data.donutSegments;
-    if (!segments.length) return;
-
     this.createSelectorQuery()
       .select('#overviewDonut')
       .fields({ node: true, size: true })
@@ -182,13 +190,29 @@ Page({
         const canvas = res && res[0] && res[0].node;
         if (!canvas) return;
         const dpr = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).pixelRatio || 2;
+        // 重设 width/height 会同时清空位图 —— 必须在「无数据」分支之前做，
+        // 否则删光支出后画布仍保留上一次的环图
         canvas.width = DONUT_SIZE * dpr;
         canvas.height = DONUT_SIZE * dpr;
         const ctx = canvas.getContext('2d');
         ctx.scale(dpr, dpr);
-        // 内圈直径只有 ~53px，金额过长会溢出，按字符数缩字号
-        const len = this.data.yearTotalText.length;
-        const fontScale = len >= 9 ? 0.7 : len >= 8 ? 0.78 : 1;
+
+        const segments = this.data.donutSegments;
+        if (!segments.length) {
+          ctx.clearRect(0, 0, DONUT_SIZE, DONUT_SIZE);
+          return;
+        }
+
+        // 中心金额按实际测量宽度缩字号：内圈直径只有约 53px，
+        // 金额到 10 万以上（如 ¥123,456）就会压到色环上。
+        // 用 measureText 而不是按字符数估算，能覆盖任意位数。
+        const geo = computeDonutLayout(DONUT_SIZE, DONUT_SIZE, 1, false);
+        const maxTextW = geo.innerR * 2 - 6;
+        const centerText = `¥${this.data.yearTotalText}`;
+        ctx.font = 'bold 14px sans-serif';
+        const measured = ctx.measureText(centerText).width;
+        const fontScale = measured > maxTextW ? Math.max(0.55, maxTextW / measured) : 1;
+
         renderDonut({
           ctx,
           w: DONUT_SIZE,

@@ -230,6 +230,14 @@
   font-size: 40rpx;
   margin-right: 24rpx;
 }
+/* 自定义图片图标：与 emoji 同尺寸 */
+.cost-icon-img {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 24rpx;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+}
 .cost-main {
   flex: 1;
 }

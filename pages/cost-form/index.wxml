@@ -17,7 +17,8 @@
         data-index="{{index}}"
         hover-class="hover-dim"
         bindtap="onSelectCategory">
-        <view class="cat-emoji">{{item.emoji}}</view>
+        <image wx:if="{{item.isImage}}" class="cat-emoji-img" src="{{item.icon}}" mode="aspectFill" />
+        <view wx:else class="cat-emoji">{{item.emoji}}</view>
         <view class="cat-name">{{item.name}}</view>
       </view>
     </scroll-view>

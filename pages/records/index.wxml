@@ -92,7 +92,8 @@
     <view wx:for="{{costRecords}}" wx:key="sourceId" class="record card">
       <view class="record-top">
         <view class="cost-head">
-          <view class="cost-icon">{{item.emoji}}</view>
+          <image wx:if="{{item.isImage}}" class="cost-icon-img" src="{{item.icon}}" mode="aspectFill" />
+          <view wx:else class="cost-icon">{{item.emoji}}</view>
           <view class="cost-name">{{item.name}}</view>
         </view>
         <view class="cost-amount">¥ {{item.amountText}}</view>
