@@ -5,10 +5,29 @@ import { ensurePrivacyAuthorize } from '../../utils/privacy';
 
 Page({
   data: {
-    jsonText: ''
+    jsonText: '',
+    /** 导出时是否把自定义图标一并打包（base64） */
+    includeIcons: false
+  },
+  onToggleIcons(e: WechatMiniprogram.SwitchChange) {
+    this.setData({ includeIcons: e.detail.value });
+  },
+  /** 统一取导出内容，图标体积超限时给出可操作的提示 */
+  buildBundle(): string | null {
+    try {
+      return exportBundle(getStorage(), { includeIcons: this.data.includeIcons });
+    } catch (err) {
+      wx.showModal({
+        title: '导出失败',
+        content: (err as Error).message || '生成备份失败，请重试',
+        showCancel: false
+      });
+      return null;
+    }
   },
   onExport() {
-    const json = exportBundle(getStorage());
+    const json = this.buildBundle();
+    if (json === null) return;
     wx.setClipboardData({
       data: json,
       success: () => wx.showToast({ title: '已复制到剪贴板，请粘贴保存', icon: 'none' })
@@ -16,7 +35,8 @@ Page({
   },
   /** 导出为 .json 文件：写入用户目录后通过文件分享消息发出 */
   onExportFile() {
-    const json = exportBundle(getStorage());
+    const json = this.buildBundle();
+    if (json === null) return;
     const d = new Date();
     const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
     const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
