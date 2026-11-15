@@ -54,6 +54,19 @@
         "sortOrder": 0
       },
       {
+        "sourceId": "mp:category:充电",
+        "sourcePlatform": "mp",
+        "createdAt": 1767232800000,
+        "updatedAt": 1767232800000,
+        "deleted": false,
+        "name": "充电",
+        "icon": "ev",
+        "isPreset": true,
+        "presetType": "ev",
+        "visible": true,
+        "sortOrder": 1
+      },
+      {
         "sourceId": "mp:category:保养",
         "sourcePlatform": "mp",
         "createdAt": 1767232800000,
@@ -64,7 +77,7 @@
         "isPreset": true,
         "presetType": "maintain",
         "visible": true,
-        "sortOrder": 1
+        "sortOrder": 2
       },
       {
         "sourceId": "mp:category:维修",
@@ -77,72 +90,72 @@
         "isPreset": true,
         "presetType": "fix",
         "visible": true,
-        "sortOrder": 2
+        "sortOrder": 3
       },
       {
-        "sourceId": "mp:category:停车",
+        "sourceId": "mp:category:停车费",
         "sourcePlatform": "mp",
         "createdAt": 1767232800000,
         "updatedAt": 1767232800000,
         "deleted": false,
-        "name": "停车",
+        "name": "停车费",
         "icon": "p",
         "isPreset": true,
         "presetType": "",
         "visible": true,
-        "sortOrder": 3
-      },
-      {
-        "sourceId": "mp:category:充电",
-        "sourcePlatform": "mp",
-        "createdAt": 1767232800000,
-        "updatedAt": 1767232800000,
-        "deleted": false,
-        "name": "充电",
-        "icon": "ev",
-        "isPreset": true,
-        "presetType": "ev",
-        "visible": true,
-        "sortOrder": 4
+        "sortOrder": 100
       },
       {
         "sourceId": "mp:category:洗车",
         "sourcePlatform": "mp",
-        "createdAt": 1767319200000,
-        "updatedAt": 1767319200000,
+        "createdAt": 1767232800000,
+        "updatedAt": 1767232800000,
         "deleted": false,
         "name": "洗车",
         "icon": "wash",
-        "isPreset": false,
+        "isPreset": true,
         "presetType": "",
         "visible": true,
-        "sortOrder": 5
+        "sortOrder": 101
       },
       {
-        "sourceId": "mp:category:高速",
+        "sourceId": "mp:category:高速费",
         "sourcePlatform": "mp",
-        "createdAt": 1767319200000,
-        "updatedAt": 1767319200000,
+        "createdAt": 1767232800000,
+        "updatedAt": 1767232800000,
         "deleted": false,
-        "name": "高速",
+        "name": "高速费",
         "icon": "toll",
-        "isPreset": false,
+        "isPreset": true,
         "presetType": "",
         "visible": true,
-        "sortOrder": 6
+        "sortOrder": 102
       },
       {
         "sourceId": "mp:category:保险",
         "sourcePlatform": "mp",
-        "createdAt": 1767319200000,
-        "updatedAt": 1767319200000,
+        "createdAt": 1767232800000,
+        "updatedAt": 1767232800000,
         "deleted": false,
         "name": "保险",
         "icon": "shield",
+        "isPreset": true,
+        "presetType": "",
+        "visible": true,
+        "sortOrder": 103
+      },
+      {
+        "sourceId": "mp:category:改装",
+        "sourcePlatform": "mp",
+        "createdAt": 1767319200000,
+        "updatedAt": 1767319200000,
+        "deleted": false,
+        "name": "改装",
+        "icon": "🎨",
         "isPreset": false,
         "presetType": "",
         "visible": true,
-        "sortOrder": 7
+        "sortOrder": 200
       }
     ],
     "maintains": [
@@ -746,7 +759,7 @@
         "updatedAt": 1770343200000,
         "deleted": false,
         "carSourceId": "mp:cars:test-hybrid",
-        "categorySourceId": "mp:category:停车",
+        "categorySourceId": "mp:category:停车费",
         "amount": 18.0,
         "costDate": 1770343200000,
         "remark": "地下车库",
@@ -761,7 +774,7 @@
         "updatedAt": 1778724000000,
         "deleted": false,
         "carSourceId": "mp:cars:test-hybrid",
-        "categorySourceId": "mp:category:高速",
+        "categorySourceId": "mp:category:高速费",
         "amount": 78.0,
         "costDate": 1778724000000,
         "remark": "高速",
@@ -806,7 +819,7 @@
         "updatedAt": 1790301600000,
         "deleted": false,
         "carSourceId": "mp:cars:test-hybrid",
-        "categorySourceId": "mp:category:停车",
+        "categorySourceId": "mp:category:停车费",
         "amount": 25.0,
         "costDate": 1790301600000,
         "remark": "医院停车",
@@ -821,7 +834,7 @@
         "updatedAt": 1793844000000,
         "deleted": false,
         "carSourceId": "mp:cars:test-hybrid",
-        "categorySourceId": "mp:category:高速",
+        "categorySourceId": "mp:category:高速费",
         "amount": 110.0,
         "costDate": 1793844000000,
         "remark": "跨城高速",

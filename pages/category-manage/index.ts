@@ -8,8 +8,10 @@ import {
   setCategoryVisible,
   setCategoryIcon,
   moveCategoryBy,
-  hasCategoryName
+  hasCategoryName,
+  getCategory
 } from '../../services/cost.service';
+import { isSystemPreset } from '../../repositories/seed';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
 
 /** 单行高度（rpx），与 .row 的 min-height 保持一致 */
@@ -22,6 +24,8 @@ interface CatView {
   emoji: string;
   isImage: boolean;
   isPreset: boolean;
+  /** 系统预设（加油/充电/保养/维修）：不出现在本页，由专用表单自动归类 */
+  isSystem: boolean;
   visible: boolean;
 }
 
@@ -55,10 +59,13 @@ Page({
       emoji: iconEmoji(c.icon),
       isImage: isImageIcon(c.icon),
       isPreset: c.isPreset,
+      isSystem: isSystemPreset(c),
       visible: c.visible !== false
     }));
     this.setData({
-      presets: view.filter(v => v.isPreset),
+      // 系统预设（加油/充电/保养/维修）不在此展示：它们不是支出类别，
+      // 由各自表单自动生成支出，列在这里只会让用户以为可以重复记。
+      presets: view.filter(v => v.isPreset && !v.isSystem),
       customs: view.filter(v => !v.isPreset)
     });
   },
@@ -142,7 +149,10 @@ Page({
             wx.showToast({ title: '已有同名类别', icon: 'none' });
             return;
           }
-          updateCategory(getStorage(), id, name, '🧾');
+          // 保留原图标：updateCategory 的 icon 参数是必填，之前写死 '🧾'
+          // 会让用户改个名字就把自己设的图标冲掉
+          const current = getCategory(getStorage(), id);
+          updateCategory(getStorage(), id, name, current ? current.icon : '🧾');
           this.load();
         }
       }

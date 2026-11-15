@@ -63,6 +63,7 @@ const LEGACY_ICON_MAP: Record<string, string> = {
   ticket: '🧾',
   wash: '🧼',
   toll: '🛣️',
+  shield: '🛡️',
   car: '🚗'
 };
 

@@ -14,6 +14,13 @@
   font-size: 22rpx;
   color: var(--color-text-3);
 }
+/* 系统预设说明：紧跟在预设卡片下方，与上方操作提示区分开 */
+.tip-note {
+  margin: 12rpx 8rpx 24rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--color-text-3);
+}
 .row {
   display: flex;
   align-items: center;

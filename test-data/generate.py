@@ -20,18 +20,22 @@ _PKG = os.path.join(os.path.dirname(OUT_DIR), 'package.json')
 with open(_PKG, encoding='utf-8') as _f:
     APP_VERSION = json.load(_f)['version']
 
-# 预设类别 ID 与 seed.ts 保持一致，导入后会自动合并
+# 预设类别 ID 与 seed.ts 保持一致，导入后会自动合并。
+# 前四个是系统预设（presetType 非空，由专用表单自动归类，不出现在支出类别里），
+# 后四个是支出预设（用户记支出时可选）。
 PRESET_CATEGORIES = [
     ('加油', 'oil', 'refuel', 0),
-    ('保养', 'maintain', 'maintain', 1),
-    ('维修', 'fix', 'fix', 2),
-    ('停车', 'p', '', 3),
-    ('充电', 'ev', 'ev', 4),
+    ('充电', 'ev', 'ev', 1),
+    ('保养', 'maintain', 'maintain', 2),
+    ('维修', 'fix', 'fix', 3),
+    ('停车费', 'p', '', 100),
+    ('洗车', 'wash', '', 101),
+    ('高速费', 'toll', '', 102),
+    ('保险', 'shield', '', 103),
 ]
+# 自定义类别不得与预设重名，这里用一个预设里没有的名字
 CUSTOM_CATEGORIES = [
-    ('洗车', 'wash', 5),
-    ('高速', 'toll', 6),
-    ('保险', 'shield', 7),
+    ('改装', '🎨', 200),
 ]
 
 CAT = {
@@ -39,9 +43,9 @@ CAT = {
     'ev': 'mp:category:充电',
     'maintain': 'mp:category:保养',
     'fix': 'mp:category:维修',
-    'park': 'mp:category:停车',
+    'park': 'mp:category:停车费',
     'wash': 'mp:category:洗车',
-    'toll': 'mp:category:高速',
+    'toll': 'mp:category:高速费',
     'insurance': 'mp:category:保险',
 }
 

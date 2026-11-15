@@ -85,20 +85,26 @@ describe('cost.service 类别管理', () => {
     expect(listCategories(adapter).some(c => c.sourceId === cat.sourceId)).toBe(false);
   });
 
-  it('记支出默认显示全部类别（4 预设 + 自定义）', () => {
+  it('记支出默认显示全部支出类别（4 支出预设 + 自定义）', () => {
     const { adapter } = setup();
     addCategory(adapter, '杂费', 'ticket');
     const names = listSpendCategories(adapter).map(c => c.name);
-    expect(names).toEqual(expect.arrayContaining(['加油', '保养', '维修', '停车', '杂费']));
+    expect(names).toEqual(
+      expect.arrayContaining(['停车费', '洗车', '高速费', '保险', '杂费'])
+    );
+    // 系统预设（加油/充电/保养/维修）有专用录入，不得出现在支出类别里
+    for (const banned of ['加油', '充电', '保养', '维修']) {
+      expect(names).not.toContain(banned);
+    }
   });
 
   it('关闭某类别的"显示"后，记支出不再出现该类别', () => {
     const { adapter } = setup();
-    const fuel = listCategories(adapter).find(c => c.name === '加油')!;
-    setCategoryVisible(adapter, fuel.sourceId, false);
+    const wash = listCategories(adapter).find(c => c.name === '洗车')!;
+    setCategoryVisible(adapter, wash.sourceId, false);
     const names = listSpendCategories(adapter).map(c => c.name);
-    expect(names).not.toContain('加油');
-    expect(names).toContain('保养');
+    expect(names).not.toContain('洗车');
+    expect(names).toContain('停车费');
   });
 });
 
@@ -249,13 +255,16 @@ describe('cost.service 批量拖动换位（R-12）', () => {
 describe('cost.service 同名类别校验（R-10）', () => {
   it('忽略大小写与首尾空格，编辑时排除自身', () => {
     const { adapter } = setup();
-    const a = addCategory(adapter, '停车费', 'p');
+    // 用非预设名，避免与预设「停车费」撞名干扰「排除自身」的判断
+    const a = addCategory(adapter, '美容', 'p');
     addCategory(adapter, 'Parking', 'p');
 
-    expect(hasCategoryName(adapter, '停车费')).toBe(true);
-    expect(hasCategoryName(adapter, ' 停车费 ')).toBe(true);
+    expect(hasCategoryName(adapter, '美容')).toBe(true);
+    expect(hasCategoryName(adapter, ' 美容 ')).toBe(true);
     expect(hasCategoryName(adapter, 'parking')).toBe(true);
-    expect(hasCategoryName(adapter, '停车费', a.sourceId)).toBe(false);
-    expect(hasCategoryName(adapter, '洗车')).toBe(false);
+    expect(hasCategoryName(adapter, '美容', a.sourceId)).toBe(false);
+    // 预设名一律占用，自定义不能重名
+    expect(hasCategoryName(adapter, '洗车')).toBe(true);
+    expect(hasCategoryName(adapter, '打蜡')).toBe(false);
   });
 });

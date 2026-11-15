@@ -69,11 +69,14 @@ export function listCategories(storage: StorageAdapter): Category[] {
 }
 
 /**
- * 记支出可选的类别：返回所有 visible=true 的类别（预设 + 自定义）。
- * 用户可在类别管理里对任意类别（含加油/保养/维修/停车）开关"是否显示"。
+ * 记支出可选的类别：visible=true 的**支出类**类别（支出预设 + 自定义）。
+ *
+ * 必须排除系统预设（presetType 非空：加油/充电/保养/维修）：
+ * 它们由各自的专用表单自动生成支出，若在这里也能选，用户会重复记同一笔消费
+ * （先记一次「加油」，再在支出里选「加油」记一次）。
  */
 export function listSpendCategories(storage: StorageAdapter): Category[] {
-  return listCategories(storage).filter(c => c.visible !== false);
+  return listCategories(storage).filter(c => c.visible !== false && !c.presetType);
 }
 
 /**

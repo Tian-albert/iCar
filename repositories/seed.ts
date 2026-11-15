@@ -2,14 +2,36 @@
 import { Category, Cost } from '../types/models';
 import { StorageAdapter } from './storage.adapter';
 
-// 预设类别：加油 / 保养 / 维修 / 停车 / 充电（停车无专用表单，presetType 为空）
-const PRESETS: Array<Pick<Category, 'name' | 'icon' | 'presetType' | 'sortOrder'>> = [
-  { name: '加油', icon: 'oil', presetType: 'refuel', sortOrder: 0 },
-  { name: '保养', icon: 'maintain', presetType: 'maintain', sortOrder: 1 },
-  { name: '维修', icon: 'fix', presetType: 'fix', sortOrder: 2 },
-  { name: '停车', icon: 'p', presetType: '', sortOrder: 3 },
-  { name: '充电', icon: 'ev', presetType: 'ev', sortOrder: 4 }
+/**
+ * 系统预设：由「加油 / 充电 / 保养 / 维修」四个专用表单自动关联生成支出
+ * （见 refuel / maintain-record / repair 服务的 presetType 查询）。
+ *
+ * 这些类别**必须保留**，否则自动生成的支出会归到「其他」。
+ * 但它们**不出现在「记支出」的类别选择里** —— 那样会和专用录入重复，
+ * 用户还能手动选「加油」再记一笔加油，导致同一次消费被记两遍。
+ */
+const SYSTEM_PRESETS: Array<Pick<Category, 'name' | 'icon' | 'presetType'>> = [
+  { name: '加油', icon: 'oil', presetType: 'refuel' },
+  { name: '充电', icon: 'ev', presetType: 'ev' },
+  { name: '保养', icon: 'maintain', presetType: 'maintain' },
+  { name: '维修', icon: 'fix', presetType: 'fix' }
 ];
+
+/**
+ * 支出预设：记支出时用户可选的常用项（presetType 为空）。
+ * 加油/充电/保养/维修不在此列，它们走各自的录入表单。
+ */
+const SPEND_PRESETS: Array<Pick<Category, 'name' | 'icon' | 'presetType'>> = [
+  { name: '停车费', icon: 'p', presetType: '' },
+  { name: '洗车', icon: 'wash', presetType: '' },
+  { name: '高速费', icon: 'toll', presetType: '' },
+  { name: '保险', icon: 'shield', presetType: '' }
+];
+
+/** 是否系统预设（不出现在支出类别选择与类别管理里） */
+export function isSystemPreset(c: Pick<Category, 'presetType'>): boolean {
+  return !!c.presetType;
+}
 
 /**
  * 同名预设去重：历史数据可能残留多条同名预设
@@ -47,9 +69,53 @@ export function dedupePresetCategories(adapter: StorageAdapter): void {
   }
 }
 
+/** 把 from 的支出记录全部改指向 to，然后软删 from */
+function mergeCategoryInto(adapter: StorageAdapter, from: Category, to: Category): void {
+  const now = Date.now();
+  const costs = adapter
+    .list<Cost>('costs')
+    .filter(x => x.categorySourceId === from.sourceId && !x.deleted);
+  for (const cost of costs) {
+    cost.categorySourceId = to.sourceId;
+    cost.updatedAt = now;
+    adapter.update('costs', cost);
+  }
+  adapter.softDelete('categories', from.sourceId);
+}
+
+/**
+ * 「停车」→「停车费」改名（旧库升级）。
+ *
+ * 保留原 sourceId：支出记录靠 sourceId 关联，换 id 就得重指全部历史支出，
+ * 风险远大于收益（sourceId 对用户不可见）。
+ * 若已存在「停车费」（用户自定义过同名类别），则把「停车」并入它再软删，
+ * 避免升级后出现两个「停车费」。
+ */
+function renameLegacyParking(adapter: StorageAdapter): void {
+  const all = adapter.list<Category>('categories').filter(c => !c.deleted);
+  const legacy = all.find(c => c.isPreset && c.name === '停车');
+  if (!legacy) return;
+
+  const target = all.find(c => c.name === '停车费');
+  if (target && target.sourceId !== legacy.sourceId) {
+    mergeCategoryInto(adapter, legacy, target);
+    return;
+  }
+
+  legacy.name = '停车费';
+  legacy.isPreset = true;
+  legacy.presetType = '';
+  legacy.updatedAt = Date.now();
+  adapter.update('categories', legacy);
+}
+
 export function seedPresetCategories(adapter: StorageAdapter): void {
   // 0. 先做同名预设去重（自愈历史重复数据）
   dedupePresetCategories(adapter);
+
+  // 0.5 「停车」改名为「停车费」，必须在补齐预设之前做，
+  //     否则会先插入一条新的「停车费」，与旧「停车」并存。
+  renameLegacyParking(adapter);
 
   const all = adapter.list<Category>('categories').filter(c => !c.deleted);
 
@@ -98,20 +164,36 @@ export function seedPresetCategories(adapter: StorageAdapter): void {
     }
   }
 
-  // 3. 确保 5 个预设存在（仅按未删除记录判断，避免"软删后不再重建"）
-  const current = adapter.list<Category>('categories').filter(c => !c.deleted);
-  for (const preset of PRESETS) {
-    if (current.some(c => c.name === preset.name && c.isPreset)) continue;
-    const now = Date.now();
-    adapter.insert<Category>('categories', {
-      ...preset,
-      sourceId: `mp:category:${preset.name}`,
-      sourcePlatform: 'mp',
-      isPreset: true,
-      visible: true,
-      createdAt: now,
-      updatedAt: now,
-      deleted: false
-    });
-  }
+  // 3. 确保系统预设与支出预设都存在（仅按未删除记录判断，避免"软删后不再重建"）
+  const ensure = (
+    list: Array<Pick<Category, 'name' | 'icon' | 'presetType'>>,
+    baseOrder: number
+  ) => {
+    const current = adapter.list<Category>('categories').filter(c => !c.deleted);
+    const presets = current.filter(c => c.isPreset);
+    let nextOrder = presets.length
+      ? Math.max(...presets.map(c => c.sortOrder ?? 0)) + 1
+      : baseOrder;
+
+    for (const preset of list) {
+      if (current.some(c => c.name === preset.name && c.isPreset)) continue;
+      // 同名自定义类别已存在时不再插入，避免与用户的类别重名
+      if (current.some(c => c.name === preset.name)) continue;
+      const now = Date.now();
+      adapter.insert<Category>('categories', {
+        ...preset,
+        sourceId: `mp:category:${preset.name}`,
+        sourcePlatform: 'mp',
+        isPreset: true,
+        visible: true,
+        sortOrder: nextOrder++,
+        createdAt: now,
+        updatedAt: now,
+        deleted: false
+      });
+    }
+  };
+
+  ensure(SPEND_PRESETS, 0);
+  ensure(SYSTEM_PRESETS, 100);
 }
