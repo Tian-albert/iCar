@@ -28,21 +28,33 @@
   color: var(--color-text-1);
 }
 
-/* 分栏：横向可滚动，避免加新分组后挤压换行 */
+/* 分栏：横向可滚动，避免加新分组后挤压换行。
+   必须显式定高 + align-items:center —— 否则作为 scroll-view 的 flex 子项
+   会被 stretch 拉成很高的气泡，且文字贴在上沿。 */
 .tab-bar {
   flex-shrink: 0;
   display: flex;
+  align-items: center;
+  /* 比 chip 高 8rpx，留出居中余量，避免恰好等高时边缘被裁 */
+  height: 64rpx;
   white-space: nowrap;
   margin-top: 24rpx;
 }
 .tab {
-  flex-shrink: 0;
-  padding: 12rpx 24rpx;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56rpx;
+  /* line-height:1 配合上面的 flex 居中，文字才真正居中，不依赖字体默认行高 */
+  line-height: 1;
+  padding: 0 24rpx;
   margin-right: 12rpx;
   border-radius: var(--r-pill);
   background: var(--color-fill);
   color: var(--color-text-2);
   font-size: 24rpx;
+  box-sizing: border-box;
 }
 .tab-on {
   background: var(--color-primary-light);
