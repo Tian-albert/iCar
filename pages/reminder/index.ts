@@ -1,41 +1,102 @@
-// 保养 Tab：显示置顶车辆（未置顶则最近使用）的保养事项
+// 概览 Tab（原「保养」Tab）：全局面板
+//
+// 与原「保养」页的区别：原页只显示置顶车，现在跨全部车汇总 ——
+// 保养总览、按车花费、最近流水、漏记提醒都是「统计页做不到」的跨车视角。
 import { getStorage } from '../../store/index';
-import { listCars } from '../../services/car.service';
-import { getPinnedCarId } from '../../services/user.service';
-import { ensureMaintainTemplates, getMaintainProgress } from '../../services/maintain-record.service';
-import { Car } from '../../types/models';
+import { buildOverview, OverviewSnapshot } from '../../services/overview.service';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
+import { renderDonut, DonutSegment } from '../../utils/chart-render';
 
-/** 取置顶车辆；未置顶时回退到最近使用的车辆 */
-function pickActiveCar(storage: ReturnType<typeof getStorage>): Car | null {
-  const cars = listCars(storage);
-  if (!cars.length) return null;
-  const pinnedId = getPinnedCarId(storage);
-  const pinned = cars.find(c => c.sourceId === pinnedId);
-  if (pinned) return pinned;
-  return [...cars].sort((a, b) => b.updatedAt - a.updatedAt)[0];
+/** 环图逻辑尺寸（px，375 屏宽下 104px ≈ 208rpx） */
+const DONUT_SIZE = 104;
+
+interface MaintainView {
+  key: string;
+  carSourceId: string;
+  carName: string;
+  name: string;
+  remainText: string;
+  level: string;
+}
+
+interface CarCostView {
+  carSourceId: string;
+  carName: string;
+  amountText: string;
+  percentText: string;
+  color: string;
+}
+
+interface RecentView {
+  key: string;
+  carSourceId: string;
+  carName: string;
+  dateText: string;
+  typeLabel: string;
+  amountText: string;
+  section: string;
+}
+
+/** 千分位整数 */
+function fmtInt(n: number): string {
+  const v = Math.round(n);
+  return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/** 金额保留两位；整数则不带小数 */
+function fmtMoney(n: number): string {
+  const v = Math.round(n * 100) / 100;
+  return Number.isInteger(v) ? fmtInt(v) : v.toFixed(2);
+}
+
+/** 相对日期：今天 / 昨天 / M-D */
+function relativeDate(ts: number, now: number): string {
+  const d = new Date(ts);
+  const today = new Date(now);
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const diffDays = Math.floor((startOfToday - new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()) / 86400000);
+  if (diffDays === 0) return '今天';
+  if (diffDays === 1) return '昨天';
+  return `${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+/** 距今天数的口语化 */
+function daysAgoText(days: number | null): string {
+  if (days === null) return '—';
+  if (days <= 0) return '今天';
+  if (days === 1) return '昨天';
+  return `${days} 天前`;
 }
 
 Page({
   data: {
     hasCar: false,
-    carName: '',
-    mileages: 0,
-    isPinned: false,
-    soonItems: [] as Array<{ name: string; remainText: string; progressPercent: number }>,
-    allCount: 0
+    carCount: 0,
+    totalMileageText: '0',
+    monthCostText: '0',
+    pendingCount: 0,
+    lastRecordText: '—',
+    yearTotalText: '0',
+    stale: null as { carName: string; days: number } | null,
+    maintain: [] as MaintainView[],
+    carCosts: [] as CarCostView[],
+    recent: [] as RecentView[],
+    donutSegments: [] as DonutSegment[],
+    /** 主车 id：管理保养项时用 */
+    mainCarId: ''
   },
-  /** 转发：落地车辆列表，接收方本地无数据也能正常打开 */
+
   onShareAppMessage() {
-    return buildShareMessage({
-      highlight: this.data.hasCar ? `${this.data.carName}保养还剩多少，一眼看到` : ''
-    });
+    return buildShareMessage({ highlight: this.shareHighlight() });
   },
   onShareTimeline() {
-    return buildTimelineMessage({
-      highlight: this.data.hasCar ? `${this.data.carName}保养还剩多少，一眼看到` : ''
-    });
+    return buildTimelineMessage({ highlight: this.shareHighlight() });
   },
+  shareHighlight(): string {
+    if (!this.data.hasCar) return '';
+    return `今年已记 ${this.data.yearTotalText} 元，${this.data.carCount} 辆车一目了然`;
+  },
+
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 });
@@ -43,47 +104,125 @@ Page({
     enableShareMenu();
     this.load();
   },
+
+  onReady() {
+    this.drawDonut();
+  },
+
   load() {
     const storage = getStorage();
-    const car = pickActiveCar(storage);
-    if (!car) {
-      this.setData({ hasCar: false });
+    const now = Date.now();
+    const snap: OverviewSnapshot = buildOverview(storage, now);
+
+    if (snap.metric.carCount === 0) {
+      this.setData({ hasCar: false, donutSegments: [] });
       return;
     }
-    ensureMaintainTemplates(storage, car.sourceId);
-    const progress = getMaintainProgress(storage, car.sourceId, Date.now());
-    const soonItems = progress
-      .filter(p => p.urgent)
-      .sort((a, b) => a.progress - b.progress)
-      .map(p => ({
-        name: p.maintain.name,
-        remainText:
-          p.remainDays !== null
-            ? `剩余 ${p.remainDays} 天`
-            : p.remainMileage !== null
-              ? `剩余 ${p.remainMileage} km`
-              : '',
-        progressPercent: Math.round(p.progress * 100)
+
+    // 环图扇区：百分比按金额算，颜色与图例一致
+    const segments: DonutSegment[] = snap.carCosts
+      .filter(c => c.amount > 0)
+      .map(c => ({
+        name: c.carName,
+        amount: fmtMoney(c.amount),
+        percent: c.percent,
+        color: c.color
       }));
-    this.setData({
-      hasCar: true,
-      carName: car.name,
-      mileages: car.mileages,
-      isPinned: getPinnedCarId(storage) === car.sourceId,
-      soonItems,
-      allCount: progress.length
-    });
+
+    this.setData(
+      {
+        hasCar: true,
+        carCount: snap.metric.carCount,
+        totalMileageText: fmtInt(snap.metric.totalMileage),
+        monthCostText: fmtMoney(snap.metric.monthCost),
+        pendingCount: snap.pendingCount,
+        lastRecordText: daysAgoText(snap.metric.lastRecordDays),
+        yearTotalText: fmtInt(snap.yearTotal),
+        stale: snap.stale ? { carName: snap.stale.carName, days: snap.stale.days } : null,
+        maintain: snap.maintain.map((m, i) => ({
+          key: `${m.carSourceId}-${m.name}-${i}`,
+          carSourceId: m.carSourceId,
+          carName: m.carName,
+          name: m.name,
+          remainText: m.remainText,
+          level: m.level
+        })),
+        carCosts: snap.carCosts.map(c => ({
+          carSourceId: c.carSourceId,
+          carName: c.carName,
+          amountText: fmtInt(c.amount),
+          percentText: `${Math.round(c.percent)}%`,
+          color: c.color
+        })),
+        recent: snap.recent.map((r, i) => ({
+          key: `${r.carSourceId}-${r.date}-${i}`,
+          carSourceId: r.carSourceId,
+          carName: r.carName,
+          dateText: relativeDate(r.date, now),
+          typeLabel: r.typeLabel,
+          amountText: fmtMoney(r.amount),
+          section: r.section
+        })),
+        donutSegments: segments,
+        mainCarId: snap.mainCarId
+      },
+      () => this.drawDonut()
+    );
   },
-  onOpenManage() {
-    const car = pickActiveCar(getStorage());
-    if (car) {
-      wx.navigateTo({ url: `/pages/maintain-manage/index?id=${car.sourceId}` });
-    }
+
+  /** 用共享 renderDonut 画环图（无外标签，中心显示今年合计） */
+  drawDonut() {
+    const segments = this.data.donutSegments;
+    if (!segments.length) return;
+
+    this.createSelectorQuery()
+      .select('#overviewDonut')
+      .fields({ node: true, size: true })
+      .exec(res => {
+        const canvas = res && res[0] && res[0].node;
+        if (!canvas) return;
+        const dpr = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).pixelRatio || 2;
+        canvas.width = DONUT_SIZE * dpr;
+        canvas.height = DONUT_SIZE * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        // 内圈直径只有 ~53px，金额过长会溢出，按字符数缩字号
+        const len = this.data.yearTotalText.length;
+        const fontScale = len >= 9 ? 0.7 : len >= 8 ? 0.78 : 1;
+        renderDonut({
+          ctx,
+          w: DONUT_SIZE,
+          h: DONUT_SIZE,
+          segments,
+          total: this.data.yearTotalText,
+          showLabels: false,
+          centerLabel: '今年合计',
+          fontScale
+        });
+      });
   },
-  onOpenDetail() {
-    const car = pickActiveCar(getStorage());
-    if (car) {
-      wx.navigateTo({ url: `/pages/vehicle-detail/index?id=${car.sourceId}` });
-    }
+
+  /** 点某条保养项 → 该车详情的「保养进度」 */
+  onTapMaintain(e: WechatMiniprogram.TouchEvent) {
+    const id = e.currentTarget.dataset.car as string;
+    wx.navigateTo({ url: `/pages/vehicle-detail/index?id=${id}&section=maintain` });
+  },
+
+  /** 点某条流水 → 该车详情对应区块 */
+  onTapRecord(e: WechatMiniprogram.TouchEvent) {
+    const id = e.currentTarget.dataset.car as string;
+    const section = (e.currentTarget.dataset.section as string) || 'costs';
+    wx.navigateTo({ url: `/pages/vehicle-detail/index?id=${id}&section=${section}` });
+  },
+
+  /** 管理保养项：跳到主车（多车时的取舍，与 Hero 主车规则一致） */
+  onManageMaintain() {
+    const id = this.data.mainCarId;
+    if (!id) return;
+    wx.navigateTo({ url: `/pages/maintain-manage/index?id=${id}` });
+  },
+
+  onAddCar() {
+    wx.navigateTo({ url: '/pages/vehicle-form/index' });
   }
 });

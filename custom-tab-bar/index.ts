@@ -3,7 +3,8 @@ Component({
   data: {
     selected: 0,
     list: [
-      { pagePath: '/pages/reminder/index', text: '保养', icon: '🔧' },
+      // 该页已由「保养」改为全局「概览」面板（保养提醒作为其中一个区块）
+      { pagePath: '/pages/reminder/index', text: '概览', icon: '📊' },
       { pagePath: '/pages/index/index', text: '车辆', icon: '🚙' },
       { pagePath: '/pages/user/index', text: '我的', icon: '👤' }
     ]

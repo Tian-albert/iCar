@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>主界面布局原型 · 车记本（一次性原型，勿上线）</title>
+<!--
+  这是**一次性原型**，只用于回答一个问题：
+  「主界面（车辆列表）的信息层级与主操作该怎么排？」
+
+  3 个变体结构不同，用 ?variant=A|B|C 切换，← → 方向键也可切换。
+  取色与字号取自 app.wxss 的真实令牌（1rpx = 0.5px @375px 宽）。
+  定稿后此文件不进主分支，只保留结论。
+-->
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --divider:#F0F1F4; --fill:#F2F3F5; --border:#E6EAF1;
+    --primary:#3B6FF6; --primary-light:#EEF3FE;
+    --danger:#F5474F; --warning:#E8912A; --success:#2BA84A;
+    --dark:#1E2536;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;display:flex;flex-direction:column;align-items:center;
+    padding:26px 16px 104px;gap:14px;min-height:100vh;color:var(--t1);
+  }
+  .caption{max-width:430px;text-align:center;}
+  .caption h1{font-size:16px;font-weight:600;}
+  .caption .why{font-size:12.5px;color:var(--t2);margin-top:6px;line-height:1.6;}
+
+  .phone{
+    width:375px;height:690px;background:var(--bg);border-radius:34px;
+    overflow:hidden;position:relative;flex-shrink:0;
+    box-shadow:0 14px 44px rgba(15,23,42,.18);border:1px solid #fff;
+  }
+  .screen{position:absolute;inset:0 0 56px 0;overflow-y:auto;}
+  .page{padding:12px;}
+
+  /* ---------- 导航栏 ---------- */
+  .navbar{
+    height:44px;display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:600;background:var(--bg);position:relative;
+  }
+  .navbar .right{
+    position:absolute;right:12px;top:0;height:44px;display:flex;align-items:center;gap:14px;
+  }
+  .nav-icon{
+    width:26px;height:26px;border-radius:50%;background:var(--fill);
+    display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--t2);
+  }
+  .nav-text{font-size:14px;color:var(--primary);font-weight:500;}
+
+  /* ---------- TabBar ---------- */
+  .tabbar{
+    position:absolute;left:0;right:0;bottom:0;height:56px;
+    background:rgba(255,255,255,.96);border-top:1px solid var(--divider);
+    display:flex;
+  }
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+  .tab .ic{font-size:18px;line-height:1;filter:grayscale(1);opacity:.45;}
+  .tab .tx{font-size:11px;color:var(--t3);}
+  .tab.on .ic{filter:none;opacity:1;}
+  .tab.on .tx{color:var(--primary);}
+
+  /* ---------- 通用 ---------- */
+  .overview{
+    font-size:12px;color:var(--t3);padding:2px 4px 12px;line-height:1.5;
+  }
+  .status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px;}
+  .dot-ok{background:var(--success);}
+  .dot-warn{background:var(--warning);}
+  .dot-bad{background:var(--danger);}
+
+  /* ================= 变体 A：车卡内嵌操作 ================= */
+  .car-card{
+    background:var(--card);border-radius:16px;padding:14px;
+    margin-bottom:12px;box-shadow:0 1px 6px rgba(15,23,42,.05);
+  }
+  .cc-top{display:flex;align-items:center;gap:10px;}
+  .cc-icon{font-size:26px;line-height:1;flex-shrink:0;}
+  .cc-name{font-size:16px;font-weight:600;}
+  .pin-tag{
+    font-size:10px;color:var(--primary);background:var(--primary-light);
+    padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:500;
+  }
+  .cc-status{margin-left:auto;font-size:11.5px;color:var(--t2);white-space:nowrap;}
+  .cc-sub{font-size:13px;color:var(--t3);margin:7px 0 0 36px;}
+  .cc-actions{display:flex;align-items:center;gap:8px;margin-top:11px;padding-left:36px;}
+  .btn-add{
+    background:var(--primary);color:#fff;font-size:12.5px;font-weight:500;
+    padding:6px 14px;border-radius:999px;
+  }
+  .btn-link{font-size:12.5px;color:var(--t2);padding:6px 4px;}
+
+  /* ================= 变体 B：主车工作台 ================= */
+  .brand{font-size:12px;color:var(--t3);}
+  .hero{
+    background:var(--dark);border-radius:18px;padding:18px 16px;color:#fff;
+  }
+  .hero-top{display:flex;align-items:center;gap:11px;}
+  .hero-icon{font-size:30px;line-height:1;}
+  .hero-name{font-size:19px;font-weight:600;}
+  .hero-sub{font-size:11.5px;color:rgba(255,255,255,.62);margin-top:3px;}
+  .hero-metrics{display:flex;margin:16px 0 14px;}
+  .hero-metrics > div{flex:1;text-align:center;}
+  .hero-metrics b{display:block;font-size:18px;font-weight:600;}
+  .hero-metrics span{display:block;font-size:10.5px;color:rgba(255,255,255,.6);margin-top:4px;}
+  .hero-cta{
+    background:#fff;color:var(--dark);text-align:center;font-size:15px;font-weight:600;
+    padding:11px;border-radius:999px;
+  }
+  .hero-actions{display:flex;gap:8px;margin-top:9px;}
+  .hero-actions > span{
+    flex:1;text-align:center;font-size:13px;
+    padding:9px;border-radius:10px;
+    background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);
+  }
+  .sec-title{font-size:12px;color:var(--t3);margin:18px 4px 8px;}
+  .mini-row{
+    background:var(--card);border-radius:12px;padding:13px 14px;margin-bottom:8px;
+    display:flex;align-items:center;gap:9px;font-size:13.5px;
+  }
+  .mini-row .mi{font-size:19px;line-height:1;}
+  .mini-row .mn{font-weight:500;}
+  .mini-row .ms{color:var(--t3);font-size:12px;margin-left:auto;}
+  .mini-row .mst{font-size:11px;margin-left:8px;}
+
+  /* ================= 变体 C：极简 + 底部固定记账 ================= */
+  .slim-row{
+    background:var(--card);border-radius:12px;padding:15px 14px;margin-bottom:8px;
+    display:flex;align-items:center;gap:11px;
+  }
+  .slim-icon{font-size:24px;line-height:1;}
+  .slim-name{font-size:15.5px;font-weight:600;}
+  .slim-sub{font-size:12px;color:var(--t3);margin-top:3px;}
+  .slim-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+  .slim-state{font-size:11.5px;color:var(--t2);white-space:nowrap;}
+  .slim-arrow{color:var(--t4);font-size:19px;line-height:1;}
+  .add-row{
+    text-align:center;font-size:13px;color:var(--t3);
+    padding:14px;border:1px dashed var(--border);border-radius:12px;margin-top:4px;
+  }
+  /* C 专属：浮在 tabBar 之上的固定主按钮 */
+  .fixed-cta{
+    position:absolute;left:12px;right:12px;bottom:66px;
+    background:var(--primary);color:#fff;text-align:center;
+    font-size:15.5px;font-weight:600;padding:13px;border-radius:999px;
+    box-shadow:0 6px 18px rgba(59,111,246,.4);
+  }
+
+  /* ================= 变体 D：混合（主车工作台 + 其余车一步记账） ================= */
+  .cc-compact{
+    background:var(--card);border-radius:14px;padding:13px 14px;
+    margin-bottom:10px;display:flex;align-items:center;gap:11px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);
+  }
+  .cc-compact .cc-icon{font-size:24px;line-height:1;flex-shrink:0;}
+  .cc-body{flex:1;min-width:0;}
+  .cc-body .cc-name{font-size:15px;font-weight:600;}
+  .cc-sub2{font-size:12px;color:var(--t3);margin-top:3px;}
+  .cc-right{display:flex;align-items:center;gap:9px;flex-shrink:0;}
+  .cc-state{font-size:11px;color:var(--t2);white-space:nowrap;}
+  .cc-plus{
+    width:28px;height:28px;border-radius:50%;background:var(--primary);
+    color:#fff;font-size:17px;line-height:28px;text-align:center;flex-shrink:0;
+  }
+  .hero-name .pin-tag{margin-left:8px;background:rgba(255,255,255,.18);color:#fff;}
+
+  /* ================= 变体 E：D 的改进（保养改为状态条） ================= */
+  .hero-alert{
+    margin-top:9px;display:flex;align-items:center;gap:7px;
+    background:rgba(245,71,79,.16);border-radius:10px;padding:9px 11px;
+    font-size:12px;color:#FFD9DC;
+  }
+  .hero-alert .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .hero-alert .arw{color:rgba(255,255,255,.62);font-size:15px;line-height:1;}
+  .hero-alert.ok{background:rgba(43,168,74,.16);color:#C8F0D4;}
+
+  /* ---------- 变体切换条（不属于设计本身） ---------- */
+  .switcher{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+    display:flex;align-items:center;gap:4px;
+    background:#1B2130;color:#fff;border-radius:999px;padding:6px 8px;
+    box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:99;font-size:12.5px;
+  }
+  .switcher button{
+    width:30px;height:30px;border:0;border-radius:50%;cursor:pointer;
+    background:rgba(255,255,255,.12);color:#fff;font-size:15px;line-height:1;
+  }
+  .switcher button:hover{background:rgba(255,255,255,.24);}
+  .switcher .lbl{min-width:126px;text-align:center;font-weight:500;}
+  .hint{position:fixed;left:0;right:0;bottom:4px;text-align:center;font-size:10.5px;color:#8b93a3;}
+</style>
+</head>
+<body>
+
+<div class="caption">
+  <h1 id="vName">A（车卡内嵌）</h1>
+  <div class="why" id="vWhy"></div>
+</div>
+
+<div class="phone">
+  <div class="screen" id="screen"></div>
+  <div class="tabbar">
+    <div class="tab"><span class="ic">🔧</span><span class="tx">保养</span></div>
+    <div class="tab on"><span class="ic">🚙</span><span class="tx">车辆</span></div>
+    <div class="tab"><span class="ic">👤</span><span class="tx">我的</span></div>
+  </div>
+</div>
+
+<div class="switcher">
+  <button id="prev" title="上一个（←）">‹</button>
+  <span class="lbl" id="lbl">A</span>
+  <button id="next" title="下一个（→）">›</button>
+</div>
+<div class="hint">← → 切换变体 · 地址栏 ?variant=A|B|C 可直接分享</div>
+
+<script>
+// 三辆测试车，与 test-data 里的数据口径一致
+const CARS = [
+  { icon:'🚙', name:'CRV',     pinned:true,  km:'5,850', month:'¥420', state:'ok',   stateText:'机油剩 1,200 km', short:'正常' },
+  { icon:'⚡', name:'Model Y', pinned:false, km:'5,460', month:'¥86',  state:'bad',  stateText:'空调滤芯已超期',   short:'超期' },
+  { icon:'🚗', name:'汉DM-i',  pinned:false, km:'5,400', month:'¥210', state:'ok',   stateText:'保养正常',       short:'正常' }
+];
+
+const VARIANTS = {
+  A: {
+    name: 'A（车卡内嵌）',
+    why: '列表是主角。每张卡片内嵌「记一笔」，统计/保养作为次链接。三辆车时信息密度最高，一屏能看全。'
+  },
+  B: {
+    name: 'B（主车工作台）',
+    why: '主车占满上半屏做成深色工作台：三个关键数字 + 大号「记一笔」+ 统计/保养并排。其余车辆压缩为细行。适合「基本只开一辆车」。'
+  },
+  C: {
+    name: 'C（极简 + 底部固定）',
+    why: '列表退化成纯选择器（只有车名、里程、保养状态），不放任何操作；唯一主按钮固定在底部「＋ 记一笔」，任何时候都能一步记账。统计移到右上角。'
+  },
+  D: {
+    name: 'D（混合：主车工作台 + 每车一步记账）',
+    why: '主车用 B 的深色工作台（关键数字 + 大号记一笔 + 统计/保养/记录并排），其余车保留 A 的卡片与右侧＋，多车时仍是一步记账且不会记错车。添加车辆收进右上角。'
+  },
+  E: {
+    name: 'E（D 改进：保养改为状态条）',
+    why: '「保养」按钮与底部 TabBar 重复（都是置顶车、都进保养页），且没有待办时纯占位。改成「有事才出现」的状态条：平时不占地方，超期时主动提醒并一步进入；动作区只留 统计 / 记录。'
+  },
+  F: {
+    name: 'F（定稿：D + 保养按钮回归 + 概览 Tab）',
+    why: '按确认的方案：Hero 动作区恢复「统计 / 保养 / 记录」三项（保养保留，因为 Tab 已改为「概览」不再承担保养职责）；底部 Tab 改为「概览 📊 / 车辆 / 我的」。'
+  }
+};
+
+function screenA() {
+  return `
+  <div class="navbar">我的车辆<div class="right"><div class="nav-icon">＋</div></div></div>
+  <div class="page">
+    <div class="overview">3 辆车 · 总里程 16,710 km · <span class="status-dot dot-bad"></span>1 项待保养</div>
+    ${CARS.map(c => `
+      <div class="car-card">
+        <div class="cc-top">
+          <span class="cc-icon">${c.icon}</span>
+          <span class="cc-name">${c.name}</span>
+          ${c.pinned ? '<span class="pin-tag">置顶</span>' : ''}
+          <span class="cc-status"><span class="status-dot dot-${c.state}"></span>${c.stateText}</span>
+        </div>
+        <div class="cc-sub">${c.km} km · 本月 ${c.month}</div>
+        <div class="cc-actions">
+          <span class="btn-add">＋ 记一笔</span>
+          <span class="btn-link">统计</span>
+          <span class="btn-link">保养</span>
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function screenB() {
+  const main = CARS[0], others = CARS.slice(1);
+  return `
+  <div class="navbar"><span class="brand">车记本</span><div class="right"><div class="nav-icon">＋</div></div></div>
+  <div class="page">
+    <div class="hero">
+      <div class="hero-top">
+        <span class="hero-icon">${main.icon}</span>
+        <div>
+          <div class="hero-name">${main.name}</div>
+          <div class="hero-sub">燃油 · 已行驶 ${main.km} km</div>
+        </div>
+      </div>
+      <div class="hero-metrics">
+        <div><b>${main.month}</b><span>本月支出</span></div>
+        <div><b>8.46</b><span>平均油耗</span></div>
+        <div><b>1,200</b><span>机油剩余 km</span></div>
+      </div>
+      <div class="hero-cta">＋ 记一笔</div>
+      <div class="hero-actions"><span>统计</span><span>保养</span><span>记录</span></div>
+    </div>
+    <div class="sec-title">其他车辆</div>
+    ${others.map(c => `
+      <div class="mini-row">
+        <span class="mi">${c.icon}</span>
+        <span class="mn">${c.name}</span>
+        <span class="ms">${c.km} km</span>
+        <span class="mst"><span class="status-dot dot-${c.state}"></span></span>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function screenC() {
+  return `
+  <div class="navbar">我的车辆<div class="right"><span class="nav-text">统计</span></div></div>
+  <div class="page" style="padding-bottom:80px;">
+    ${CARS.map(c => `
+      <div class="slim-row">
+        <span class="slim-icon">${c.icon}</span>
+        <div>
+          <div class="slim-name">${c.name}${c.pinned ? '<span class="pin-tag">置顶</span>' : ''}</div>
+          <div class="slim-sub">${c.km} km</div>
+        </div>
+        <div class="slim-right">
+          <span class="slim-state"><span class="status-dot dot-${c.state}"></span>${c.stateText}</span>
+          <span class="slim-arrow">›</span>
+        </div>
+      </div>
+    `).join('')}
+    <div class="add-row">＋ 添加车辆</div>
+  </div>
+  <div class="fixed-cta">＋ 记一笔</div>`;
+}
+
+// 混合版：主车用 B 的深色工作台，其余车保留 A 的「每车一步记账」
+function screenD() {
+  const main = CARS[0], others = CARS.slice(1);
+  // 概览用真实数据算，避免只有一辆车时还写着「3 辆车」
+  const totalKm = CARS.reduce((s, c) => s + Number(c.km.replace(/,/g, '')), 0);
+  const badCount = CARS.filter(c => c.state === 'bad').length;
+  // 只有一辆车时不要留一个空的「其他车辆」标题
+  const othersBlock = others.length === 0 ? '' : `
+    <div class="sec-title">其他车辆</div>
+    ${others.map(c => `
+      <div class="cc-compact">
+        <span class="cc-icon">${c.icon}</span>
+        <div class="cc-body">
+          <div class="cc-name">${c.name}</div>
+          <div class="cc-sub2">${c.km} km · 本月 ${c.month}</div>
+        </div>
+        <div class="cc-right">
+          <span class="cc-state"><span class="status-dot dot-${c.state}"></span>${c.short}</span>
+          <div class="cc-plus">＋</div>
+        </div>
+      </div>
+    `).join('')}`;
+
+  return `
+  <div class="navbar">我的车辆<div class="right"><div class="nav-icon">＋</div></div></div>
+  <div class="page">
+    <div class="overview">${CARS.length} 辆车 · 总里程 ${totalKm.toLocaleString()} km${badCount ? ` · <span class="status-dot dot-bad"></span>${badCount} 项待保养` : ''}</div>
+
+    <div class="hero">
+      <div class="hero-top">
+        <span class="hero-icon">${main.icon}</span>
+        <div>
+          <div class="hero-name">${main.name}${main.pinned ? '<span class="pin-tag">置顶</span>' : ''}</div>
+          <div class="hero-sub">燃油 · 已行驶 ${main.km} km</div>
+        </div>
+      </div>
+      <div class="hero-metrics">
+        <div><b>${main.month}</b><span>本月支出</span></div>
+        <div><b>8.46</b><span>平均油耗</span></div>
+        <div><b>1,200</b><span>机油剩余 km</span></div>
+      </div>
+      <div class="hero-cta">＋ 记一笔</div>
+      <div class="hero-actions"><span>统计</span><span>保养</span><span>记录</span></div>
+    </div>
+
+    ${othersBlock}
+  </div>`;
+}
+
+// D 的改进：保养不再是按钮（TabBar 已有），改成「有事才出现」的状态条
+function screenE() {
+  const main = CARS[0], others = CARS.slice(1);
+  const totalKm = CARS.reduce((s, c) => s + Number(c.km.replace(/,/g, '')), 0);
+  const badCount = CARS.filter(c => c.state === 'bad').length;
+
+  const othersBlock = others.length === 0 ? '' : `
+    <div class="sec-title">其他车辆</div>
+    ${others.map(c => `
+      <div class="cc-compact">
+        <span class="cc-icon">${c.icon}</span>
+        <div class="cc-body">
+          <div class="cc-name">${c.name}</div>
+          <div class="cc-sub2">${c.km} km · 本月 ${c.month}</div>
+        </div>
+        <div class="cc-right">
+          <span class="cc-state"><span class="status-dot dot-${c.state}"></span>${c.short}</span>
+          <div class="cc-plus">＋</div>
+        </div>
+      </div>
+    `).join('')}`;
+
+  // 有待保养项才出现；没有则整条不渲染，不占地方
+  const alertBlock = badCount > 0
+    ? `<div class="hero-alert">
+         <span class="t">⚠ 刹车油已超期 45 天 · 点查看全部保养</span>
+         <span class="arw">›</span>
+       </div>`
+    : '';
+
+  return `
+  <div class="navbar">我的车辆<div class="right"><div class="nav-icon">＋</div></div></div>
+  <div class="page">
+    <div class="overview">${CARS.length} 辆车 · 总里程 ${totalKm.toLocaleString()} km${badCount ? ` · <span class="status-dot dot-bad"></span>${badCount} 项待保养` : ''}</div>
+
+    <div class="hero">
+      <div class="hero-top">
+        <span class="hero-icon">${main.icon}</span>
+        <div>
+          <div class="hero-name">${main.name}${main.pinned ? '<span class="pin-tag">置顶</span>' : ''}</div>
+          <div class="hero-sub">燃油 · 已行驶 ${main.km} km</div>
+        </div>
+      </div>
+      <div class="hero-metrics">
+        <div><b>${main.month}</b><span>本月支出</span></div>
+        <div><b>8.46</b><span>平均油耗</span></div>
+        <div><b>1,200</b><span>机油剩余 km</span></div>
+      </div>
+      <div class="hero-cta">＋ 记一笔</div>
+      <div class="hero-actions"><span>统计</span><span>记录</span></div>
+      ${alertBlock}
+    </div>
+
+    ${othersBlock}
+  </div>`;
+}
+
+// 定稿版：D 的结构 + 保养按钮回归（Tab 已改「概览」，保养职责交回 Hero）
+function screenF() {
+  const main = CARS[0], others = CARS.slice(1);
+  const totalKm = CARS.reduce((s, c) => s + Number(c.km.replace(/,/g, '')), 0);
+  const badCount = CARS.filter(c => c.state === 'bad').length;
+
+  const othersBlock = others.length === 0 ? '' : `
+    <div class="sec-title">其他车辆</div>
+    ${others.map(c => `
+      <div class="cc-compact">
+        <span class="cc-icon">${c.icon}</span>
+        <div class="cc-body">
+          <div class="cc-name">${c.name}</div>
+          <div class="cc-sub2">${c.km} km · 本月 ${c.month}</div>
+        </div>
+        <div class="cc-right">
+          <span class="cc-state"><span class="status-dot dot-${c.state}"></span>${c.short}</span>
+          <div class="cc-plus">＋</div>
+        </div>
+      </div>
+    `).join('')}`;
+
+  return `
+  <div class="navbar">我的车辆<div class="right"><div class="nav-icon">＋</div></div></div>
+  <div class="page">
+    <div class="overview">${CARS.length} 辆车 · 总里程 ${totalKm.toLocaleString()} km${badCount ? ` · <span class="status-dot dot-bad"></span>${badCount} 项待保养` : ''}</div>
+
+    <div class="hero">
+      <div class="hero-top">
+        <span class="hero-icon">${main.icon}</span>
+        <div>
+          <div class="hero-name">${main.name}${main.pinned ? '<span class="pin-tag">置顶</span>' : ''}</div>
+          <div class="hero-sub">燃油 · 已行驶 ${main.km} km</div>
+        </div>
+      </div>
+      <div class="hero-metrics">
+        <div><b>${main.month}</b><span>本月支出</span></div>
+        <div><b>8.46</b><span>平均油耗</span></div>
+        <div><b>1,200</b><span>机油剩余 km</span></div>
+      </div>
+      <div class="hero-cta">＋ 记一笔</div>
+      <div class="hero-actions"><span>统计</span><span>保养</span><span>记录</span></div>
+    </div>
+
+    ${othersBlock}
+  </div>`;
+}
+
+const RENDER = { A: screenA, B: screenB, C: screenC, D: screenD, E: screenE, F: screenF };
+const ORDER = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+function current() {
+  const v = (new URLSearchParams(location.search).get('variant') || 'A').toUpperCase();
+  return RENDER[v] ? v : 'A';
+}
+
+function paint(v) {
+  document.getElementById('screen').innerHTML = RENDER[v]();
+  document.getElementById('vName').textContent = VARIANTS[v].name;
+  document.getElementById('vWhy').textContent = VARIANTS[v].why;
+  document.getElementById('lbl').textContent = v;
+  history.replaceState(null, '', '?variant=' + v);
+}
+
+function step(d) {
+  const i = ORDER.indexOf(current());
+  paint(ORDER[(i + d + ORDER.length) % ORDER.length]);
+}
+
+document.getElementById('prev').onclick = () => step(-1);
+document.getElementById('next').onclick = () => step(1);
+document.addEventListener('keydown', e => {
+  const t = document.activeElement;
+  if (t && /input|textarea/i.test(t.tagName)) return;
+  if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'ArrowRight') step(1);
+});
+
+paint(current());
+</script>
+</body>
+</html>

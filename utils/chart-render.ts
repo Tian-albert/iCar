@@ -44,12 +44,20 @@ export interface DonutLayout {
  * 环形图几何布局。
  * 组件用它做触摸命中判定，绘制函数用它画图——同一份公式，改一处两边同步。
  */
-export function computeDonutLayout(w: number, h: number, fontScale = 1): DonutLayout {
+export function computeDonutLayout(
+  w: number,
+  h: number,
+  fontScale = 1,
+  withLabels = true
+): DonutLayout {
   const scale = fontScale > 0 ? fontScale : 1;
   const cx = w / 2;
   const cy = h / 2;
-  const labelSpace = Math.max(70 * scale, w * 0.26);
-  const outerR = Math.min(w / 2 - labelSpace, h / 2 - 14 * scale);
+  // 无外标签时不必为标签预留横向空间，环可以画得更大
+  const labelSpace = withLabels ? Math.max(70 * scale, w * 0.26) : 0;
+  const padX = withLabels ? 0 : 4;
+  const padY = withLabels ? 14 * scale : 4;
+  const outerR = Math.min(w / 2 - labelSpace - padX, h / 2 - padY);
   const innerR = outerR * 0.55;
   const offR = 10 * scale;
   return { cx, cy, outerR, innerR, offR, valid: outerR >= 20 };
@@ -143,6 +151,13 @@ export interface DonutRenderOptions {
   activeIndex?: number;
   /** 字号缩放，默认 1（页面组件）；分享卡片传约 2 */
   fontScale?: number;
+  /**
+   * 是否绘制外标签引线与文字，默认 true。
+   * 概览页那种 100px 左右的小环图设 false，否则标签会挤成一团。
+   */
+  showLabels?: boolean;
+  /** 中心下方的小字，默认「总支出」 */
+  centerLabel?: string;
 }
 
 /** 绘制环形图（与 donut-chart 组件完全同一算法） */
@@ -151,10 +166,11 @@ export function renderDonut(opts: DonutRenderOptions): void {
   const active = typeof opts.activeIndex === 'number' ? opts.activeIndex : -1;
   const scale = opts.fontScale && opts.fontScale > 0 ? opts.fontScale : 1;
   const lineH = LABEL_LINE_HEIGHT * scale;
+  const showLabels = opts.showLabels !== false;
 
   if (!segments.length) return;
 
-  const layout = computeDonutLayout(w, h, scale);
+  const layout = computeDonutLayout(w, h, scale, showLabels);
   if (!layout.valid) return;
   const { cx, cy, outerR, innerR, offR } = layout;
 
@@ -191,8 +207,9 @@ export function renderDonut(opts: DonutRenderOptions): void {
   ctx.fillText(`¥${total}`, cx, cy - 7 * scale);
   ctx.fillStyle = CHART_THEME.text3;
   ctx.font = fontOf(10, scale);
-  ctx.fillText('总支出', cx, cy + 13 * scale);
+  ctx.fillText(opts.centerLabel || '总支出', cx, cy + 13 * scale);
 
+  if (showLabels) {
   // 外标签（防重叠）
   start = -Math.PI / 2;
   const mids: number[] = [];
@@ -230,6 +247,7 @@ export function renderDonut(opts: DonutRenderOptions): void {
     ctx.textAlign = lay.side === 'right' ? 'left' : 'right';
     ctx.fillText(label, lay.x, lay.y);
   });
+  }
 
   // 选中气泡
   if (active >= 0 && active < segments.length) {

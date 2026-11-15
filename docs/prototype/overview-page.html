@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概览页原型 v2 · 车记本（一次性原型，勿上线）</title>
+<!--
+  一次性原型 v2，回答：原「保养」Tab 改为「概览」全局面板后的信息与跳转。
+
+  区块：
+    A 全局指标条（本月总支出 / 待保养 / 最近记账）
+    E 漏记提醒（弱提示，小字灰色）
+    B 保养总览（全部车，按「超期 > 剩余少」排序）→ 点某项跳该车详情的「保养进度」
+    C 今年花费 · 按车（环形图 + 横条）→ 按金额降序
+    D 最近记录（跨车流水，3 条，无「全部」）→ 点某条跳该车详情对应区块
+
+  取色与字号取自 app.wxss 真实令牌（375px 宽下 1rpx = 0.5px）。
+-->
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --divider:#F0F1F4; --fill:#F2F3F5; --border:#E6EAF1;
+    --primary:#3B6FF6; --primary-light:#EEF3FE;
+    --danger:#F5474F; --warning:#E8912A; --success:#2BA84A;
+    --c1:#3B82F6; --c2:#22C55E; --c3:#F59E0B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;display:flex;flex-direction:column;align-items:center;
+    padding:26px 16px 40px;gap:14px;min-height:100vh;color:var(--t1);
+  }
+  .caption{max-width:440px;text-align:center;}
+  .caption h1{font-size:16px;font-weight:600;}
+  .caption .why{font-size:12.5px;color:var(--t2);margin-top:6px;line-height:1.7;}
+  .caption .why code{background:#fff;padding:1px 5px;border-radius:4px;font-size:11.5px;}
+
+  .phone{
+    width:375px;height:690px;background:var(--bg);border-radius:34px;
+    overflow:hidden;position:relative;flex-shrink:0;
+    box-shadow:0 14px 44px rgba(15,23,42,.18);border:1px solid #fff;
+  }
+  .screen{position:absolute;inset:0 0 56px 0;overflow-y:auto;}
+  .page{padding:0 12px 16px;}
+
+  .navbar{
+    height:44px;display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:600;background:var(--bg);
+  }
+
+  .tabbar{
+    position:absolute;left:0;right:0;bottom:0;height:56px;
+    background:rgba(255,255,255,.96);border-top:1px solid var(--divider);
+    display:flex;
+  }
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+  .tab .ic{font-size:18px;line-height:1;filter:grayscale(1);opacity:.45;}
+  .tab .tx{font-size:11px;color:var(--t3);}
+  .tab.on .ic{filter:none;opacity:1;}
+  .tab.on .tx{color:var(--primary);}
+
+  .card{
+    background:var(--card);border-radius:16px;padding:14px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);
+  }
+  .sec-title{font-size:12px;color:var(--t3);margin:16px 4px 8px;}
+  .status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px;}
+  .dot-ok{background:var(--success);}
+  .dot-warn{background:var(--warning);}
+  .dot-bad{background:var(--danger);}
+
+  /* ---------- A 指标条 ---------- */
+  .head-line{font-size:12px;color:var(--t3);padding:4px 4px 10px;}
+  .metrics{
+    display:flex;background:var(--card);border-radius:16px;padding:14px 4px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);
+  }
+  .metrics > div{flex:1;text-align:center;position:relative;}
+  .metrics > div + div::before{
+    content:'';position:absolute;left:0;top:4px;bottom:4px;width:1px;background:var(--divider);
+  }
+  .metrics b{display:block;font-size:17px;font-weight:600;letter-spacing:-.2px;}
+  .metrics span{display:block;font-size:10.5px;color:var(--t3);margin-top:5px;}
+  .metrics .warn b{color:var(--danger);}
+  .metrics .muted b{font-size:16px;}
+
+  /* ---------- E 漏记（弱提示） ---------- */
+  .stale{
+    font-size:11px;color:var(--t3);padding:8px 4px 0;
+    display:flex;align-items:center;gap:5px;
+  }
+  .stale .ic{opacity:.7;}
+
+  /* ---------- B 保养总览 ---------- */
+  .mnt-row{
+    display:flex;align-items:center;gap:8px;padding:11px 0;
+    border-bottom:1px solid var(--divider);cursor:pointer;
+  }
+  .mnt-row:last-of-type{border-bottom:none;}
+  .mnt-car{font-size:12px;color:var(--t3);width:56px;flex-shrink:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mnt-name{font-size:13.5px;font-weight:500;flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mnt-remain{font-size:12px;white-space:nowrap;flex-shrink:0;}
+  .mnt-remain.bad{color:var(--danger);font-weight:500;}
+  .mnt-remain.warn{color:var(--warning);}
+  .go{color:var(--t4);font-size:16px;line-height:1;flex-shrink:0;}
+  .mnt-all{
+    display:block;text-align:center;font-size:12px;color:var(--primary);
+    padding-top:10px;margin-top:2px;border-top:1px solid var(--divider);
+  }
+
+  /* ---------- C 今年花费（环形 + 横条） ---------- */
+  .cost-wrap{display:flex;align-items:center;gap:20px;}
+  .donut{
+    width:104px;height:104px;border-radius:50%;position:relative;flex-shrink:0;
+    /* 扇区：CRV 55.3% / 汉DM-i 26.8% / Model Y 17.9% */
+    background:conic-gradient(
+      var(--c1) 0 55.3%,
+      var(--c2) 55.3% 82.1%,
+      var(--c3) 82.1% 100%
+    );
+  }
+  .donut-hole{
+    position:absolute;inset:17px;border-radius:50%;background:var(--card);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .donut-hole b{font-size:12.5px;font-weight:600;letter-spacing:-.3px;}
+  .donut-hole span{font-size:9px;color:var(--t3);margin-top:2px;}
+  /* 图例：色点 + 车名 + 金额 + 淡色百分比（无横条，金额与百分比各自成列） */
+  .legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
+  .lg-row{display:flex;align-items:center;gap:6px;}
+  .lg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;margin-right:1px;}
+  .lg-name{font-size:12.5px;color:var(--t2);flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lg-val{font-size:13px;font-weight:600;text-align:right;flex-shrink:0;min-width:44px;}
+  /* 百分比用 text-3（白底 4.70:1）；text-4 仅 3.09:1，按规范不得用于白底文字 */
+  .lg-pct{font-size:11px;color:var(--t3);text-align:right;flex-shrink:0;width:30px;}
+
+  /* ---------- D 最近记录 ---------- */
+  .rec-row{
+    display:flex;align-items:center;gap:8px;padding:11px 0;
+    border-bottom:1px solid var(--divider);cursor:pointer;
+  }
+  .rec-row:last-of-type{border-bottom:none;}
+  .rec-date{font-size:11.5px;color:var(--t3);width:42px;flex-shrink:0;}
+  .rec-car{font-size:11.5px;color:var(--t3);width:54px;flex-shrink:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rec-type{font-size:13px;flex:1;min-width:0;}
+  .rec-amt{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<div class="caption">
+  <h1>「概览」页 v2（原「保养」Tab）</h1>
+  <div class="why">
+    指标条第三格改为「最近记账」· 花费区加环形图 · 记录只留 3 条<br>
+    <strong>点击跳转</strong>：保养项 → 该车详情「保养进度」；记录项 → 该车详情对应区块
+  </div>
+</div>
+
+<div class="phone">
+  <div class="screen" id="screen"></div>
+  <div class="tabbar">
+    <div class="tab on"><span class="ic">📊</span><span class="tx">概览</span></div>
+    <div class="tab"><span class="ic">🚙</span><span class="tx">车辆</span></div>
+    <div class="tab"><span class="ic">👤</span><span class="tx">我的</span></div>
+  </div>
+</div>
+
+<script>
+// 三辆车（与 test-data 口径一致）
+const CARS = [
+  { icon:'🚙', name:'CRV',     km:'5,850', year:4820, color:'#3B82F6' },
+  { icon:'⚡', name:'Model Y', km:'5,460', year:1560, color:'#F59E0B' },
+  { icon:'🚗', name:'汉DM-i',  km:'5,400', year:2340, color:'#22C55E' }
+];
+
+// B 保养总览：全部车的待保养项，按「超期 → 剩余少」排序
+const MAINTAIN = [
+  { car:'汉DM-i', name:'刹车油',   remain:'已超期 45 天', level:'bad'  },
+  { car:'CRV',    name:'机油机滤', remain:'剩 1,200 km',  level:'warn' }
+];
+
+// D 最近记录：跨车流水（仅 3 条）
+const RECORDS = [
+  { date:'今天',  car:'CRV',     type:'加油', amt:'¥300.00', target:'加油/充电记录' },
+  { date:'昨天',  car:'Model Y', type:'充电', amt:'¥28.50',  target:'加油/充电记录' },
+  { date:'11-13', car:'汉DM-i',  type:'停车', amt:'¥15.00',  target:'近期支出' }
+];
+
+const TOTAL_KM = 16710;
+const MONTH_COST = 716;
+const PENDING = 1;
+const STALE = { name:'CRV', days:32 };
+
+const money = n => n.toLocaleString();
+
+function render() {
+  const yearSum = CARS.reduce((s, c) => s + c.year, 0);
+  const byAmount = [...CARS].sort((a, b) => b.year - a.year);
+
+  // 环形图 conic-gradient：按金额占比累加
+  let acc = 0;
+  const stops = byAmount.map(c => {
+    const from = (acc / yearSum) * 100;
+    acc += c.year;
+    const to = (acc / yearSum) * 100;
+    return `${c.color} ${from.toFixed(2)}% ${to.toFixed(2)}%`;
+  }).join(', ');
+
+  const maintRows = MAINTAIN.map(m => `
+    <div class="mnt-row" title="跳转 ${m.car} 车辆详情 · 保养进度">
+      <span class="mnt-car">${m.car}</span>
+      <span class="mnt-name">${m.name}</span>
+      <span class="mnt-remain ${m.level === 'bad' ? 'bad' : 'warn'}">
+        <span class="status-dot dot-${m.level}"></span>${m.remain}
+      </span>
+      <span class="go">›</span>
+    </div>
+  `).join('');
+
+  // 只有色点 + 车名 + 金额 + 淡色百分比，不放横条
+  // 百分比四舍五入后把误差补给最大项，保证三项视觉上合计 100%
+  const pcts = byAmount.map(c => Math.round((c.year / yearSum) * 100));
+  const diff = 100 - pcts.reduce((a, b) => a + b, 0);
+  if (diff !== 0) pcts[0] += diff;
+
+  const legendRows = byAmount.map((c, i) => `
+    <div class="lg-row">
+      <span class="lg-dot" style="background:${c.color}"></span>
+      <span class="lg-name">${c.name}</span>
+      <span class="lg-val">¥${money(c.year)}</span>
+      <span class="lg-pct">${pcts[i]}%</span>
+    </div>
+  `).join('');
+
+  const recRows = RECORDS.map(r => `
+    <div class="rec-row" title="跳转 ${r.car} 车辆详情 · ${r.target}">
+      <span class="rec-date">${r.date}</span>
+      <span class="rec-car">${r.car}</span>
+      <span class="rec-type">${r.type}</span>
+      <span class="rec-amt">${r.amt}</span>
+      <span class="go">›</span>
+    </div>
+  `).join('');
+
+  return `
+  <div class="navbar">概览</div>
+  <div class="page">
+    <!-- A -->
+    <div class="head-line">${CARS.length} 辆车 · 总里程 ${money(TOTAL_KM)} km</div>
+    <div class="metrics">
+      <div><b>¥${MONTH_COST}</b><span>本月总支出</span></div>
+      <div class="${PENDING ? 'warn' : ''}"><b>${PENDING}</b><span>待保养</span></div>
+      <div class="muted"><b>3 天前</b><span>最近记账</span></div>
+    </div>
+
+    <!-- E -->
+    <div class="stale"><span class="ic">🕒</span>${STALE.name} 已 ${STALE.days} 天没记账了</div>
+
+    <!-- B -->
+    <div class="sec-title">保养提醒</div>
+    <div class="card">
+      ${maintRows}
+      <span class="mnt-all">全部 12 项保养 ›</span>
+    </div>
+
+    <!-- C -->
+    <div class="sec-title">今年花费 · 按车</div>
+    <div class="card">
+      <div class="cost-wrap">
+        <div class="donut" style="background:conic-gradient(${stops})">
+          <div class="donut-hole">
+            <b>¥${money(yearSum)}</b>
+            <span>今年合计</span>
+          </div>
+        </div>
+        <div class="legend">${legendRows}</div>
+      </div>
+    </div>
+
+    <!-- D -->
+    <div class="sec-title">最近记录</div>
+    <div class="card">
+      ${recRows}
+    </div>
+  </div>`;
+}
+
+document.getElementById('screen').innerHTML = render();
+</script>
+</body>
+</html>
