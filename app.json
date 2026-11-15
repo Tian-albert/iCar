@@ -34,7 +34,7 @@
     "selectedColor": "#3B6FF6",
     "backgroundColor": "#ffffff",
     "list": [
-      { "pagePath": "pages/reminder/index", "text": "保养" },
+      { "pagePath": "pages/reminder/index", "text": "概览" },
       { "pagePath": "pages/index/index", "text": "车辆" },
       { "pagePath": "pages/user/index", "text": "我的" }
     ]

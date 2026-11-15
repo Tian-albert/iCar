@@ -74,13 +74,44 @@ Page({
     recentCosts: [] as CostView[],
     maintainProgress: [] as MaintainProgressView[],
     maintainTotal: 0,
-    fabOpen: false
+    fabOpen: false,
+    /** 概览页跳转时指定要滚动到的区块，消费后立即清空 */
+    targetSection: ''
   },
   onLoad(options: Record<string, string>) {
-    this.setData({ carId: options.id });
+    this.setData({
+      carId: options.id,
+      // 概览页跳转时带 section，进入后滚动到对应区块
+      targetSection: options.section || ''
+    });
   },
   onShow() {
     this.load();
+  },
+
+  /**
+   * 滚动到 section 指定的区块。
+   * 必须等 load() 的 setData 渲染完成后再滚动，否则目标节点还不存在。
+   * 用 selector 而非 scroll-into-view，避免给页面套 scroll-view 改结构。
+   */
+  scrollToSection() {
+    const map: Record<string, string> = {
+      maintain: '#sec-maintain',
+      records: '#sec-records',
+      costs: '#sec-costs'
+    };
+    const selector = map[this.data.targetSection];
+    if (!selector) return;
+    // 只滚一次，之后用户手动滚动不受影响
+    this.setData({ targetSection: '' });
+    wx.nextTick(() => {
+      wx.pageScrollTo({
+        selector,
+        duration: 260,
+        // 节点不存在（如该车无记录导致区块未渲染）时静默失败即可
+        fail: () => {}
+      });
+    });
   },
   load() {
     const storage = getStorage();
@@ -161,6 +192,9 @@ Page({
       maintainProgress,
       maintainTotal: allProgress.length
     });
+
+    // 渲染完成后再滚动到概览页指定的区块
+    this.scrollToSection();
   },
   /** 展开 / 收起悬浮菜单 */
   onToggleFab() {
