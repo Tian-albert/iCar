@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>图标选择器分栏修复对比</title>
+<title>图标选择器分栏对比</title>
 <!--
-  一次性对比页：验证「分栏气泡」修复。
-  左 = 修复前的写法（无 height，被 stretch 拉伸，文字贴上沿）
-  右 = 修复后的写法（56rpx 定高 + flex 居中）
+  一次性对比页：分栏气泡的两种实现。
+  左 = scroll-view 方案（当前线上）：overflow:hidden 裁掉气泡顶部 + 横向滑动不可靠
+  右 = 普通 view + flex-wrap（本次修复）：不需要滚动，气泡完整居中
   数值按 375px 宽换算：1rpx = 0.5px
 -->
 <style>
@@ -19,12 +19,12 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-    background:#E9ECF2;display:flex;justify-content:center;gap:24px;
+    background:#E9ECF2;display:flex;flex-wrap:wrap;justify-content:center;gap:28px;
     padding:28px 16px 40px;align-items:flex-start;color:var(--t1);
   }
-  .col{width:340px;}
+  .col{width:375px;}
   .col h2{font-size:13px;font-weight:600;margin-bottom:4px;}
-  .col p{font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:10px;}
+  .col p{font-size:11.5px;color:var(--t2);line-height:1.6;margin-bottom:10px;min-height:36px;}
 
   .panel{
     background:var(--card);border-radius:12px;padding:16px;
@@ -32,43 +32,46 @@
   }
   .title{text-align:center;font-size:16px;font-weight:600;margin-bottom:12px;}
 
-  /* ---------- 修复前：无 height，被 stretch ---------- */
-  .tabbar-broken{
+  /* ---------- 左：scroll-view 方案（有裁切与滑动问题） ---------- */
+  .tabbar-scroll{
     display:flex;
     white-space:nowrap;
-    overflow-x:auto;
-    /* scroll-view 的默认行盒较高，子项 stretch 后气泡被撑高 */
-    min-height:32px;
-    align-items:stretch;
+    overflow:hidden;      /* 模拟 scroll-view 的 overflow:hidden */
+    height:32px;          /* 模拟 scroll-view 定高 64rpx */
+    align-items:center;
   }
-  .tabbar-broken .tab{
-    flex-shrink:0;
-    padding:6px 12px;
-    margin-right:6px;
+  .tabbar-scroll .tab{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    /* 内容比容器高 4px，顶部被 overflow:hidden 裁掉 */
+    height:36px;
+    line-height:1;
+    padding:0 12px;
+    margin-right:12px;
     border-radius:999px;
     background:var(--fill);
     color:var(--t2);
     font-size:12px;
   }
-  .tabbar-broken .tab.on{background:var(--primary-light);color:var(--primary);font-weight:600;}
+  .tabbar-scroll .tab.on{background:var(--primary-light);color:var(--primary);font-weight:600;}
 
-  /* ---------- 修复后：56rpx=28px 定高 + 居中 ---------- */
+  /* ---------- 右：普通 view + flex-wrap（本次修复） ---------- */
   .tabbar-fixed{
     display:flex;
-    align-items:center;      /* 不拉伸 */
-    height:32px;             /* 64rpx */
-    white-space:nowrap;
-    overflow-x:auto;
+    flex-wrap:wrap;
+    align-items:center;
   }
   .tabbar-fixed .tab{
     flex:0 0 auto;
     display:flex;
-    align-items:center;      /* 文字垂直居中 */
+    align-items:center;
     justify-content:center;
-    height:28px;             /* 56rpx */
+    height:28px;          /* 56rpx */
     line-height:1;
-    padding:0 12px;
-    margin-right:6px;
+    padding:0 8px;        /* 16rpx */
+    margin:0 4px 4px 0;   /* 8rpx */
     border-radius:999px;
     background:var(--fill);
     color:var(--t2);
@@ -86,22 +89,24 @@
     color:var(--primary);border-top:1px solid var(--divider);
   }
   .hint{text-align:center;font-size:11px;color:var(--t3);}
+  .mark{font-size:11px;color:#C2410C;margin-top:6px;}
 </style>
 </head>
 <body>
 
 <div class="col">
-  <h2>修复前</h2>
-  <p>无 height，作为 flex 子项被 stretch 撑高，文字贴在气泡上沿。</p>
+  <h2>修复前（scroll-view）</h2>
+  <p>容器定高 32px，气泡实际 36px，overflow:hidden 把顶部裁掉 4px——看起来就是「被上面遮住一点」。横向滑动在 enable-flex 下也不可靠。</p>
   <div class="panel">
     <div class="title">选择图标</div>
-    <div class="tabbar-broken">
+    <div class="tabbar-scroll">
       <div class="tab on">加油充电</div>
       <div class="tab">洗美维修</div>
       <div class="tab">通行规费</div>
       <div class="tab">车型车色</div>
       <div class="tab">其他</div>
     </div>
+    <div class="mark">↑ 气泡上沿被切掉，且第 5 个溢出容器外无法滑动</div>
     <div class="grid">
       <div class="item">🛢️</div><div class="item">⛽</div><div class="item">🔋</div>
       <div class="item">⚡</div><div class="item">🔌</div><div class="item">🪫</div>
@@ -112,8 +117,8 @@
 </div>
 
 <div class="col">
-  <h2>修复后（定高 56rpx + 居中）</h2>
-  <p>容器 64rpx 居中，chip 固定 28px 高、文字用 flex 垂直居中，不再受行高影响。</p>
+  <h2>修复后（普通 view + flex-wrap）</h2>
+  <p>内边距收到 16rpx，5 个分栏总宽 632rpx，小于面板可用 686rpx——本来就不需要滚动。wrap 只作极端字号下的兜底。</p>
   <div class="panel">
     <div class="title">选择图标</div>
     <div class="tabbar-fixed">

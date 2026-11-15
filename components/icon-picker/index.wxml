@@ -3,8 +3,11 @@
   <view class="picker-panel" catchtap="noop">
     <view class="picker-title">选择图标</view>
 
-    <!-- 分栏 -->
-    <scroll-view class="tab-bar" scroll-x enable-flex show-scrollbar="{{false}}">
+    <!-- 分栏：用普通 view 而非 scroll-view。
+         5 个分栏收窄内边距后总宽 632rpx < 可用 686rpx，本来就不需要滚动；
+         而 scroll-view 的 overflow:hidden 会把略高的气泡顶部裁掉，
+         横向滑动在 enable-flex 下也不可靠。wrap 仅作极端字号下的兜底。 -->
+    <view class="tab-bar">
       <view
         wx:for="{{groups}}"
         wx:key="key"
@@ -12,7 +15,7 @@
         hover-class="hover-dim"
         data-key="{{item.key}}"
         bindtap="onTab">{{item.label}}</view>
-    </scroll-view>
+    </view>
 
     <!-- 当前分栏的图标 -->
     <scroll-view class="icon-scroll" scroll-y show-scrollbar="{{false}}">
