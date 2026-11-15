@@ -323,22 +323,31 @@ describe('保养摘要取值规则', () => {
 
 describe('Hero 动作区的跳转目标', () => {
   const ts: string = require('fs').readFileSync('pages/index/index.ts', 'utf-8');
-  const formTs: string = require('fs').readFileSync('pages/maintain-form/index.ts', 'utf-8');
 
-  it('「保养」进记保养页，而不是保养项管理页', () => {
-    const block = /onOpenMaintain\(\)[\s\S]{0,500}?\n  \},/.exec(ts);
+  it('「保养」进保养项管理页', () => {
+    const block = /onOpenMaintain\(\)[\s\S]{0,600}?\n  \},/.exec(ts);
     expect(block).toBeTruthy();
-    expect(block![0]).toContain('/pages/maintain-form/index?carId=');
-    expect(block![0]).not.toContain('maintain-manage');
+    expect(block![0]).toContain('/pages/maintain-manage/index?id=');
+    expect(block![0]).not.toContain('maintain-form');
   });
 
-  it('跳转参数名与记保养页读取的参数一致', () => {
-    expect(ts).toContain('/pages/maintain-form/index?carId=');
-    expect(formTs).toContain('options.carId');
+  it('参数名 id 与保养项管理页读取的一致', () => {
+    const manageTs: string = require('fs').readFileSync(
+      'pages/maintain-manage/index.ts',
+      'utf-8'
+    );
+    expect(ts).toContain('/pages/maintain-manage/index?id=');
+    expect(manageTs).toContain('options.id');
   });
 
-  it('保养项管理仍能从记保养页进入（改完不会变成孤岛）', () => {
-    expect(formTs).toContain('maintain-manage');
+  it('记保养由「记一笔 → 保养」Tab 承担，不在首页重复', () => {
+    const entryTs: string = require('fs').readFileSync('pages/entry/index.ts', 'utf-8');
+    const entryWxml: string = require('fs').readFileSync(
+      'pages/entry/index.wxml',
+      'utf-8'
+    );
+    expect(entryTs).toContain("{ key: 'maintain', label: '保养' }");
+    expect(entryWxml).toContain("activeTab === 'maintain'");
   });
 
   it('其余动作跳转未被误改', () => {

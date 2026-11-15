@@ -240,16 +240,16 @@ Page({
   },
 
   /**
-   * Hero：保养 → 记保养。
+   * Hero：保养 → 保养项管理。
    *
-   * 这里进的是「记一笔保养」而不是「保养项管理」：Hero 的动作区对应的是
-   * 高频使用场景（记一笔 / 统计 / 保养 / 记录），管理保养项属于低频配置，
-   * 应该从记保养页的「管理 ›」进，而不是占用首页位置。
+   * 「记一次保养」已经由「记一笔 → 保养 Tab」承担（entry 页内有完整表单），
+   * 首页若再放一个记保养入口就是重复。而保养项管理（增删改周期、配图标）
+   * 是唯一从首页到不了的配置入口，放在这里正好补位。
    */
   onOpenMaintain() {
     const hero = this.data.hero;
     if (!hero) return;
-    wx.navigateTo({ url: `/pages/maintain-form/index?carId=${hero.carId}` });
+    wx.navigateTo({ url: `/pages/maintain-manage/index?id=${hero.carId}` });
   },
 
   /** Hero：记录（该车全部记录） */
