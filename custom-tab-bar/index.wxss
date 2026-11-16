@@ -11,9 +11,16 @@
   padding: 0 8rpx;
   box-sizing: border-box;
 
-  background: rgba(255, 255, 255, 0.62);
-  -webkit-backdrop-filter: blur(30rpx) saturate(180%);
-  backdrop-filter: blur(30rpx) saturate(180%);
+  /*
+   * 毛玻璃：刻意做得「不敏感」。
+   *
+   * 原来的 saturate(180%) 会把背后内容的色彩变化放大 —— swiper 横向滑动时
+   * 底栏采到的内容一直在变，视觉上就像底栏自己在动。
+   * 现在去掉 saturate、降低 blur、提高底不透明度，让底栏在滑动中**看起来是静止的**。
+   */
+  background: rgba(252, 253, 255, 0.86);
+  -webkit-backdrop-filter: blur(18rpx);
+  backdrop-filter: blur(18rpx);
   /* 高光描边：上边偏亮，模拟玻璃厚度 */
   border: 1rpx solid rgba(255, 255, 255, 0.75);
   border-radius: 999rpx;
@@ -25,6 +32,10 @@
  * 指示块：选中项的浅蓝底块。
  * 绝对定位在胶囊内，随滑动连续位移（transform 由 JS 驱动）。
  * 宽度与每个 tab 等宽，由 left:0 + width:33.33% 决定，translateX 按 tab 步长给。
+ *
+ * **不要加 transition**：滑动中每帧都会写入新的 transform，
+ * 有 transition 就会每帧重启一次过渡，永远追不上手指 → 明显抖动/闪烁。
+ * 松手后的平滑归位由 swiper 自己的切换动画驱动，不需要 CSS 过渡。
  */
 .tab-indicator {
   position: absolute;
@@ -35,7 +46,8 @@
   border-radius: 46rpx;
   background: rgba(59, 111, 246, 0.12);
   pointer-events: none;
-  transition: transform 0.12s ease-out;
+  /* 独立合成层：避免每帧重排，位移只走合成 */
+  will-change: transform;
 }
 
 .tab-item {
@@ -49,9 +61,36 @@
   z-index: 1;
 }
 
-.tab-icon {
+/*
+ * 图标：描边层与实心层叠加，靠 opacity 切换。
+ * 不用「切 src」是因为换图会触发重新解码，滑动中每帧都换就会闪烁。
+ */
+.tab-icon-wrap {
+  position: relative;
   width: 46rpx;
   height: 46rpx;
+}
+
+.tab-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 46rpx;
+  height: 46rpx;
+}
+
+.tab-icon-line {
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
+
+.tab-icon-fill {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.tab-icon-fill.on {
+  opacity: 1;
 }
 
 /* 自定义组件默认样式隔离，取不到页面级 CSS 变量，此处用字面量 */

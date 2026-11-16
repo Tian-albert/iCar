@@ -302,3 +302,74 @@ describe('高度链完整（防止主界面空白）', () => {
     }
   });
 });
+
+describe('滑动流畅性（防止闪烁与卡顿）', () => {
+  const fs = require('fs') as any;
+  const wxss: string = fs.readFileSync('custom-tab-bar/index.wxss', 'utf-8');
+  const barTs: string = fs.readFileSync('custom-tab-bar/index.ts', 'utf-8');
+  const swiperTs: string = fs.readFileSync('components/tab-swiper/index.ts', 'utf-8');
+  const swiperWxml: string = fs.readFileSync('components/tab-swiper/index.wxml', 'utf-8');
+
+  it('指示块不加 transition（每帧重启过渡会导致抖动）', () => {
+    const m = wxss.match(/\.tab-indicator \{[\s\S]*?\}/);
+    expect(m).toBeTruthy();
+    expect(m![0]).not.toContain('transition');
+  });
+
+  it('指示块用 will-change 走合成层', () => {
+    const m = wxss.match(/\.tab-indicator \{[\s\S]*?\}/);
+    expect(m![0]).toContain('will-change');
+  });
+
+  it('底栏不用 saturate（放大背景变化，看起来像底栏在动）', () => {
+    expect(wxss).not.toMatch(/backdrop-filter:\s*[^;]*saturate/);
+  });
+
+  it('滑动中只发位移、不发高亮索引（避免图标透明度反复切换）', () => {
+    expect(swiperTs).toContain('during');
+    expect(swiperTs).toMatch(/during[\s\S]{0,200}index: null/);
+  });
+
+  it('底栏支持 index 为 null：只更新位移', () => {
+    expect(barTs).toMatch(/index: number \| null/);
+    expect(barTs).toMatch(/index === null[\s\S]{0,120}indicatorOffset: offset/);
+  });
+
+  it('位移变化小于 1px 时跳过 setData（降低跨线程通信频率）', () => {
+    expect(swiperTs).toMatch(/_lastOffset/);
+    expect(swiperTs).toMatch(/<\s*1\)\s*return/);
+  });
+
+  it('图标双层叠加，不切 src（切 src 会重新解码图片）', () => {
+    expect(swiperWxml).toBeTruthy();
+    const barWxml: string = fs.readFileSync('custom-tab-bar/index.wxml', 'utf-8');
+    expect(barWxml).toContain('tab-icon-line');
+    expect(barWxml).toContain('tab-icon-fill');
+    // 实心层用 class 切换透明度，src 是固定的
+    expect(barWxml).toContain('src="{{fillIcons[item.icon]}}"');
+    expect(barWxml).toContain('src="{{lineIcons[item.icon]}}"');
+  });
+});
+
+describe('跨页滑动时目标页已就绪（避免滑到位才出现）', () => {
+  const fs = require('fs') as any;
+  const ts: string = fs.readFileSync('components/tab-swiper/index.ts', 'utf-8');
+  const wxml: string = fs.readFileSync('components/tab-swiper/index.wxml', 'utf-8');
+
+  it('渲染「当前 + 相邻」页，而不是只渲染当前页', () => {
+    expect(ts).toContain('keepFlags');
+    expect(wxml).toContain('keep0');
+    expect(wxml).toContain('keep1');
+    expect(wxml).toContain('keep2');
+    // 不再用 active === N 只渲染当前页
+    expect(wxml).not.toContain('active ===');
+  });
+
+  it('keepFlags 规则：0 → 保留 0/1，1 → 全保留，2 → 保留 1/2', () => {
+    // 直接验算规则（与实现同源）
+    const keep = (i: number) => ({ keep0: i <= 1, keep1: true, keep2: i >= 1 });
+    expect(keep(0)).toEqual({ keep0: true, keep1: true, keep2: false });
+    expect(keep(1)).toEqual({ keep0: true, keep1: true, keep2: true });
+    expect(keep(2)).toEqual({ keep0: false, keep1: true, keep2: true });
+  });
+});

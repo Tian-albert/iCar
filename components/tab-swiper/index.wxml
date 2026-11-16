@@ -1,9 +1,10 @@
 <!--
   三个 tab 的内容容器：swiper 承载，页面内容真正跟手横向滑动。
 
-  只有 active 的那个内容组件会被渲染（wx:if）：
-  - 省内存
-  - 避免概览页的 canvas 环图在不可见时抢节点
+  渲染策略：只渲染**当前 tab 及其相邻**的页面（keep0/keep1/keep2）。
+  - 如果只渲染当前页，跨页滑动时目标页是空白，滑到位才「啪」一下出现
+  - 如果全渲染，概览页的 canvas 环图会常驻抢节点
+  只保留相邻页，滑动时目标页已经在了，衔接顺畅；内存也只多占一页。
 -->
 <swiper
   class="host-swiper"
@@ -12,12 +13,12 @@
   bindtransition="onTransition"
   bindanimationfinish="onAnimationFinish">
   <swiper-item class="host-swiper-item">
-    <tab-overview wx:if="{{active === 0}}" index="0" bind:ready="onChildReady" />
+    <tab-overview wx:if="{{keep0}}" index="0" bind:ready="onChildReady" />
   </swiper-item>
   <swiper-item class="host-swiper-item">
-    <tab-vehicles wx:if="{{active === 1}}" index="1" bind:ready="onChildReady" />
+    <tab-vehicles wx:if="{{keep1}}" index="1" bind:ready="onChildReady" />
   </swiper-item>
   <swiper-item class="host-swiper-item">
-    <tab-profile wx:if="{{active === 2}}" index="2" bind:ready="onChildReady" />
+    <tab-profile wx:if="{{keep2}}" index="2" bind:ready="onChildReady" />
   </swiper-item>
 </swiper>

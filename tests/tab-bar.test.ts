@@ -60,10 +60,13 @@ describe('图标：手绘 SVG 而非 emoji', () => {
 });
 
 describe('组件：按选中态切换图标', () => {
-  it('WXML 用 image 渲染，高亮由 indicatorIndex 决定', () => {
+  it('图标用双层叠加（描边 + 实心），靠透明度切换', () => {
     expect(wxml).toContain('<image');
-    // 高亮项由指示块的位置决定（滑动时连续变化），不再是固定的 selected
-    expect(wxml).toContain(
+    // 关键：两层同时存在，只切 opacity。换 src 会重新解码图片，滑动时闪烁
+    expect(wxml).toContain('tab-icon-line');
+    expect(wxml).toContain('tab-icon-fill');
+    expect(wxml).toContain("indicatorIndex === index ? 'on' : ''");
+    expect(wxml).not.toContain(
       'indicatorIndex === index ? fillIcons[item.icon] : lineIcons[item.icon]'
     );
     expect(wxml).toContain('mode="aspectFit"');
@@ -99,7 +102,12 @@ describe('形态：悬浮胶囊 + 毛玻璃', () => {
 
   it('毛玻璃：backdrop-filter + 半透明底', () => {
     expect(wxss).toContain('backdrop-filter');
-    expect(wxss).toMatch(/background:\s*rgba\(255,\s*255,\s*255,\s*0\.\d+\)/);
+    expect(wxss).toMatch(/background:\s*rgba\(\d+,\s*\d+,\s*\d+,\s*0\.\d+\)/);
+  });
+
+  it('不使用 saturate：它会放大背景变化，让底栏看起来在跟着滑动', () => {
+    // 只检查属性值，注释里提到 saturate（说明为何去掉）不算
+    expect(wxss).not.toMatch(/backdrop-filter:\s*[^;]*saturate/);
   });
 
   it('有玻璃厚度感的高光描边与投影', () => {

@@ -67,11 +67,16 @@ Component({
     },
 
     /**
-     * 宿主页调用：更新指示块位置与高亮项。
+     * 页面调用：更新指示块位置。
      *
-     * 滑动过程中连续调用，指示块因此能跟手移动。
+     * `index` 为 null 表示**滑动中**：只更新位移，不动高亮索引。
+     * 滑动中每帧改高亮会让图标透明度反复切换 → 观感上像在闪。
      */
-    setIndicatorOffset(offset: number, index: number) {
+    setIndicatorOffset(offset: number, index: number | null) {
+      if (index === null || typeof index !== 'number') {
+        this.setData({ indicatorOffset: offset });
+        return;
+      }
       this.setData({ indicatorOffset: offset, indicatorIndex: index });
     }
   }

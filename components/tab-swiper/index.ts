@@ -13,6 +13,24 @@ import { indicatorOffset, indicatorActiveIndex } from '../../utils/tab-indicator
 /** tab 总数 */
 const TAB_COUNT = 3;
 
+/**
+ * 计算哪些内容组件需要渲染：当前页 + 相邻页。
+ *
+ * 只渲染当前页的话，跨页滑动时目标页是空白，滑到位才「啪」一下出现；
+ * 全渲染又会让概览页的 canvas 环图常驻。保留相邻页是两者的折中。
+ */
+function keepFlags(index: number): {
+  keep0: boolean;
+  keep1: boolean;
+  keep2: boolean;
+} {
+  return {
+    keep0: index <= 1,
+    keep1: true,
+    keep2: index >= 1
+  };
+}
+
 Component({
   properties: {
     /** 初始停在第几个 tab */
@@ -25,10 +43,15 @@ Component({
   data: {
     current: 0,
     /**
-     * 当前「已激活」的 tab。
-     * 用它决定渲染哪个内容组件：非激活的不渲染，省内存也避免 canvas 抢节点。
+     * 每个内容组件是否渲染。
+     *
+     * 只保留「当前 + 相邻」两页：
+     * - 只留当前页 → 跨页滑动时目标页空白，滑到位才出现，观感断裂
+     * - 全渲染 → 概览页 canvas 环图常驻抢节点
      */
-    active: 0,
+    keep0: true,
+    keep1: true,
+    keep2: false,
     /** 每个 tab 的步长（px），实测得到 */
     step: 0
   },
@@ -36,7 +59,7 @@ Component({
   lifetimes: {
     attached() {
       const init = Math.min(TAB_COUNT - 1, Math.max(0, this.data.initial || 0));
-      this.setData({ current: init, active: init });
+      this.setData(Object.assign({ current: init }, keepFlags(init)));
     },
     ready() {
       this.measureStep();
@@ -68,13 +91,23 @@ Component({
         .exec();
     },
 
-    /** 把指示块位置与高亮项同步给底部栏 */
-    syncTabBar(dx: number, current: number) {
+    /**
+     * 把指示块位置同步给底部栏。
+     *
+     * `during` 为 true 表示滑动中：**只发位移，不发高亮索引**。
+     * 高亮索引会切换图标的 src（描边↔实心），每帧变化会让图片反复解码 → 闪烁。
+     */
+    syncTabBar(dx: number, current: number, during = false) {
       const step = this.data.step;
       if (!(step > 0)) return;
 
-      // 组件拿不到宿主页实例，通过 triggerEvent 冒泡给页面
       const offset = indicatorOffset(dx, current, TAB_COUNT, step);
+      if (during) {
+        // 滑动中：只动位移，图标保持原样，避免 src 变化引发重绘
+        this.triggerEvent('indicator', { offset, index: null });
+        return;
+      }
+
       const activeIndex = indicatorActiveIndex(dx, current, TAB_COUNT, step);
       this.triggerEvent('indicator', { offset, index: activeIndex });
     },
@@ -91,7 +124,7 @@ Component({
         this.syncTabBar(0, target);
         return;
       }
-      this.setData({ current: target, active: target });
+      this.setData(Object.assign({ current: target }, keepFlags(target)));
       this.syncTabBar(0, target);
     },
 
@@ -100,17 +133,30 @@ Component({
       this.notifyShown(this.data.current);
     },
 
-    /** 滑动过程中：指示块跟手 */
+    /**
+     * 滑动过程中：指示块跟手。
+     *
+     * 位移变化小于 1px 时直接跳过 —— 每帧都 setData 会让跨线程通信过载，
+     * 反而拖慢滑动（尤其从最左滑到最右时位移大、帧数多，累积卡顿明显）。
+     */
     onTransition(e: any) {
       const dx = (e.detail && e.detail.dx) || 0;
-      this.syncTabBar(dx, this.data.current);
+      const step = this.data.step;
+      if (!(step > 0)) return;
+
+      const offset = indicatorOffset(dx, this.data.current, TAB_COUNT, step);
+      const last = (this as any)._lastOffset;
+      if (typeof last === 'number' && Math.abs(offset - last) < 1) return;
+      (this as any)._lastOffset = offset;
+
+      this.syncTabBar(dx, this.data.current, true);
     },
 
-    /** 切换完成：更新 current / active，并通知内容组件刷新 */
+    /** 切换完成：更新 current 与渲染范围，并通知内容组件刷新 */
     onChange(e: any) {
       const current = e.detail && e.detail.current;
       if (typeof current !== 'number') return;
-      this.setData({ current, active: current });
+      this.setData(Object.assign({ current }, keepFlags(current)));
       this.syncTabBar(0, current);
       this.notifyShown(current);
     },
