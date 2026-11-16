@@ -2,13 +2,7 @@
   <view class="card">
     <view class="section-title">导出数据</view>
     <view class="tip">可复制 JSON 文本，或直接生成 .json 文件分享到聊天（建议发给「文件传输助手」保存）。</view>
-    <view class="opt-row">
-      <view class="opt-text">
-        <view class="opt-title">包含自定义图标</view>
-        <view class="opt-desc">换机时图标才能一起恢复；会让备份体积明显变大</view>
-      </view>
-      <switch checked="{{includeIcons}}" color="#3B6FF6" bindchange="onToggleIcons" />
-    </view>
+    <view class="tip">自定义图标不会被导出，恢复备份时会换成对应的预设图标。</view>
     <button class="btn-primary" bindtap="onExport">导出并复制</button>
     <button class="btn-primary file-btn" bindtap="onExportFile">导出为 JSON 文件</button>
   </view>

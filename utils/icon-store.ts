@@ -48,32 +48,6 @@ function sandboxReady(): boolean {
   return typeof wx !== 'undefined' && !!wx.getFileSystemManager && !!wx.env;
 }
 
-/** 读取图标文件内容为 base64（不含 data URL 前缀）；不可用或失败返回 null */
-export function readIconBase64(path: string): string | null {
-  if (!sandboxReady()) return null;
-  const name = baseName(path);
-  if (!isManagedIconFile(name)) return null;
-  try {
-    const content = wx.getFileSystemManager().readFileSync(path, 'base64');
-    return typeof content === 'string' && content ? content : null;
-  } catch (e) {
-    return null;
-  }
-}
-
-/** 把 base64 写回沙盒（沿用原文件名），返回绝对路径；失败返回 '' */
-export function writeIconBase64(name: string, base64: string): string {
-  if (!sandboxReady()) return '';
-  if (!isManagedIconFile(name) || !base64) return '';
-  try {
-    const dest = `${wx.env.USER_DATA_PATH}/${name}`;
-    wx.getFileSystemManager().writeFileSync(dest, base64, 'base64');
-    return dest;
-  } catch (e) {
-    return '';
-  }
-}
-
 /** 图标文件是否真实存在于沙盒 */
 export function iconFileExists(path: string): boolean {
   if (!sandboxReady()) return false;

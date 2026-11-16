@@ -4,14 +4,7 @@ import { Car } from '../types/models';
 import { rebuildConsumptionsForCar } from './refuel.service';
 import { syncMileages } from './car.service';
 import { dedupePresetCategories, normalizeSpendCategoryAliases } from '../repositories/seed';
-import {
-  baseName,
-  isManagedIconFile,
-  readIconBase64,
-  writeIconBase64,
-  iconFileExists,
-  iconPathOf
-} from '../utils/icon-store';
+import { baseName, isManagedIconFile, iconFileExists, iconPathOf } from '../utils/icon-store';
 
 /** 业务表（fuelConsumptions 为派生数据，导入时不 Upsert，由 rebuild 重算） */
 const BUSINESS_TABLES = [
@@ -27,26 +20,25 @@ const BUSINESS_TABLES = [
 
 const EXPORT_TABLES = [...BUSINESS_TABLES, 'fuelConsumptions'];
 
-export interface ExportOptions {
-  /**
-   * 是否把自定义图标以 base64 一并导出。
-   *
-   * 图标文件本身不在 JSON 里，实体的 icon 只是本机沙盒路径；
-   * 不带图标的话，换机后所有自定义图标都会裂图。
-   */
-  includeIcons?: boolean;
-}
+/**
+ * 各类实体的默认预设图标。
+ *
+ * 恢复备份时不还原自定义图标（那是本机文件），而是换成这里对应的预设图标——
+ * 统一回落到 📌 会让「保养项」看起来像数据出错。
+ */
+const DEFAULT_ICON_BY_TABLE: Record<string, string> = {
+  cars: '🚗',
+  categories: '🧾',
+  maintains: '🔧'
+};
 
-/** 选择「包含图标」时允许的最大 base64 总字符数（约 3MB） */
-export const ICON_EXPORT_MAX_CHARS = 4 * 1024 * 1024;
-
-/** 带有 icon 字段、需要一起打包图标的业务表 */
-const ICON_TABLES = ['cars', 'categories', 'maintains'];
-
-/** 备份里的图标资源表：文件名 → base64 */
-type IconPayload = Record<string, string>;
-
-export function exportBundle(storage: StorageAdapter, options: ExportOptions = {}): string {
+/**
+ * 导出备份。
+ *
+ * **不打包图标**：图标是装饰，且自定义图标本质是本机文件，把它塞进 JSON 会让
+ * 备份从几百 KB 涨到几 MB。恢复时统一换成预设图标即可（见 restoreDefaultIcon）。
+ */
+export function exportBundle(storage: StorageAdapter): string {
   const data: Record<string, any> = {};
   for (const table of EXPORT_TABLES) {
     data[table] = storage.list(table).filter((e: any) => !e.deleted);
@@ -57,46 +49,14 @@ export function exportBundle(storage: StorageAdapter, options: ExportOptions = {
     data['user'] = rest;
   }
 
-  // 可选：把实体引用的自定义图标读成 base64 一并带走
-  const icons: IconPayload = {};
-  if (options.includeIcons) {
-    const paths = new Set<string>();
-    for (const table of ICON_TABLES) {
-      for (const e of (data[table] || []) as Array<{ icon?: string }>) {
-        if (e && e.icon) paths.add(e.icon);
-      }
-    }
-
-    let total = 0;
-    for (const p of paths) {
-      const name = baseName(p);
-      if (!name || !isManagedIconFile(name) || icons[name]) continue;
-      const b64 = readIconBase64(p);
-      if (!b64) continue;
-      total += b64.length;
-      if (total > ICON_EXPORT_MAX_CHARS) {
-        // 宁可报错也不静默丢图标——丢了用户换机后才发现裂图
-        throw new Error('自定义图标过多，请先清理部分图标，或取消勾选「包含自定义图标」');
-      }
-      icons[name] = b64;
-    }
-  }
-
-  const hasIcons = Object.keys(icons).length > 0;
-  const manifest: any = {
+  const manifest = {
     format: 'icar-export',
     version: 1,
     source: { platform: 'mp', appVersion: '1.2.0', exportedAt: Date.now() },
-    options: {
-      amountUnit: 'yuan',
-      timeUnit: 'ms',
-      imageMode: hasIcons ? 'base64' : 'file',
-      package: 'json'
-    },
+    options: { amountUnit: 'yuan', timeUnit: 'ms', imageMode: 'file', package: 'json' },
     warnings: [] as string[],
     data
   };
-  if (hasIcons) manifest.icons = icons;
   return JSON.stringify(manifest, null, 2);
 }
 
@@ -192,26 +152,23 @@ function sanitizeImported(table: string, e: any): any | null {
 }
 
 /**
- * 把实体上的图标路径解析成本机可用的路径。
+ * 决定导入后的图标。
  *
- * - emoji / 外部资源：原样返回
- * - 自定义图标（`icon-*.png`）：备份里带了这个文件就写回沙盒；
- *   否则本地若已有该文件则继续用；都没有则**清空** ——
- *   让 UI 回落到默认 emoji，好过显示一张裂图。
+ * 备份不带图标文件，所以：
+ * - emoji 类图标（预设）：原样保留
+ * - 自定义图片图标（`icon-*.png`，本机沙盒路径）：本机已有同文件则继续用
+ *   （同机合并不误伤），否则换成该实体的**预设图标**——留失效路径只会裂图，
+ *   而统一回落 📌 会让保养项之类看起来像数据出错。
  */
-function resolveIcon(raw: string, icons: IconPayload): string {
-  if (!raw) return '';
+function resolveIcon(raw: string, table: string): string {
+  const fallback = DEFAULT_ICON_BY_TABLE[table] || '';
+  if (!raw) return fallback;
+
   const name = baseName(raw);
   if (!isManagedIconFile(name)) return raw;
 
-  const b64 = icons[name];
-  if (b64) {
-    const written = writeIconBase64(name, b64);
-    if (written) return written;
-  }
-
   const local = iconPathOf(name);
-  return local && iconFileExists(local) ? local : '';
+  return local && iconFileExists(local) ? local : fallback;
 }
 
 /** 物理清空若干表（含已软删的记录），返回清掉的条数 */
@@ -261,12 +218,6 @@ export function importBundle(
     }
   }
 
-  // 备份若带了图标资源（导出时勾选「包含自定义图标」），这里要用它还原沙盒文件
-  const icons: IconPayload =
-    manifest.icons && typeof manifest.icons === 'object' && !Array.isArray(manifest.icons)
-      ? (manifest.icons as IconPayload)
-      : {};
-
   let added = 0;
   let updated = 0;
   let skipped = 0;
@@ -300,9 +251,9 @@ export function importBundle(
           skipped++;
           continue;
         }
-        // 图标可能是别的设备上的沙盒路径：能还原就还原，还原不了就清空回落 emoji
-        if (typeof clean.icon === 'string' && clean.icon) {
-          clean.icon = resolveIcon(clean.icon, icons);
+        // 图标可能是别的设备上的沙盒路径：本机没有该文件就换成预设图标
+        if (typeof clean.icon === 'string') {
+          clean.icon = resolveIcon(clean.icon, table);
         }
         const existing = storage.get<any>(table, clean.sourceId);
         if (!existing) {
