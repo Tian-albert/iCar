@@ -3,5 +3,18 @@
   "compilerOptions": {
     "types": ["jest", "miniprogram-api-typings"]
   },
-  "include": ["types/**/*", "domain/**/*", "repositories/**/*", "services/**/*", "utils/**/*", "tests/**/*"]
+  "include": [
+    "typings/**/*",
+    "types/**/*",
+    "domain/**/*",
+    "repositories/**/*",
+    "services/**/*",
+    "utils/**/*",
+    "store/**/*",
+    "components/**/*",
+    "custom-tab-bar/**/*",
+    "pages/**/*",
+    "app.ts",
+    "tests/**/*"
+  ]
 }
