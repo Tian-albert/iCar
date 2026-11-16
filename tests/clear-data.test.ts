@@ -212,68 +212,69 @@ describe('「我的」页的界面契约', () => {
   });
 });
 
-describe('推荐按钮的样式细节', () => {
+describe('推荐项的样式细节', () => {
   const fsx2 = require('fs') as any;
   const wxss: string = fsx2.readFileSync('pages/user/index.wxss', 'utf-8');
+  const wxml: string = fsx2.readFileSync('pages/user/index.wxml', 'utf-8');
 
-  it('button 外观完全重置（无默认边框/背景/内边距残留）', () => {
-    const block = wxss.match(/\.share-btn \{[\s\S]*?\}/);
+  it('视觉复用 .row / .row-label / .row-arrow，与「关于」同一套类', () => {
+    // 这是「字体、位置必须一致」的根本保证：
+    // 不是靠覆盖 button 样式去「凑」成一样，而是用同一个类
+    const block = wxml.match(/<view class="row row-share">[\s\S]*?<\/view>\s*<\/view>/);
     expect(block).toBeTruthy();
-    const css = block![0];
-    expect(css).toContain('background: transparent');
-    expect(css).toContain('border: none');
-    // 微信 button 默认有一条 ::after 边框，必须显式去掉
-    expect(wxss).toMatch(/\.share-btn::after \{[\s\S]{0,60}border: none/);
+    expect(block![0]).toContain('class="row-label"');
+    expect(block![0]).toContain('class="row-arrow"');
+    expect(block![0]).toContain('把车记本推荐给朋友');
   });
 
-  it('负外边距抵消 .card 内边距，与上面的 row 对齐', () => {
-    const block = wxss.match(/\.share-btn \{[\s\S]*?\}/);
-    // .card 有左右 padding，button 若不抵消会缩进、与 row 不对齐
-    expect(block![0]).toMatch(/margin:\s*0\s+calc\(0rpx - var\(--sp-4\)\)/);
-    // 内边距移到内层：button 自身 padding 必须归零，否则双重内边距
-    expect(block![0]).toMatch(/padding:\s*0/);
-    const inner = wxss.match(/\.share-inner \{[\s\S]*?\}/);
-    expect(inner).toBeTruthy();
-    expect(inner![0]).toMatch(/padding:\s*0 var\(--sp-4\)/);
-  });
-
-  it('不使用渐变（用户明确要求与整体风格一致）', () => {
-    expect(wxss).not.toContain('linear-gradient');
-  });
-
-  it('重置 button 内置样式：不加粗、不居中', () => {
-    // 微信给 button 注入 text-align:center / font-weight:bold / display:block，
-    // 优先级高于普通 class，不显式重置就会导致文字居中加粗
-    const block = wxss.match(/\.share-btn \{[\s\S]*?\}/);
-    expect(block).toBeTruthy();
-    expect(block![0]).toMatch(/font-weight:\s*normal/);
-    expect(block![0]).toMatch(/text-align:\s*left/);
-    expect(block![0]).toMatch(/display:\s*block/);
-  });
-
-  it('布局在内层 view 上，箭头靠最右', () => {
-    const inner = wxss.match(/\.share-inner \{[\s\S]*?\}/);
-    expect(inner).toBeTruthy();
-    // space-between 让箭头自然到最右，而不是紧贴文字
-    expect(inner![0]).toMatch(/display:\s*flex/);
-    expect(inner![0]).toContain('justify-content: space-between');
-    expect(inner![0]).toMatch(/align-items:\s*center/);
-  });
-
-  it('WXML 用内层 view 包裹，不在 button 上直接放布局', () => {
-    const wxml: string = fsx2.readFileSync('pages/user/index.wxml', 'utf-8');
-    const btn = wxml.match(/<button class="share-btn"[\s\S]*?<\/button>/);
+  it('button 只做透明覆盖层，不承载任何可见内容', () => {
+    const btn = wxml.match(/<button class="share-cover"[^>]*>/);
     expect(btn).toBeTruthy();
-    // 必须有 share-inner 这层
-    expect(btn![0]).toContain('class="share-inner"');
-    // 文案与箭头都在内层里
-    expect(btn![0]).toMatch(/share-inner[\s\S]*把车记本推荐给朋友/);
-    expect(btn![0]).toMatch(/share-inner[\s\S]*row-arrow/);
+    // 自闭合，内部没有文字/子节点 —— 避免 button 内置样式影响视觉
+    expect(btn![0]).toContain('open-type="share"');
+    expect(btn![0]).toMatch(/\/>$/);
+    // 文案不能在 button 里面
+    expect(btn![0]).not.toContain('把车记本推荐给朋友');
+  });
+
+  it('覆盖层铺满整行、视觉不可见但可点击', () => {
+    const cover = wxss.match(/\.share-cover \{[\s\S]*?\}/);
+    expect(cover).toBeTruthy();
+    const css = cover![0];
+    expect(css).toMatch(/position:\s*absolute/);
+    expect(css).toMatch(/width:\s*100%/);
+    expect(css).toMatch(/height:\s*100%/);
+    // 用接近 0 而非 0：opacity:0 在部分渲染引擎下不接收点击，分享会调不起来
+    expect(css).toMatch(/opacity:\s*0\.0?1/);
+    expect(css).toMatch(/z-index:\s*1/);
+    // 无默认外观残留
+    expect(css).toMatch(/padding:\s*0/);
+    expect(css).toMatch(/border:\s*none/);
+    expect(css).toMatch(/background:\s*transparent/);
+  });
+
+  it('行容器为覆盖层提供定位参照', () => {
+    const row = wxss.match(/\.row-share \{[\s\S]*?\}/);
+    expect(row).toBeTruthy();
+    expect(row![0]).toMatch(/position:\s*relative/);
+  });
+
+  it('不再依赖覆盖 button 内置样式（旧方案已废弃）', () => {
+    // 在 button 上写 font-weight/text-align 覆盖实测在真机不生效，
+    // 所以这些类不应再出现，避免有人又改回去
+    expect(wxss).not.toContain('.share-btn');
+    expect(wxss).not.toContain('.share-inner');
   });
 
   it('字号与普通选项一致（row-label 是 28rpx）', () => {
     const label = wxss.match(/\.row-label \{[\s\S]*?\}/);
     expect(label).toBeTruthy();
     expect(label![0]).toMatch(/font-size:\s*28rpx/);
+    // 加粗只应出现在「不想要」的地方之外：row-label 本身不加粗
+    expect(label![0]).not.toMatch(/font-weight:\s*(bold|700)/);
+  });
+
+  it('不使用渐变（用户明确要求与整体风格一致）', () => {
+    expect(wxss).not.toContain('linear-gradient');
   });
 });

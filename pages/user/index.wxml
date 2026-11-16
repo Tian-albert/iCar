@@ -40,17 +40,19 @@
 
   <!--
     推荐给朋友：单独一组放在最下，靠「位置」突出，而非靠字体样式。
-    button 只当分享触发器的壳，布局交给内层 view —— 微信给 button 注入了
-    内置样式（text-align:center / font-weight:bold / display:block），
-    优先级高于普通 class，直接在上面写 flex 不可靠。
+
+    这里**不用 button 承载布局**——微信给 button 注入了内置样式
+    （text-align:center / font-size / padding / line-height），
+    即使写了 class 覆盖，真机上仍可能不生效。
+    改法：视觉用与上面「关于」完全相同的 .row 结构，
+    button 做成铺满整行的透明覆盖层，只负责触发分享。
   -->
   <view class="card">
-    <button class="share-btn" open-type="share" hover-class="hover-dim">
-      <view class="share-inner">
-        <view class="row-label">把车记本推荐给朋友</view>
-        <view class="row-arrow">›</view>
-      </view>
-    </button>
+    <view class="row row-share">
+      <view class="row-label">把车记本推荐给朋友</view>
+      <view class="row-arrow">›</view>
+      <button class="share-cover" open-type="share" hover-class="none" />
+    </view>
   </view>
 
   <view class="version">车记本 v1.2.0</view>
