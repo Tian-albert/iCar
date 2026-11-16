@@ -37,7 +37,8 @@ describe('「概览」改名三处必须一致', () => {
   it('自定义 TabBar 文案与图标同步', () => {
     const src = read('custom-tab-bar/index.ts');
     expect(src).toContain("text: '概览'");
-    expect(src).toContain('📊');
+    // 图标已从 emoji 改为手绘 SVG 的 data URI（见 utils/tab-icons.ts）
+    expect(src).toContain("icon: 'overview'");
     expect(src).not.toContain("text: '保养'");
   });
 

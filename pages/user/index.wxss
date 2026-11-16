@@ -1,7 +1,8 @@
 .page {
   min-height: 100vh;
   padding: 24rpx;
-  padding-bottom: 160rpx;
+  /* 悬浮胶囊底栏：胶囊高 108rpx + 底部偏移 20rpx + 安全区 + 呼吸留白 */
+  padding-bottom: calc(168rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 .user-card {
