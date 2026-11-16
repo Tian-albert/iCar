@@ -1,4 +1,8 @@
-<view class="page">
+<view class="page"
+    bindtouchstart="onTouchStart"
+    bindtouchmove="onTouchMove"
+    bindtouchend="onTouchEnd"
+    bindtouchcancel="onTouchCancel">
   <block wx:if="{{hasCar}}">
     <!-- A 全局指标条 -->
     <view class="head-line">{{carCount}} 辆车 · 总里程 {{totalMileageText}} km</view>

@@ -10,6 +10,7 @@ import {
 } from '../../services/overview.service';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { renderDonut, computeDonutLayout, DonutSegment } from '../../utils/chart-render';
+import { createTabSwipeHandlers, TAB_PATHS } from '../../utils/tab-swipe-page';
 
 /** 环图逻辑尺寸（px，375 屏宽下 104px ≈ 208rpx） */
 const DONUT_SIZE = 104;
@@ -92,6 +93,9 @@ Page({
     mainCarId: ''
   },
 
+  // 横向滑动：底部栏胶囊跟手，松手切换相邻 tab
+  ...createTabSwipeHandlers({ index: 0, count: 3, paths: TAB_PATHS }),
+
   onShareAppMessage() {
     return buildShareMessage({ highlight: this.shareHighlight() });
   },
@@ -105,7 +109,8 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 });
+      // 复位胶囊位移：从别处滑回来时不应停在半路
+      this.getTabBar().setData({ selected: 0, offsetX: 0, dragging: false });
     }
     enableShareMenu();
     this.load();

@@ -1,8 +1,8 @@
-<view class="tab-bar">
+<view class="tab-bar" style="transform: translateX({{offsetX}}px);">
   <view
     wx:for="{{list}}"
     wx:key="pagePath"
-    class="tab-item {{selected === index ? 'tab-active' : ''}}"
+    class="tab-item {{selected === index && !dragging ? 'tab-active' : ''}}"
     data-path="{{item.pagePath}}"
     data-index="{{index}}"
     bindtap="switchTab">
