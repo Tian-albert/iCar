@@ -230,10 +230,50 @@ describe('推荐按钮的样式细节', () => {
     const block = wxss.match(/\.share-btn \{[\s\S]*?\}/);
     // .card 有左右 padding，button 若不抵消会缩进、与 row 不对齐
     expect(block![0]).toMatch(/margin:\s*0\s+calc\(0rpx - var\(--sp-4\)\)/);
-    expect(block![0]).toMatch(/padding:\s*0 var\(--sp-4\)/);
+    // 内边距移到内层：button 自身 padding 必须归零，否则双重内边距
+    expect(block![0]).toMatch(/padding:\s*0/);
+    const inner = wxss.match(/\.share-inner \{[\s\S]*?\}/);
+    expect(inner).toBeTruthy();
+    expect(inner![0]).toMatch(/padding:\s*0 var\(--sp-4\)/);
   });
 
   it('不使用渐变（用户明确要求与整体风格一致）', () => {
     expect(wxss).not.toContain('linear-gradient');
+  });
+
+  it('重置 button 内置样式：不加粗、不居中', () => {
+    // 微信给 button 注入 text-align:center / font-weight:bold / display:block，
+    // 优先级高于普通 class，不显式重置就会导致文字居中加粗
+    const block = wxss.match(/\.share-btn \{[\s\S]*?\}/);
+    expect(block).toBeTruthy();
+    expect(block![0]).toMatch(/font-weight:\s*normal/);
+    expect(block![0]).toMatch(/text-align:\s*left/);
+    expect(block![0]).toMatch(/display:\s*block/);
+  });
+
+  it('布局在内层 view 上，箭头靠最右', () => {
+    const inner = wxss.match(/\.share-inner \{[\s\S]*?\}/);
+    expect(inner).toBeTruthy();
+    // space-between 让箭头自然到最右，而不是紧贴文字
+    expect(inner![0]).toMatch(/display:\s*flex/);
+    expect(inner![0]).toContain('justify-content: space-between');
+    expect(inner![0]).toMatch(/align-items:\s*center/);
+  });
+
+  it('WXML 用内层 view 包裹，不在 button 上直接放布局', () => {
+    const wxml: string = fsx2.readFileSync('pages/user/index.wxml', 'utf-8');
+    const btn = wxml.match(/<button class="share-btn"[\s\S]*?<\/button>/);
+    expect(btn).toBeTruthy();
+    // 必须有 share-inner 这层
+    expect(btn![0]).toContain('class="share-inner"');
+    // 文案与箭头都在内层里
+    expect(btn![0]).toMatch(/share-inner[\s\S]*把车记本推荐给朋友/);
+    expect(btn![0]).toMatch(/share-inner[\s\S]*row-arrow/);
+  });
+
+  it('字号与普通选项一致（row-label 是 28rpx）', () => {
+    const label = wxss.match(/\.row-label \{[\s\S]*?\}/);
+    expect(label).toBeTruthy();
+    expect(label![0]).toMatch(/font-size:\s*28rpx/);
   });
 });

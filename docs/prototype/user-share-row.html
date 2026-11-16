@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「我的」页 · 推荐给朋友样式修正</title>
+<style>
+  :root{
+    --primary:#3B6FF6;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486;
+    --bg:#F5F6F8; --card:#fff; --divider:#F0F1F4; --danger:#F5474F;
+    --sp3:12px; --sp4:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:24px 14px 44px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:22px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:360px;}
+  .col h2{font-size:13px;font-weight:600;margin-bottom:2px;}
+  .col .desc{font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:8px;min-height:34px;}
+  .badge{display:inline-block;font-size:9px;padding:1.5px 5px;border-radius:4px;
+    font-weight:600;margin-left:4px;vertical-align:middle;}
+  .badge.err{background:#FDE8E9;color:#B3232A;}
+  .badge.ok{background:#E4F6EA;color:#1E7F3C;}
+
+  .phone{
+    width:360px;background:var(--bg);border-radius:26px;overflow:hidden;
+    box-shadow:0 12px 34px rgba(15,23,42,.18);border:1px solid rgba(0,0,0,.05);
+    padding:14px 0 18px;
+  }
+  .nav{height:40px;display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:600;margin-bottom:6px;}
+
+  .card{background:var(--card);border-radius:16px;margin:0 12px 12px;
+    padding:var(--sp3) var(--sp4);box-shadow:0 1px 3px rgba(15,23,42,.05);}
+
+  /* 普通 row：这是「正确」的基准 */
+  .row{display:flex;align-items:center;justify-content:space-between;
+    min-height:52px;border-bottom:1px solid var(--divider);}
+  .row:last-child{border-bottom:none;}
+  .row-label{font-size:14px;color:var(--t1);}
+  .row-label.danger{color:var(--danger);}
+  .row-arrow{font-size:20px;color:var(--t3);line-height:1;}
+
+  /* ===== 问题版：模拟 button 默认样式干扰 ===== */
+  .share-btn-broken{
+    /* button 默认：display:block + text-align:center + font-weight:bold */
+    display: block;
+    text-align: center;
+    font-weight: bold;
+    min-height: 52px;
+    margin: 0 -16px;
+    padding: 0 16px;
+    background: transparent;
+    border: none;
+    width: calc(100% + 32px);
+    font-size: 14px;
+    line-height: 52px;
+    color: var(--t1);
+  }
+  /* 即使设了 flex，button 的 display 也可能不被覆盖 */
+  .share-btn-broken .row-label{
+    display: inline;      /* 跟着 text-align:center 居中 */
+    font-weight: bold;    /* 继承 button 的 bold */
+  }
+  .share-btn-broken .row-arrow{
+    display: inline;
+    font-size: 18px;
+    color: var(--t3);
+    margin-left: 4px;     /* 紧贴文字，不在最右 */
+  }
+
+  /* ===== 修复版：内层 view 承载 flex ===== */
+  .share-btn-fixed{
+    display: block;
+    margin: 0 -16px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    font-size: 14px;
+    font-weight: normal;   /* 关键：重置加粗 */
+    line-height: normal;
+    text-align: left;      /* 关键：重置居中 */
+    color: var(--t1);
+  }
+  .share-btn-fixed::after{ border: none; }
+  .share-inner{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    padding: 0 16px;
+  }
+
+  .note{font-size:11px;color:#5A6272;line-height:1.8;margin-top:8px;padding:9px 11px;
+    background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .err{color:#B3232A;} .ok{color:#1E7F3C;}
+  .note ul{margin:4px 0 0 14px;}
+  .note li{margin-bottom:2px;}
+
+  /* 对齐参考线 */
+  .guide{position:relative;}
+  .guide::before{
+    content:'';position:absolute;left:28px;top:0;bottom:0;width:1px;
+    background:rgba(59,111,246,.35);pointer-events:none;z-index:5;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 现状（有问题） ===== -->
+<div class="col">
+  <h2>现状<span class="badge err">有问题</span></h2>
+  <div class="desc">文字居中、加粗，箭头紧贴文字而非最右。蓝色竖线是左侧对齐参考线。</div>
+  <div class="phone guide">
+    <div class="nav">我的</div>
+
+    <div class="card">
+      <div class="row"><span class="row-label">反馈与建议</span><span class="row-arrow">›</span></div>
+      <div class="row"><span class="row-label">关于</span><span class="row-arrow">›</span></div>
+    </div>
+
+    <div class="card">
+      <!-- 问题版 -->
+      <div class="share-btn-broken">
+        <span class="row-label">把车记本推荐给朋友</span><span class="row-arrow">›</span>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:10.5px;color:#A8B0BC;padding:6px 0;">车记本 v1.2.0</div>
+  </div>
+  <div class="note">
+    <b>原因</b>：`.share-btn` 是 <code>&lt;button&gt;</code> 元素，微信给它注入了内置默认样式：
+    <ul>
+      <li><code>text-align: center</code> → 文字居中</li>
+      <li><code>font-weight: bold</code> → 加粗</li>
+      <li><code>display: block</code> → 我设的 <code>display: flex</code> 可能不生效</li>
+    </ul>
+    这些内置样式<b>优先级高于普通 class</b>，所以只靠 class 覆盖并不可靠。
+  </div>
+</div>
+
+<!-- ===== 修复后 ===== -->
+<div class="col">
+  <h2>修复后<span class="badge ok">与其余选项一致</span></h2>
+  <div class="desc">文字左对齐、常规字重、字号相同，箭头在最右边，和「关于」完全对齐。</div>
+  <div class="phone guide">
+    <div class="nav">我的</div>
+
+    <div class="card">
+      <div class="row"><span class="row-label">反馈与建议</span><span class="row-arrow">›</span></div>
+      <div class="row"><span class="row-label">关于</span><span class="row-arrow">›</span></div>
+    </div>
+
+    <div class="card">
+      <!-- 修复版：button 只做壳，内层 view 承载布局 -->
+      <div class="share-btn-fixed">
+        <div class="share-inner">
+          <span class="row-label">把车记本推荐给朋友</span>
+          <span class="row-arrow">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:10.5px;color:#A8B0BC;padding:6px 0;">车记本 v1.2.0</div>
+  </div>
+  <div class="note">
+    <b>做法</b>：button 只当「分享触发器」的壳，<b>布局全部交给内层 view</b>。
+    <ul>
+      <li>button 上重置：<code>font-weight: normal</code>、<code>text-align: left</code>、<code>display: block</code></li>
+      <li>内层 <code>.share-inner</code> 用 <code>flex + space-between</code> → 箭头自然到最右</li>
+      <li>内层 <code>padding: 0 16px</code> + button 负 margin，抵消 <code>.card</code> 内边距，文字与「关于」左边缘对齐</li>
+    </ul>
+    这样不受 button 内置样式干扰，与普通 row 视觉完全一致。
+  </div>
+</div>
+
+<!-- ===== 完整页面预览 ===== -->
+<div class="col">
+  <h2>完整页面（修复后）</h2>
+  <div class="desc">推荐项仍单独成组放在最下，靠位置突出，而非靠字体样式。</div>
+  <div class="phone guide">
+    <div class="nav">我的</div>
+
+    <div class="card">
+      <div class="row">
+        <span class="row-label">保养到期提醒</span>
+        <span style="width:40px;height:22px;border-radius:11px;background:var(--primary);position:relative;">
+          <span style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff;"></span>
+        </span>
+      </div>
+      <div class="row"><span class="row-label">支出类别管理</span><span class="row-arrow">›</span></div>
+      <div class="row"><span class="row-label">数据导入导出</span><span class="row-arrow">›</span></div>
+      <div class="row"><span class="row-label">回收站</span><span class="row-arrow">›</span></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><span class="row-label danger">清除所有数据</span><span class="row-arrow">›</span></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><span class="row-label">反馈与建议</span><span class="row-arrow">›</span></div>
+      <div class="row"><span class="row-label">关于</span><span class="row-arrow">›</span></div>
+    </div>
+
+    <div class="card">
+      <div class="share-btn-fixed">
+        <div class="share-inner">
+          <span class="row-label">把车记本推荐给朋友</span>
+          <span class="row-arrow">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:10.5px;color:#A8B0BC;padding:6px 0;">车记本 v1.2.0</div>
+  </div>
+  <div class="note">
+    <b>四项对齐检查</b>：字号 14px ✓　字重 常规 ✓　左对齐 ✓　箭头最右 ✓<br>
+    与「关于」「反馈与建议」逐项一致，唯一的区别是它<b>单独成组</b>——这是位置上的突出，符合你的要求。
+  </div>
+</div>
+
+</body>
+</html>

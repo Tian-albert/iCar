@@ -32,28 +32,42 @@
 }
 
 /*
- * 「把车记本推荐给朋友」：用 button 承载以支持 open-type="share"，
- * 但外观完全对齐普通 .row —— 既融入整页风格，又因单独成组而突出。
+ * 「把车记本推荐给朋友」：用 button 承载以支持 open-type="share"。
+ *
+ * button 只当壳，**布局全部交给内层 .share-inner**：
+ * 微信给 button 注入了内置默认样式（text-align:center、font-weight:bold、
+ * display:block），优先级高于普通 class，直接在上面写 flex 不可靠，
+ * 会导致文字居中加粗、箭头紧贴文字而非靠右。
+ * 这里把这三项显式重置，让内层 view 能正常 flex 布局。
  *
  * 负外边距抵消 .card 的左右内边距，否则按钮会缩进、与上面的 row 不对齐。
  */
 .share-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 104rpx;
+  display: block;
   margin: 0 calc(0rpx - var(--sp-4));
-  padding: 0 var(--sp-4);
+  padding: 0;
   background: transparent;
   border: none;
   border-radius: 0;
+  /* 重置 button 内置样式：不加粗、不居中 */
+  font-weight: normal;
+  text-align: left;
   font-size: inherit;
   line-height: normal;
-  text-align: left;
+  color: var(--color-text-1);
 }
 /* 去掉 button 的默认 ::after 边框 */
 .share-btn::after {
   border: none;
+}
+
+/* 内层承载布局：flex 不受 button 内置样式干扰 */
+.share-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 104rpx;
+  padding: 0 var(--sp-4);
 }
 .version {
   margin-top: 40rpx;
