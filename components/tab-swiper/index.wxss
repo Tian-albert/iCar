@@ -1,3 +1,9 @@
+/* 组件宿主节点撑满父级，否则内部 swiper 的 height:100% 无参照 */
+:host {
+  display: block;
+  height: 100%;
+}
+
 .host-swiper {
   width: 100%;
   height: 100%;

@@ -243,3 +243,62 @@ describe('页面路径完整性（防悬空引用）', () => {
     expect(fs.existsSync('pages/tab-host')).toBe(false);
   });
 });
+
+describe('高度链完整（防止主界面空白）', () => {
+  const fs = require('fs') as any;
+
+  // 自定义组件宿主节点默认高度是 auto，任何一层没撑满，
+  // 内部 height:100% 就会解析为 0 —— 整页白屏且没有任何报错。
+  const CHAIN = [
+    'pages/tab-overview/index.wxss',
+    'pages/tab-vehicles/index.wxss',
+    'pages/tab-profile/index.wxss',
+    'components/tab-swiper/index.wxss',
+    'components/tab-overview/index.wxss',
+    'components/tab-vehicles/index.wxss',
+    'components/tab-profile/index.wxss'
+  ];
+
+  for (const f of CHAIN) {
+    it(`${f} 设置了有效高度`, () => {
+      const css: string = fs.readFileSync(f, 'utf-8');
+      expect(css).toMatch(/height:\s*(100%|100vh)/);
+    });
+  }
+
+  it('薄壳页给组件宿主节点显式设了高度（tab-swiper 标签选择器）', () => {
+    for (const f of [
+      'pages/tab-overview/index.wxss',
+      'pages/tab-vehicles/index.wxss',
+      'pages/tab-profile/index.wxss'
+    ]) {
+      const css: string = fs.readFileSync(f, 'utf-8');
+      expect(css).toMatch(/tab-swiper\s*\{[\s\S]{0,120}height:\s*100%/);
+    }
+  });
+
+  it('组件用 :host 撑满宿主节点', () => {
+    for (const f of [
+      'components/tab-swiper/index.wxss',
+      'components/tab-overview/index.wxss',
+      'components/tab-vehicles/index.wxss',
+      'components/tab-profile/index.wxss'
+    ]) {
+      const css: string = fs.readFileSync(f, 'utf-8');
+      expect(css).toMatch(/:host\s*\{[\s\S]{0,120}height:\s*100%/);
+    }
+  });
+
+  it('swiper 与 swiper-item 都撑满', () => {
+    const css: string = fs.readFileSync('components/tab-swiper/index.wxss', 'utf-8');
+    expect(css).toMatch(/\.host-swiper\s*\{[\s\S]{0,120}height:\s*100%/);
+    expect(css).toMatch(/\.host-swiper-item\s*\{[\s\S]{0,120}height:\s*100%/);
+  });
+
+  it('内容组件的滚动容器撑满', () => {
+    for (const c of ['tab-overview', 'tab-vehicles', 'tab-profile']) {
+      const css: string = fs.readFileSync(`components/${c}/index.wxss`, 'utf-8');
+      expect(css).toMatch(/\.page-scroll\s*\{[\s\S]{0,120}height:\s*100%/);
+    }
+  });
+});
