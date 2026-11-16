@@ -223,38 +223,123 @@ export function importBundle(
   let skipped = 0;
   let cleared = 0;
 
+  /*
+   * 第一步：把整份备份在内存里过一遍（净化 + 图标回落 + 引用完整性校验），
+   * 全部通过才动数据库。
+   *
+   * 为什么必须先做：覆盖导入原来是「先 clearTables 再逐条写」，
+   * 一旦中途抛错（或写入的引用全是悬空的），旧数据已经没了、新数据又没写全，
+   * 且本地 Storage 没有事务，无法回滚 —— 用户的数据就永久丢了。
+   */
+  const staged: Record<string, any[]> = {};
+  for (const table of BUSINESS_TABLES) staged[table] = [];
+
+  for (const table of BUSINESS_TABLES) {
+    for (const e of (data[table] || []) as any[]) {
+      if (
+        !e ||
+        typeof e !== 'object' ||
+        Array.isArray(e) ||
+        !e.sourceId ||
+        e.deleted === true
+      ) {
+        skipped++;
+        continue;
+      }
+      // 导入绕过 service 层，必须在此把数值兜干净：
+      // 一条 amount: NaN 会让统计页总支出与图表直接显示 NaN
+      const clean = sanitizeImported(table, e);
+      if (!clean) {
+        skipped++;
+        continue;
+      }
+      // 图标可能是别的设备上的沙盒路径：本机没有该文件就换成预设图标
+      if (typeof clean.icon === 'string') {
+        clean.icon = resolveIcon(clean.icon, table);
+      }
+      staged[table].push(clean);
+    }
+  }
+
+  /*
+   * 引用完整性校验：把指向不存在实体的**次级引用**断开。
+   *
+   * 备份里可能存在指向不存在实体的记录（手改过、或来自不同版本）。
+   * 直接写进去会形成「看不见的孤儿」：比如一笔支出的类别不存在，
+   * 页面回落成「其他」但统计里仍占一份金额；加油记录的 costSourceId 悬空，
+   * 油费进了 fuel.totalCost 却不进 expense.total。
+   * 这里把悬空的引用**清空该字段**，而不是丢弃整条记录 ——
+   * 记录本身（金额、日期、里程）仍然有价值。
+   *
+   * 刻意**不处理 `carSourceId`**：
+   * - 丢弃整条会静默损失用户数据（导入本就是为了保住数据）
+   * - 清成空串只会让它更没意义
+   * - 原样保留，等对应的车之后被导入时还能自动归位
+   */
+  const knownIds: Record<string, Set<string>> = {};
+  for (const table of BUSINESS_TABLES) {
+    knownIds[table] = new Set(staged[table].map(x => x.sourceId));
+  }
+  // 合并模式下，库里已有的实体同样算「存在」
+  if (mode === 'merge') {
+    for (const table of BUSINESS_TABLES) {
+      for (const e of storage.list<any>(table)) {
+        if (e && e.sourceId && !e.deleted) knownIds[table].add(e.sourceId);
+      }
+    }
+  }
+
+  /** 次级引用字段 → 目标表 */
+  const REFS: Array<{ table: string; field: string; target: string }> = [
+    { table: 'maintainLogs', field: 'maintainSourceId', target: 'maintains' },
+    { table: 'maintainLogs', field: 'handleSourceId', target: 'maintainHandles' },
+    { table: 'costs', field: 'categorySourceId', target: 'categories' },
+    { table: 'costs', field: 'maintainHandleSourceId', target: 'maintainHandles' },
+    { table: 'costs', field: 'repairSourceId', target: 'repairRecords' },
+    { table: 'costs', field: 'fuelRecordSourceId', target: 'fuelRecords' },
+    { table: 'maintainHandles', field: 'costSourceId', target: 'costs' },
+    { table: 'repairRecords', field: 'costSourceId', target: 'costs' },
+    { table: 'fuelRecords', field: 'costSourceId', target: 'costs' }
+  ];
+
+  for (const ref of REFS) {
+    const known = knownIds[ref.target];
+    for (const e of staged[ref.table]) {
+      const v = e[ref.field];
+      if (!v || typeof v !== 'string') continue;
+      if (!known.has(v)) e[ref.field] = '';
+    }
+  }
+
+  /*
+   * 覆盖导入的回滚快照。
+   *
+   * 只把「校验」提前是不够的：清空之后逐条写入，写入阶段照样可能抛错
+   * （存储配额满、某条数据触发适配器异常）。本地 Storage 没有事务，
+   * 所以必须在清空前把现有数据整份留在内存里，失败时原样写回。
+   *
+   * 为什么用 exportBundle 而不是 `storage.list()`：
+   * 后者会被逐条写入覆盖/新增，快照会跟着变；序列化成 JSON 才是真拷贝。
+   * 这也顺带保住了回收站里的软删记录（exportBundle 只导未删项，
+   * 但覆盖导入本来就只清业务表，软删记录也在其中 —— 见下面的 recover）。
+   */
+  let backupRaw: Record<string, any[]> | null = null;
+
   try {
     if (mode === 'replace') {
-      // 覆盖导入：先物理清空业务表与派生表，再整份写入。
-      // 不清 user —— openid / 会员 / 置顶 / 已初始化标记都是本机属性，
-      // 尤其 categoriesSeeded 若被清掉，下次启动会把用户删过的预设重新建出来。
+      // 先留快照，再清空。不清 user —— openid / 会员 / 置顶 / 已初始化标记
+      // 都是本机属性，尤其 categoriesSeeded 若被清掉，下次启动会把用户删过的预设重新建出来。
+      backupRaw = {};
+      for (const table of BUSINESS_TABLES.concat(['fuelConsumptions'])) {
+        // 逐条浅拷贝：适配器返回的是库里对象的引用，直接存起来会被后续写入改掉
+        backupRaw[table] = storage.list<any>(table).map(e => ({ ...e }));
+      }
       cleared = clearTables(storage, BUSINESS_TABLES.concat(['fuelConsumptions']));
     }
 
-    // 业务表 Upsert：跳过软删记录与非法条目，避免已删数据复活或写入脏实体
+    // 第二步：落库。到这一步不会再因为数据格式问题中断。
     for (const table of BUSINESS_TABLES) {
-      for (const e of (data[table] || []) as any[]) {
-        if (
-          !e ||
-          typeof e !== 'object' ||
-          Array.isArray(e) ||
-          !e.sourceId ||
-          e.deleted === true
-        ) {
-          skipped++;
-          continue;
-        }
-        // 导入绕过 service 层，必须在此把数值兜干净：
-        // 一条 amount: NaN 会让统计页总支出与图表直接显示 NaN
-        const clean = sanitizeImported(table, e);
-        if (!clean) {
-          skipped++;
-          continue;
-        }
-        // 图标可能是别的设备上的沙盒路径：本机没有该文件就换成预设图标
-        if (typeof clean.icon === 'string') {
-          clean.icon = resolveIcon(clean.icon, table);
-        }
+      for (const clean of staged[table]) {
         const existing = storage.get<any>(table, clean.sourceId);
         if (!existing) {
           storage.insert(table, clean);
@@ -304,7 +389,24 @@ export function importBundle(
       syncMileages(storage, car.sourceId, true);
     }
   } catch {
-    // 本地 Storage 无事务：失败时如实告知，不伪装成功
+    // 本地 Storage 无事务：覆盖导入失败时把清空前的快照写回去，
+    // 否则用户既没有新数据、也没了旧数据（这是最坏的结果）。
+    if (mode === 'replace' && backupRaw) {
+      try {
+        for (const table of BUSINESS_TABLES.concat(['fuelConsumptions'])) {
+          for (const e of backupRaw[table] || []) {
+            storage.hardDelete(table, e.sourceId);
+          }
+          for (const e of backupRaw[table] || []) {
+            storage.insert(table, e);
+          }
+        }
+        storage.rebuildIndex();
+        return fail('导入失败，已恢复到导入前的数据');
+      } catch {
+        return fail('导入失败，且自动恢复未完成，请重新导入备份文件');
+      }
+    }
     return fail('导入过程中发生错误，数据可能未完整导入');
   }
 

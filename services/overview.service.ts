@@ -7,9 +7,8 @@
 // 3. 所有函数只读，不写库，避免仪表盘产生副作用。
 import { StorageAdapter } from '../repositories/storage.adapter';
 import { listCars } from './car.service';
-import { listCategories, listCosts } from './cost.service';
-import { listRefuels } from './refuel.service';
-import { getMaintainProgress } from './maintain-record.service';
+import { listCategories } from './cost.service';
+import { getMaintainProgressBatch } from './maintain-record.service';
 import { getPinnedCarId } from './user.service';
 import { CHART_COLORS } from '../domain/stats.service';
 import { Car, Cost, RefuelLog } from '../types/models';
@@ -183,6 +182,35 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
   const monthStart = startOfMonth(now);
   const yearStart = startOfYear(now);
 
+  /*
+   * 一次取全表、再按车分组。
+   *
+   * 原来的写法是在「按车循环」里逐车调 listCosts / listRefuels / getMaintainProgress，
+   * 每个都会 `storage.list()` 全表 + 排序，实际复杂度是 O(车辆 × 记录)；
+   * 车一多、记录一多，切回概览页就有明显卡顿。
+   * 这里只多花三张全表的扫描，复杂度回到 O(记录)。
+   */
+  const carIds = cars.map(c => c.sourceId);
+  const carIdSet = new Set(carIds);
+
+  const costsByCar = new Map<string, Cost[]>();
+  for (const c of storage.list<Cost>('costs')) {
+    if (!c || c.deleted || !carIdSet.has(c.carSourceId)) continue;
+    const list = costsByCar.get(c.carSourceId);
+    if (list) list.push(c);
+    else costsByCar.set(c.carSourceId, [c]);
+  }
+
+  const refuelsByCar = new Map<string, RefuelLog[]>();
+  for (const r of storage.list<RefuelLog>('fuelRecords')) {
+    if (!r || r.deleted || !carIdSet.has(r.carSourceId)) continue;
+    const list = refuelsByCar.get(r.carSourceId);
+    if (list) list.push(r);
+    else refuelsByCar.set(r.carSourceId, [r]);
+  }
+
+  const progressByCar = getMaintainProgressBatch(storage, carIds, now);
+
   let totalMileage = 0;
   let totalDrivenMileage = 0;
   let monthCost = 0;
@@ -203,8 +231,8 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
     const drivenKm = Math.max(0, (car.mileages || 0) - (car.initMileages || 0));
     totalDrivenMileage += drivenKm;
 
-    const costs = listCosts(storage, car.sourceId);
-    const refuels = listRefuels(storage, car.sourceId);
+    const costs = costsByCar.get(car.sourceId) || [];
+    const refuels = refuelsByCar.get(car.sourceId) || [];
 
     // ---- 本月支出 / 今年支出 / 全时段支出（只从 Cost 汇总，避免与加油重复）----
     let carYear = 0;
@@ -258,7 +286,7 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
     }
 
     // ---- 保养 ----
-    const progress = getMaintainProgress(storage, car.sourceId, now);
+    const progress = progressByCar[car.sourceId] || [];
     for (const p of progress) {
       if (!p.urgent) continue;
       pendingCount++;

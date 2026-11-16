@@ -347,16 +347,80 @@ export function getMaintainProgress(
   carSourceId: string,
   today: number
 ): MaintainProgressItem[] {
-  const maintains = listMaintains(storage, carSourceId);
-  const logs = storage.list<MaintainLog>('maintainLogs').filter(l => !l.deleted);
-  const handles = storage.list<MaintainHandle>('maintainHandles').filter(h => !h.deleted);
-  const car = storage.get<any>('cars', carSourceId);
-  const thresholds = getMaintainThresholds(storage, carSourceId);
+  const batch = getMaintainProgressBatch(storage, [carSourceId], today);
+  return batch[carSourceId] || [];
+}
 
-  return maintains.map(m => {
-    const lastHandle = findLastHandle(m, logs, handles);
-    return calcRemaining(m, lastHandle, car, today, thresholds);
-  });
+/**
+ * 批量计算多辆车的保养进度。
+ *
+ * 概览页要对每辆车算一遍。逐车调用会把 maintainLogs / maintainHandles / cars
+ * 三张表各扫 N 遍，实际复杂度是 O(车辆 × 记录)；这里一次取全表、一次建索引，
+ * 回到 O(记录)。
+ *
+ * 顺带修掉一个隐患：车辆被物理清理后 `storage.get('cars')` 返回 null，
+ * 旧实现会在 `calcRemaining` 里读 `car.mileages` 抛错。这里直接跳过。
+ */
+export function getMaintainProgressBatch(
+  storage: StorageAdapter,
+  carSourceIds: string[],
+  today: number
+): Record<string, MaintainProgressItem[]> {
+  const out: Record<string, MaintainProgressItem[]> = {};
+  const ids = new Set(carSourceIds);
+  carSourceIds.forEach(id => { out[id] = []; });
+  if (!ids.size) return out;
+
+  const cars = new Map<string, Car>();
+  for (const c of storage.list<Car>('cars')) {
+    if (!c || c.deleted || !ids.has(c.sourceId)) continue;
+    cars.set(c.sourceId, c);
+  }
+
+  const maintains = storage
+    .list<Maintain>('maintains')
+    .filter(m => m && !m.deleted && ids.has(m.carSourceId));
+  if (!maintains.length) return out;
+
+  const logs = storage
+    .list<MaintainLog>('maintainLogs')
+    .filter(l => l && !l.deleted && ids.has(l.carSourceId));
+  const handles = storage
+    .list<MaintainHandle>('maintainHandles')
+    .filter(h => h && !h.deleted && ids.has(h.carSourceId));
+
+  // 保养项 → 最近一次执行（等价于 findLastHandle，但只扫一遍日志）
+  const handleById = new Map<string, MaintainHandle>();
+  for (const h of handles) handleById.set(h.sourceId, h);
+  const lastByMaintain = new Map<string, MaintainHandle>();
+  for (const l of logs) {
+    const h = handleById.get(l.handleSourceId);
+    if (!h) continue;
+    const current = lastByMaintain.get(l.maintainSourceId);
+    if (!current || h.makeDate >= current.makeDate) lastByMaintain.set(l.maintainSourceId, h);
+  }
+
+  for (const m of maintains) {
+    const car = cars.get(m.carSourceId);
+    if (!car) continue; // 车已不存在：跳过，避免读 undefined
+    const thresholds: MaintainThresholds = {
+      mileage: car.maintainSoonMileage ?? DEFAULT_MAINTAIN_THRESHOLDS.mileage,
+      days: car.maintainSoonDays ?? DEFAULT_MAINTAIN_THRESHOLDS.days
+    };
+    out[m.carSourceId].push(
+      calcRemaining(m, lastByMaintain.get(m.sourceId) || null, car, today, thresholds)
+    );
+  }
+
+  // 与原 listMaintains 的顺序保持一致：sortOrder → createdAt
+  for (const id of carSourceIds) {
+    out[id].sort((a, b) => {
+      const x = a.maintain;
+      const y = b.maintain;
+      return (x.sortOrder ?? 0) - (y.sortOrder ?? 0) || x.createdAt - y.createdAt;
+    });
+  }
+  return out;
 }
 
 /** 保养周期表单（里程周期 或 时间周期[月/年]，二者至少填一项） */
