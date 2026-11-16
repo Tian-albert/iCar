@@ -325,18 +325,34 @@ describe('滑动流畅性（防止闪烁与卡顿）', () => {
     expect(wxss).not.toMatch(/backdrop-filter:\s*[^;]*saturate/);
   });
 
-  it('滑动中只发位移、不发高亮索引（避免图标透明度反复切换）', () => {
-    expect(swiperTs).toContain('during');
-    expect(swiperTs).toMatch(/during[\s\S]{0,200}index: null/);
+  it('三态模型：drag 不带过渡跟手 / settle 带过渡落位 / final 无过渡精确落位', () => {
+    expect(swiperTs).toContain("'drag' | 'settle' | 'final'");
+    expect(swiperTs).toMatch(/mode === 'drag'[\s\S]{0,120}smooth: false/);
+    expect(swiperTs).toMatch(/smooth: mode === 'settle'/);
   });
 
-  it('用拖动态隔开归位动画：change 之后到达的 transition 不再消费（修闪烁的根）', () => {
-    // 松手后 swiper 仍会触发 transition，但 change 先到、current 已更新，
-    // 若继续消费旧基准的 dx，指示块会先跳回去再滑过来 —— 观感即闪烁
+  it('change 只切高亮、不移动指示块（修「中间闪一下再跳到最右」的根）', () => {
+    // swiper 越过边界就触发 change：快速滑动时 change(1) 先到，
+    // 若立即吸附到中间，指示块会定格在中间，等 animationfinish 再跳到最右
+    const onChange = swiperTs.slice(swiperTs.indexOf('onChange(e'));
+    const nextFn = swiperTs.indexOf('onAnimationFinish');
+    const body = swiperTs.slice(swiperTs.indexOf('onChange(e'), nextFn);
+    expect(body).toContain('setIndicatorHighlight');
+    expect(body).not.toMatch(/indicatorOffset/);
+    expect(body).not.toContain("syncTabBar");
+  });
+
+  it('拖动态守卫：animationfinish 才退出拖动态并落位', () => {
     expect(swiperTs).toMatch(/_dragging = true/);
     expect(swiperTs).toMatch(/onTransition[\s\S]{0,120}if \(!\(this as any\)\._dragging\) return/);
-    expect(swiperTs).toMatch(/onChange[\s\S]{0,200}_dragging = false/);
     expect(swiperTs).toMatch(/onAnimationFinish[\s\S]{0,200}_dragging = false/);
+  });
+
+  it('锁定横向平移：不给 WebView 留下拖动 fixed 底栏的空间', () => {
+    const swiperCss: string = fs.readFileSync('components/tab-swiper/index.wxss', 'utf-8');
+    expect(swiperCss).toMatch(/overflow-x:\s*hidden/);
+    const barCss: string = fs.readFileSync('custom-tab-bar/index.wxss', 'utf-8');
+    expect(barCss).toMatch(/translateZ\(0\)/);
   });
 
   it('底栏支持 index 为 null：只更新位移', () => {

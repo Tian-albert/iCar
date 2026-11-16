@@ -2,6 +2,8 @@
 :host {
   display: block;
   height: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* 滚动容器：swiper-item 内必须显式指定滚动容器 */

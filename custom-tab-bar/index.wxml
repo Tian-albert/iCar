@@ -1,6 +1,8 @@
 <view class="tab-bar">
   <!-- 指示块：独立于图标，随滑动连续移动（胶囊本身不动） -->
-  <view class="tab-indicator" style="transform: translateX({{indicatorOffset}}px);"></view>
+  <view
+    class="tab-indicator {{indicatorSmooth ? 'smooth' : ''}}"
+    style="transform: translateX({{indicatorOffset}}px);"></view>
 
   <view
     wx:for="{{list}}"

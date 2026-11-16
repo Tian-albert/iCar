@@ -86,7 +86,7 @@ Component({
           const inner = w - 28 * 2 * rpx - 8 * 2 * rpx;
           this.setData({ step: inner / TAB_COUNT });
           // 步长拿到后重新同步一次指示块
-          this.syncTabBar(0, this.data.current);
+          this.syncTabBar(0, this.data.current, 'final');
         })
         .exec();
     },
@@ -94,22 +94,23 @@ Component({
     /**
      * 把指示块位置同步给底部栏。
      *
-     * `during` 为 true 表示滑动中：**只发位移，不发高亮索引**。
-     * 高亮索引会切换图标的 src（描边↔实心），每帧变化会让图片反复解码 → 闪烁。
+     * - `'drag'`：手势拖动中。只发位移、不发高亮索引（切高亮会引发重绘），
+     *   底栏收到后**不带过渡**直接跟手。
+     * - `'settle'`：松手/点击后落位。发目标位置与高亮索引，底栏**带过渡**平滑滑过去。
+     * - `'final'`：归位动画结束。发精确位置，不带过渡（纠正累积误差）。
      */
-    syncTabBar(dx: number, current: number, during = false) {
+    syncTabBar(dx: number, current: number, mode: 'drag' | 'settle' | 'final') {
       const step = this.data.step;
       if (!(step > 0)) return;
 
       const offset = indicatorOffset(dx, current, TAB_COUNT, step);
-      if (during) {
-        // 滑动中：只动位移，图标保持原样，避免 src 变化引发重绘
-        this.triggerEvent('indicator', { offset, index: null });
+      if (mode === 'drag') {
+        this.triggerEvent('indicator', { offset, index: null, smooth: false });
         return;
       }
 
       const activeIndex = indicatorActiveIndex(dx, current, TAB_COUNT, step);
-      this.triggerEvent('indicator', { offset, index: activeIndex });
+      this.triggerEvent('indicator', { offset, index: activeIndex, smooth: mode === 'settle' });
     },
 
     /**
@@ -120,12 +121,12 @@ Component({
     switchToTab(index: number) {
       const target = Math.min(TAB_COUNT - 1, Math.max(0, index));
       if (target === this.data.current) {
-        // 已在该 tab：直接让指示块归位，避免点击后底块不跟手
-        this.syncTabBar(0, target);
+        // 已在该 tab：精确落位即可
+        this.syncTabBar(0, target, 'final');
         return;
       }
       this.setData(Object.assign({ current: target }, keepFlags(target)));
-      this.syncTabBar(0, target);
+      this.syncTabBar(0, target, 'settle');
     },
 
     /** 页面 onShow 时调用：刷新当前 tab 的内容 */
@@ -158,32 +159,43 @@ Component({
       if (typeof last === 'number' && Math.abs(offset - last) < 1) return;
       (this as any)._lastOffset = offset;
 
-      this.syncTabBar(dx, this.data.current, true);
+      this.syncTabBar(dx, this.data.current, 'drag');
     },
 
-    /** 切换完成：更新 current 与渲染范围，并通知内容组件刷新 */
+    /**
+     * 切换完成（swiper 越过边界就触发，早于动画结束）。
+     *
+     * ⚠️ 这里**不更新指示块位置**——这就是上次「中间闪一下再选中最右」的根因：
+     * 快速滑动时会先越过中间 tab，此时 change(1) 先到，若立即吸附到中间，
+     * 指示块就定格在中间，等 animationfinish(2) 再跳到最右。
+     *
+     * 正确做法：**不吸附**。指示块继续由拖动态的 transition 跟着手走；
+     * 高亮索引在这里切换（文字/图标变色），但**位置**留给动画结束统一落定。
+     */
     onChange(e: any) {
       const current = e.detail && e.detail.current;
       if (typeof current !== 'number') return;
 
-      // 手势结束：从现在起丢弃归位动画期间的 transition dx
-      (this as any)._dragging = false;
-
       this.setData(Object.assign({ current }, keepFlags(current)));
-      this.syncTabBar(0, current);
+
+      // 切换高亮文字/图标（不移动指示块）
+      const bar = this.getTabBar?.() as any;
+      if (bar && typeof bar.setIndicatorHighlight === 'function') {
+        bar.setIndicatorHighlight(current);
+      }
       this.notifyShown(current);
     },
 
-    /** 归位动画结束：指示块精确落到目标 tab（动画期间它保持静止） */
+    /** 归位动画结束：指示块平滑落到目标 tab */
     onAnimationFinish(e: any) {
       const current = e.detail && e.detail.current;
       if (typeof current !== 'number') return;
 
-      // 兜底：如果 change 没来（极端情况），这里也要退出拖动态
+      // 动画结束：退出拖动态，指示块精确落位（此时无 dx，位移即最终位置）
       (this as any)._dragging = false;
       (this as any)._lastOffset = undefined;
 
-      this.syncTabBar(0, current, false);
+      this.syncTabBar(0, current, 'final');
     },
 
     /**

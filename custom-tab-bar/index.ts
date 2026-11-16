@@ -35,7 +35,12 @@ Component({
     /** 指示块的横向偏移（px），滑动时跟随 */
     indicatorOffset: 0,
     /** 指示块当前覆盖的 tab（用于高亮图标） */
-    indicatorIndex: 0
+    indicatorIndex: 0,
+    /**
+     * 指示块是否带过渡移动。
+     * 拖动中=false（直接跟手）；松手落位=true（平滑滑过去）。
+     */
+    indicatorSmooth: false
   },
   methods: {
     /**
@@ -69,15 +74,32 @@ Component({
     /**
      * 页面调用：更新指示块位置。
      *
-     * `index` 为 null 表示**滑动中**：只更新位移，不动高亮索引。
-     * 滑动中每帧改高亮会让图标透明度反复切换 → 观感上像在闪。
+     * - `index` 为 null：手势拖动中，只更新位移（**不带过渡**，直接跟手），
+     *   且不动高亮（切高亮会引发重绘）。
+     * - `index` 有值且 `smooth`：松手/点击后，指示块**带过渡平滑滑**到目标位置
+     *   （iOS 的落位手感）。
+     * - `index` 有值且 `!smooth`：动画结束后的精确落位，不带过渡（纠正累积误差）。
      */
-    setIndicatorOffset(offset: number, index: number | null) {
+    setIndicatorOffset(offset: number, index: number | null, smooth: boolean) {
       if (index === null || typeof index !== 'number') {
-        this.setData({ indicatorOffset: offset });
+        this.setData({ indicatorOffset: offset, indicatorSmooth: false });
         return;
       }
-      this.setData({ indicatorOffset: offset, indicatorIndex: index });
+      this.setData({
+        indicatorOffset: offset,
+        indicatorIndex: index,
+        indicatorSmooth: smooth
+      });
+    },
+
+    /**
+     * 只切换高亮（图标实心/文字变蓝），**不移动指示块**。
+     *
+     * swiper 越过边界就触发 change，若这里同时移动指示块，
+     * 快速滑动时指示块会定格在中间 tab、等动画结束再跳到目标 —— 即「闪一下」。
+     */
+    setIndicatorHighlight(index: number) {
+      this.setData({ indicatorIndex: index });
     }
   }
 });

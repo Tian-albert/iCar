@@ -2,6 +2,8 @@
 .tab-shell {
   height: 100vh;
   overflow: hidden;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* 组件宿主节点默认高度是 auto，必须显式撑满，否则内部 swiper 高度塌陷为 0 */

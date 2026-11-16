@@ -2,6 +2,11 @@
 :host {
   display: block;
   height: 100%;
+  /* 关键：不给页面留横向平移空间。
+     iOS WebView 里，页面一旦有横向可滚动的溢出，整页（含 fixed 底栏）
+     会跟着手指平移 —— 这就是「整条底栏跟着滑动」的根因。 */
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .host-swiper {

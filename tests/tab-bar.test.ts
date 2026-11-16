@@ -118,7 +118,16 @@ describe('形态：悬浮胶囊 + 毛玻璃', () => {
 
   it('指示块是独立的绝对定位元素（不推动图标布局）', () => {
     expect(wxss).toMatch(/\.tab-indicator \{[\s\S]{0,200}position:\s*absolute/);
-    expect(wxml).toContain('class="tab-indicator"');
+    expect(wxml).toMatch(/class="tab-indicator \{\{indicatorSmooth \? 'smooth' : ''\}\}"/);
+  });
+
+  it('拖动中无过渡跟手；落位时带过渡平滑滑过去（iOS 手感）', () => {
+    // 默认无过渡：拖动中每帧写入新值，带过渡会每帧重启、永远追不上手指
+    const block = wxss.match(/\.tab-indicator \{[\s\S]*?\}/);
+    expect(block).toBeTruthy();
+    expect(block![0]).not.toContain('transition');
+    // smooth 类只在落位时启用过渡
+    expect(wxss).toMatch(/\.tab-indicator\.smooth \{[\s\S]{0,160}transition:/);
   });
 
   it('指示块用 transform 横向位移（跟手）', () => {
@@ -134,8 +143,12 @@ describe('形态：悬浮胶囊 + 毛玻璃', () => {
 
   it('高亮文字与图标用独立类，胶囊本身不移动', () => {
     expect(wxss).toMatch(/\.tab-text-on \{[\s\S]{0,120}#3B6FF6/);
-    // 胶囊不参与位移：位移只在指示块上
-    expect(wxss).not.toMatch(/\.tab-bar \{[\s\S]{0,900}transform:/);
+    // 胶囊不参与位移：位移只在指示块上（translateZ(0) 只是提层，不是位移）
+    expect(wxss).not.toMatch(/\.tab-bar \{[\s\S]{0,900}translate[XY]\(/);
+  });
+
+  it('底栏独立成合成层，避免被 iOS WebView 的页面级横向平移拖走', () => {
+    expect(wxss).toMatch(/transform:\s*translateZ\(0\)/);
   });
 });
 
