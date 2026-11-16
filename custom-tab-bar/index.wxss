@@ -1,4 +1,4 @@
-/* 悬浮胶囊底部栏：脱离屏幕底部、毛玻璃背景、选中项淡蓝底块 */
+/* 悬浮胶囊底部栏：脱离屏幕底部、柔和实底、选中项淡蓝底块 */
 .tab-bar {
   position: fixed;
   /* 左右留白 + 底部留白，让胶囊真正「浮」起来 */
@@ -12,17 +12,14 @@
   box-sizing: border-box;
 
   /*
-   * 毛玻璃：刻意做得「不敏感」。
+   * 背景：近实心的浅色底，不参与任何逐帧采样。
    *
-   * 原来的 saturate(180%) 会把背后内容的色彩变化放大 —— swiper 横向滑动时
-   * 底栏采到的内容一直在变，视觉上就像底栏自己在动。
-   * 现在去掉 saturate、降低 blur、提高底不透明度，让底栏在滑动中**看起来是静止的**。
+   * 曾经用 blur + saturate 的毛玻璃（backdrop-filter 系），真机上底栏会
+   * 跟着内容一起「动」——微信官方性能文档把这类属性点名为重栅格化：
+   * 滑动时背后内容一直在变，底栏每帧重新栅格化。两次真机反馈后才定位到。
    */
-  background: rgba(252, 253, 255, 0.86);
-  -webkit-backdrop-filter: blur(18rpx);
-  backdrop-filter: blur(18rpx);
-  /* 高光描边：上边偏亮，模拟玻璃厚度 */
-  border: 1rpx solid rgba(255, 255, 255, 0.75);
+  background: rgba(250, 251, 253, 0.97);
+  border: 1rpx solid rgba(226, 231, 240, 0.9);
   border-radius: 999rpx;
   box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.12), 0 2rpx 6rpx rgba(15, 23, 42, 0.05);
   z-index: 100;

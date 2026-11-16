@@ -9,6 +9,7 @@
 <swiper
   class="host-swiper"
   current="{{current}}"
+  bindtouchstart="onUserScrollStart"
   bindchange="onChange"
   bindtransition="onTransition"
   bindanimationfinish="onAnimationFinish">

@@ -330,6 +330,15 @@ describe('滑动流畅性（防止闪烁与卡顿）', () => {
     expect(swiperTs).toMatch(/during[\s\S]{0,200}index: null/);
   });
 
+  it('用拖动态隔开归位动画：change 之后到达的 transition 不再消费（修闪烁的根）', () => {
+    // 松手后 swiper 仍会触发 transition，但 change 先到、current 已更新，
+    // 若继续消费旧基准的 dx，指示块会先跳回去再滑过来 —— 观感即闪烁
+    expect(swiperTs).toMatch(/_dragging = true/);
+    expect(swiperTs).toMatch(/onTransition[\s\S]{0,120}if \(!\(this as any\)\._dragging\) return/);
+    expect(swiperTs).toMatch(/onChange[\s\S]{0,200}_dragging = false/);
+    expect(swiperTs).toMatch(/onAnimationFinish[\s\S]{0,200}_dragging = false/);
+  });
+
   it('底栏支持 index 为 null：只更新位移', () => {
     expect(barTs).toMatch(/index: number \| null/);
     expect(barTs).toMatch(/index === null[\s\S]{0,120}indicatorOffset: offset/);

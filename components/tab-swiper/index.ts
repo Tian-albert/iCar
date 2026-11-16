@@ -134,12 +134,21 @@ Component({
     },
 
     /**
-     * 滑动过程中：指示块跟手。
+     * 手势开始：进入拖动态。
      *
-     * 位移变化小于 1px 时直接跳过 —— 每帧都 setData 会让跨线程通信过载，
-     * 反而拖慢滑动（尤其从最左滑到最右时位移大、帧数多，累积卡顿明显）。
+     * 只有拖动态才消费 transition 的 dx —— 这是修闪烁的关键。
+     * 松手后的归位动画也会触发 transition，但那时 dragging 已为 false，
+     * 这些 dx 会被直接丢弃，指示块保持静止，等 animationfinish 一次落定。
      */
+    onUserScrollStart() {
+      (this as any)._dragging = true;
+      (this as any)._lastOffset = undefined;
+    },
+
+    /** 滑动过程中：指示块跟手（仅拖动态生效） */
     onTransition(e: any) {
+      if (!(this as any)._dragging) return;
+
       const dx = (e.detail && e.detail.dx) || 0;
       const step = this.data.step;
       if (!(step > 0)) return;
@@ -156,16 +165,25 @@ Component({
     onChange(e: any) {
       const current = e.detail && e.detail.current;
       if (typeof current !== 'number') return;
+
+      // 手势结束：从现在起丢弃归位动画期间的 transition dx
+      (this as any)._dragging = false;
+
       this.setData(Object.assign({ current }, keepFlags(current)));
       this.syncTabBar(0, current);
       this.notifyShown(current);
     },
 
-    /** 动画结束：指示块精确落到目标 tab */
+    /** 归位动画结束：指示块精确落到目标 tab（动画期间它保持静止） */
     onAnimationFinish(e: any) {
       const current = e.detail && e.detail.current;
       if (typeof current !== 'number') return;
-      this.syncTabBar(0, current);
+
+      // 兜底：如果 change 没来（极端情况），这里也要退出拖动态
+      (this as any)._dragging = false;
+      (this as any)._lastOffset = undefined;
+
+      this.syncTabBar(0, current, false);
     },
 
     /**

@@ -100,14 +100,11 @@ describe('形态：悬浮胶囊 + 毛玻璃', () => {
     expect(wxss).toMatch(/\.tab-bar \{[\s\S]{0,900}border-radius:\s*999rpx/);
   });
 
-  it('毛玻璃：backdrop-filter + 半透明底', () => {
-    expect(wxss).toContain('backdrop-filter');
-    expect(wxss).toMatch(/background:\s*rgba\(\d+,\s*\d+,\s*\d+,\s*0\.\d+\)/);
-  });
-
-  it('不使用 saturate：它会放大背景变化，让底栏看起来在跟着滑动', () => {
-    // 只检查属性值，注释里提到 saturate（说明为何去掉）不算
-    expect(wxss).not.toMatch(/backdrop-filter:\s*[^;]*saturate/);
+  it('不用 backdrop-filter：官方点名的重栅格化属性，滑动时会跟着抖', () => {
+    // 只检查属性行；注释里解释「为什么去掉」不算使用
+    expect(wxss).not.toMatch(/^([^/\n]*)-webkit-backdrop-filter:/m);
+    expect(wxss).not.toMatch(/^([^/\n]*)[^-]backdrop-filter:/m);
+    expect(wxss).not.toMatch(/^\s*saturate\(/m);
   });
 
   it('有玻璃厚度感的高光描边与投影', () => {
