@@ -33,14 +33,26 @@ export interface StatsSnapshot {
   monthlyCost: Array<{ label: string; value: number }>;
 }
 
-/** 分类支出环形图配色（设计报告 6.1） */
+/**
+ * 分类支出 / 按车花费的配色（设计报告 6.1）。
+ *
+ * 10 色：超过 6 辆车时不再出现「第 7 辆与第 1 辆同色」。
+ * 色相分布刻意拉开（蓝/绿/橙/红/紫/青/粉/靛/棕/黄绿），
+ * 保证相邻两项在白底上也能区分。
+ *
+ * 与 app.wxss 的 --chart-1..--chart-10 必须一一对应（tests/chart-colors.test.ts 有断言）。
+ */
 export const CHART_COLORS = [
-  '#3B82F6',
-  '#22C55E',
-  '#F59E0B',
-  '#EF4444',
-  '#A855F7',
-  '#14B8A6'
+  '#3B82F6', // 1 蓝
+  '#22C55E', // 2 绿
+  '#F59E0B', // 3 橙
+  '#EF4444', // 4 红
+  '#A855F7', // 5 紫
+  '#14B8A6', // 6 青
+  '#EC4899', // 7 粉
+  '#6366F1', // 8 靛
+  '#78716C', // 9 棕灰
+  '#84CC16' // 10 黄绿
 ];
 
 function endOfDay(d: Date): number {
