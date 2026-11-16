@@ -1,5 +1,4 @@
-<scroll-view class="page-scroll" scroll-y="{{true}}" enable-flex="{{true}}">
-  <view class="page">
+<view class="page">
   <!-- 空态 -->
   <view wx:if="{{carCount === 0}}" class="empty-state">
     <view class="empty-state-icon">🚗</view>
@@ -102,4 +101,3 @@
     </block>
   </block>
 </view>
-</scroll-view>

@@ -1,7 +1,0 @@
-<!-- 车辆 Tab：薄壳页，内容由共享的 tab-swiper 组件承载 -->
-<view class="tab-shell">
-  <tab-swiper
-    id="tabSwiper"
-    initial="1"
-    bind:indicator="onIndicator" />
-</view>

@@ -1,27 +1,15 @@
 <view class="tab-bar">
-  <!-- 指示块：独立于图标，随滑动连续移动（胶囊本身不动） -->
-  <view
-    class="tab-indicator {{indicatorSmooth ? 'smooth' : ''}}"
-    style="transform: translateX({{indicatorOffset}}px);"></view>
-
   <view
     wx:for="{{list}}"
     wx:key="pagePath"
-    class="tab-item"
+    class="tab-item {{selected === index ? 'tab-active' : ''}}"
     data-path="{{item.pagePath}}"
     data-index="{{index}}"
     bindtap="switchTab">
-    <!--
-      描边与实心两张图**同时存在**，只切透明度。
-      换 src 会让图片反复解码 → 滑动时闪烁；叠加淡入淡出则是纯合成，无重绘。
-    -->
-    <view class="tab-icon-wrap">
-      <image class="tab-icon tab-icon-line" src="{{lineIcons[item.icon]}}" mode="aspectFit" />
-      <image
-        class="tab-icon tab-icon-fill {{indicatorIndex === index ? 'on' : ''}}"
-        src="{{fillIcons[item.icon]}}"
-        mode="aspectFit" />
-    </view>
-    <view class="tab-text {{indicatorIndex === index ? 'tab-text-on' : ''}}">{{item.text}}</view>
+    <image
+      class="tab-icon"
+      src="{{selected === index ? fillIcons[item.icon] : lineIcons[item.icon]}}"
+      mode="aspectFit" />
+    <view class="tab-text">{{item.text}}</view>
   </view>
 </view>

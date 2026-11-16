@@ -12,6 +12,7 @@ import { listRefuels, getConsumptions } from '../../services/refuel.service';
 import { Car } from '../../types/models';
 import { displayIcon, isImageIcon } from '../../utils/icons';
 import { serviceDaysSince } from '../../utils/date';
+import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { pickMainCar } from '../../services/overview.service';
 
 interface CarView extends Car {
@@ -87,15 +88,7 @@ function maintainSummary(
   return { text: '--', label: '保养', state: 'ok' };
 }
 
-Component({
-  properties: {
-    /** 本组件在 tab 列表中的索引（用于上报实例） */
-    index: {
-      type: Number,
-      value: 1
-    }
-  },
-
+Page({
   data: {
     cars: [] as CarView[],
     hero: null as HeroView | null,
@@ -105,26 +98,25 @@ Component({
     pendingCount: 0
   },
 
-  lifetimes: {
-    attached() {
-      (this as any).load();
-    },
-    ready() {
-      // 把实例上报给父级（tab-swiper），父级切 tab 时据此调用 onShown 刷新
-      this.triggerEvent('ready', { index: this.data.index, instance: this });
+  onShow() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 1 });
     }
-  },
-
-  methods: {
-  /** 宿主页切到本组件时调用：刷新数据 */
-  onShown() {
     this.load();
+    enableShareMenu();
   },
 
-  /** 供宿主页取分享内容 */
-  getShareHighlight(): string {
+  onShareAppMessage() {
     const hero = this.data.hero;
-    return hero ? `我的${hero.name}已行驶 ${hero.mileagesText} km` : '';
+    return buildShareMessage({
+      highlight: hero ? `我的${hero.name}已行驶 ${hero.mileagesText} km` : ''
+    });
+  },
+  onShareTimeline() {
+    const hero = this.data.hero;
+    return buildTimelineMessage({
+      highlight: hero ? `我的${hero.name}已行驶 ${hero.mileagesText} km` : ''
+    });
   },
 
   load() {
@@ -281,6 +273,5 @@ Component({
     setPinnedCarId(storage, nextId);
     this.load();
     wx.showToast({ title: nextId ? '已置顶' : '已取消置顶', icon: 'none' });
-  }
   }
 });

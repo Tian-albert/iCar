@@ -3,36 +3,27 @@ import { getStorage } from '../../store/index';
 import { COMPONENT_ACTIVE_COLOR } from '../../utils/tokens';
 import { getUser, setRemindEnabled } from '../../services/user.service';
 import { FEEDBACK_EMAIL } from '../../utils/app-config';
+import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 
-Component({
-  properties: {
-    /** 本组件在 tab 列表中的索引（用于上报实例） */
-    index: {
-      type: Number,
-      value: 2
-    }
-  },
-
+Page({
   data: {
     activeColor: COMPONENT_ACTIVE_COLOR,
     nickname: '微信用户',
     remindEnabled: true,
     feedbackEmail: FEEDBACK_EMAIL
   },
-  lifetimes: {
-    attached() {
-      (this as any).load();
-    },
-    ready() {
-      // 把实例上报给父级（tab-swiper），父级切 tab 时据此调用 onShown 刷新
-      this.triggerEvent('ready', { index: this.data.index, instance: this });
+  onShow() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 2 });
     }
-  },
-
-  methods: {
-  /** 宿主页切到本组件时调用：刷新数据 */
-  onShown() {
     this.load();
+    enableShareMenu();
+  },
+  onShareAppMessage() {
+    return buildShareMessage();
+  },
+  onShareTimeline() {
+    return buildTimelineMessage();
   },
   load() {
     const storage = getStorage();
@@ -63,6 +54,5 @@ Component({
       data: this.data.feedbackEmail,
       success: () => wx.showToast({ title: '反馈邮箱已复制', icon: 'none' })
     });
-  }
   }
 });

@@ -12,31 +12,17 @@ import {
 const fsx = require('fs') as any;
 
 describe('分享落地页', () => {
-  it('指向车辆 tab 页，且不带 carId', () => {
-    const msg = buildShareMessage({ tab: 1 });
-    expect(msg.path).toBe('/pages/tab-vehicles/index?tab=1');
+  it('指向车辆列表页，且不带 carId', () => {
+    const msg = buildShareMessage();
+    expect(msg.path).toBe('/pages/index/index');
     // 本地存储无对方数据，带 id 会让详情页判定"车辆不存在"并 navigateBack
     expect(msg.path).not.toContain('id=');
     expect(msg.path).not.toContain('vehicle-detail');
   });
 
-  it('不指定 tab 时落地到车辆页默认 tab', () => {
-    expect(buildShareMessage().path).toBe('/pages/tab-vehicles/index');
-  });
-
   it('路径必须是 tabBar 页面（否则 wx.switchTab 之外的分享无法落地）', () => {
-    expect(['/pages/tab-vehicles/index']).toContain(SHARE_PATH);
-  });
-
-  it('落地页必须真实存在于 app.json 的 pages 里', () => {
-    // 指向不存在的页面会让开发者工具直接报 ENOENT
-    const app = JSON.parse(fsx.readFileSync('app.json', 'utf-8'));
-    expect(app.pages).toContain(SHARE_PATH.replace(/^\//, ''));
-  });
-
-  it('朋友圈分享带 tab 查询串', () => {
-    expect(buildTimelineMessage({ tab: 2 }).query).toBe('tab=2');
-    expect(buildTimelineMessage().query).toBe('');
+    expect(['/pages/index/index', '/pages/reminder/index', '/pages/user/index'])
+      .toContain(SHARE_PATH);
   });
 });
 

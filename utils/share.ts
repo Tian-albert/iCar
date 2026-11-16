@@ -5,14 +5,8 @@
 // vehicle-detail 的 onLoad 判定"车辆不存在"并直接 navigateBack，
 // 接收方看到的是闪退式的空白页。
 
-/**
- * 统一落地页：车辆 tab（新用户会看到空态 + 添加车辆引导）。
- *
- * 三个 tab 各自是独立页面（tabBar.list 的 pagePath 不能重复），
- * 但共享同一个 swiper 组件，所以分享落地到「车辆」页即可，
- * 由该页的 initial 决定初始停在第几个 tab。
- */
-export const SHARE_PATH = '/pages/tab-vehicles/index';
+/** 统一落地页：车辆列表（新用户会看到空态 + 添加车辆引导） */
+export const SHARE_PATH = '/pages/index/index';
 
 /** 分享封面：500x400（5:4），114KB，小于微信 128KB 上限 */
 export const SHARE_IMAGE = '/assets/share-cover.png';
@@ -39,11 +33,6 @@ function composeTitle(highlight: string): string {
 export interface ShareContext {
   /** 个性化亮点，如「我的 CRV 已行驶 5850 km」；留空用默认标题 */
   highlight?: string;
-  /**
-   * 落地页要展示的 tab 索引（0 概览 / 1 车辆 / 2 我的）。
-   * 三个 tab 现在都在宿主页里，靠 query 区分落地到哪个。
-   */
-  tab?: number;
 }
 
 export interface ShareMessage {
@@ -62,7 +51,7 @@ export interface TimelineMessage {
 export function buildShareMessage(ctx: ShareContext = {}): ShareMessage {
   return {
     title: composeTitle((ctx.highlight || '').trim()),
-    path: sharePathWithTab(ctx.tab),
+    path: SHARE_PATH,
     imageUrl: SHARE_IMAGE
   };
 }
@@ -71,22 +60,9 @@ export function buildShareMessage(ctx: ShareContext = {}): ShareMessage {
 export function buildTimelineMessage(ctx: ShareContext = {}): TimelineMessage {
   return {
     title: composeTitle((ctx.highlight || '').trim()),
-    query: tabQuery(ctx.tab),
+    query: '',
     imageUrl: SHARE_IMAGE
   };
-}
-
-/** 落地页路径（带 tab 参数） */
-function sharePathWithTab(tab?: number): string {
-  const q = tabQuery(tab);
-  return q ? `${SHARE_PATH}?${q}` : SHARE_PATH;
-}
-
-/** tab 查询串；不合法或未指定则为空 */
-function tabQuery(tab?: number): string {
-  if (typeof tab !== 'number' || isNaN(tab)) return '';
-  const idx = Math.min(2, Math.max(0, Math.round(tab)));
-  return `tab=${idx}`;
 }
 
 /** 打开转发 / 朋友圈入口（未定义时静默跳过，便于单测在 node 环境运行） */

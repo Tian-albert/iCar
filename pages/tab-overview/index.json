@@ -1,6 +1,0 @@
-{
-  "navigationBarTitleText": "概览",
-  "usingComponents": {
-    "tab-swiper": "/components/tab-swiper/index"
-  }
-}

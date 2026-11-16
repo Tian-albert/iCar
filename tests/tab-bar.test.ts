@@ -60,15 +60,9 @@ describe('图标：手绘 SVG 而非 emoji', () => {
 });
 
 describe('组件：按选中态切换图标', () => {
-  it('图标用双层叠加（描边 + 实心），靠透明度切换', () => {
+  it('WXML 用 image 渲染并在选中时切换', () => {
     expect(wxml).toContain('<image');
-    // 关键：两层同时存在，只切 opacity。换 src 会重新解码图片，滑动时闪烁
-    expect(wxml).toContain('tab-icon-line');
-    expect(wxml).toContain('tab-icon-fill');
-    expect(wxml).toContain("indicatorIndex === index ? 'on' : ''");
-    expect(wxml).not.toContain(
-      'indicatorIndex === index ? fillIcons[item.icon] : lineIcons[item.icon]'
-    );
+    expect(wxml).toContain('selected === index ? fillIcons[item.icon] : lineIcons[item.icon]');
     expect(wxml).toContain('mode="aspectFit"');
   });
 
@@ -100,11 +94,9 @@ describe('形态：悬浮胶囊 + 毛玻璃', () => {
     expect(wxss).toMatch(/\.tab-bar \{[\s\S]{0,900}border-radius:\s*999rpx/);
   });
 
-  it('不用 backdrop-filter：官方点名的重栅格化属性，滑动时会跟着抖', () => {
-    // 只检查属性行；注释里解释「为什么去掉」不算使用
-    expect(wxss).not.toMatch(/^([^/\n]*)-webkit-backdrop-filter:/m);
-    expect(wxss).not.toMatch(/^([^/\n]*)[^-]backdrop-filter:/m);
-    expect(wxss).not.toMatch(/^\s*saturate\(/m);
+  it('毛玻璃：backdrop-filter + 半透明底', () => {
+    expect(wxss).toContain('backdrop-filter');
+    expect(wxss).toMatch(/background:\s*rgba\(255,\s*255,\s*255,\s*0\.\d+\)/);
   });
 
   it('有玻璃厚度感的高光描边与投影', () => {
@@ -116,48 +108,21 @@ describe('形态：悬浮胶囊 + 毛玻璃', () => {
     expect(wxss).toContain('env(safe-area-inset-bottom)');
   });
 
-  it('指示块是独立的绝对定位元素（不推动图标布局）', () => {
-    expect(wxss).toMatch(/\.tab-indicator \{[\s\S]{0,200}position:\s*absolute/);
-    expect(wxml).toMatch(/class="tab-indicator \{\{indicatorSmooth \? 'smooth' : ''\}\}"/);
+  it('选中项有淡蓝胶囊底与高亮文字', () => {
+    expect(wxss).toMatch(/\.tab-active \{[\s\S]{0,120}background:/);
+    expect(wxss).toMatch(/\.tab-active \.tab-text \{[\s\S]{0,120}#3B6FF6/);
   });
 
-  it('拖动中无过渡跟手；落位时带过渡平滑滑过去（iOS 手感）', () => {
-    // 默认无过渡：拖动中每帧写入新值，带过渡会每帧重启、永远追不上手指
-    const block = wxss.match(/\.tab-indicator \{[\s\S]*?\}/);
-    expect(block).toBeTruthy();
-    expect(block![0]).not.toContain('transition');
-    // smooth 类只在落位时启用过渡
-    expect(wxss).toMatch(/\.tab-indicator\.smooth \{[\s\S]{0,160}transition:/);
-  });
-
-  it('指示块用 transform 横向位移（跟手）', () => {
-    expect(wxml).toContain('transform: translateX({{indicatorOffset}}px)');
-  });
-
-  it('指示块底色是半透明淡蓝（不是实心蓝块）', () => {
-    const m = wxss.match(/\.tab-indicator \{[\s\S]{0,400}?background:\s*([^;]+);/);
+  it('选中态底色是半透明淡蓝（不是实心蓝块）', () => {
+    const m = wxss.match(/\.tab-active \{[\s\S]{0,120}?background:\s*([^;]+);/);
     expect(m).toBeTruthy();
     expect(m![1]).toContain('rgba');
     expect(m![1]).toContain('0.1');
   });
-
-  it('高亮文字与图标用独立类，胶囊本身不移动', () => {
-    expect(wxss).toMatch(/\.tab-text-on \{[\s\S]{0,120}#3B6FF6/);
-    // 胶囊不参与位移：位移只在指示块上（translateZ(0) 只是提层，不是位移）
-    expect(wxss).not.toMatch(/\.tab-bar \{[\s\S]{0,900}translate[XY]\(/);
-  });
-
-  it('底栏独立成合成层，避免被 iOS WebView 的页面级横向平移拖走', () => {
-    expect(wxss).toMatch(/transform:\s*translateZ\(0\)/);
-  });
 });
 
 describe('页面底部留白与悬浮胶囊匹配', () => {
-  const pages = [
-    'components/tab-overview/index.wxss',
-    'components/tab-vehicles/index.wxss',
-    'components/tab-profile/index.wxss'
-  ];
+  const pages = ['pages/reminder/index.wxss', 'pages/index/index.wxss', 'pages/user/index.wxss'];
 
   for (const p of pages) {
     it(`${p} 预留了胶囊高度 + 安全区`, () => {

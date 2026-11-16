@@ -24,14 +24,14 @@ function collect(src: string, re: RegExp): string[] {
 describe('「概览」改名三处必须一致', () => {
   it('app.json 的 tabBar.list 文案为「概览」', () => {
     const app = JSON.parse(read('app.json'));
-    const item = app.tabBar.list.filter((x: any) => x.text === '概览')[0];
+    const item = app.tabBar.list.filter((x: any) => x.pagePath === 'pages/reminder/index')[0];
     expect(item).toBeTruthy();
     expect(item.text).toBe('概览');
   });
 
-  it('「概览」是启动首页，且在 app.json 的 pages 首项', () => {
-    const app = JSON.parse(read('app.json'));
-    expect(app.pages[0]).toBe('pages/tab-overview/index');
+  it('页面导航标题为「概览」（这是顶部显示的那一行）', () => {
+    const pageJson = JSON.parse(read('pages/reminder/index.json'));
+    expect(pageJson.navigationBarTitleText).toBe('概览');
   });
 
   it('自定义 TabBar 文案与图标同步', () => {
@@ -42,13 +42,12 @@ describe('「概览」改名三处必须一致', () => {
     expect(src).not.toContain("text: '保养'");
   });
 
-  it('自定义 TabBar 与 app.json 的 tabBar 路径一致', () => {
+  it('三处页面路径一致，未改动路由', () => {
     const app = JSON.parse(read('app.json'));
     const item = app.tabBar.list.filter((x: any) => x.text === '概览')[0];
-    expect(item.pagePath).toBe('pages/tab-overview/index');
-
-    const src = read('custom-tab-bar/index.ts');
-    expect(src).toContain("pagePath: '/pages/tab-overview/index'");
+    expect(item.pagePath).toBe('pages/reminder/index');
+    // 启动首页仍是该页
+    expect(app.pages[0]).toBe('pages/reminder/index');
   });
 });
 
@@ -108,7 +107,7 @@ describe('详情页消费 section 参数', () => {
 
 describe('概览页跳转参数与详情页契约对齐', () => {
   it('概览页只使用详情页支持的三种 section', () => {
-    const src = read('components/tab-overview/index.ts');
+    const src = read('pages/reminder/index.ts');
     const used = collect(src, /section=([a-z]+)/g);
     const allowed = ['maintain', 'records', 'costs'];
     // 静态 URL 里的 section 值（onTapRecord 是动态拼的，单独校验默认值）
