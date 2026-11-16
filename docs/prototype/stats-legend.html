@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>统计页 · 分类支出比例条原型</title>
+<style>
+  :root{
+    --primary:#3B6FF6; --primary-light:#EEF3FE;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --bg:#F5F6F8; --card:#fff; --divider:#F0F1F4; --fill:#F2F3F5;
+    --c1:#3B82F6; --c2:#22C55E; --c3:#F59E0B; --c4:#EF4444;
+    --c5:#A855F7; --c6:#14B8A6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:24px 14px 44px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:22px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:360px;}
+  .col h2{font-size:13px;font-weight:600;margin-bottom:2px;}
+  .col .desc{font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:8px;min-height:32px;}
+  .tag{display:inline-block;font-size:9px;padding:1.5px 5px;border-radius:4px;
+    background:#E4F6EA;color:#1E7F3C;font-weight:600;margin-left:4px;vertical-align:middle;}
+  .tag.alt{background:#E3EAF8;color:#3B6FF6;}
+
+  .phone{
+    width:360px;background:var(--bg);border-radius:26px;overflow:hidden;
+    box-shadow:0 12px 34px rgba(15,23,42,.18);border:1px solid rgba(0,0,0,.05);
+  }
+  .card{background:var(--card);border-radius:16px;margin:0 12px 12px;padding:14px;}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;
+    margin:14px 16px 8px;}
+  .sec-t{font-size:14px;font-weight:600;}
+  .sec-s{font-size:11px;color:var(--t3);}
+  .sec-s b{font-size:13px;color:var(--primary);font-weight:600;}
+
+  .r1{display:flex;align-items:center;gap:10px;padding:9px 0;}
+  .r1 .ic{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:15px;flex-shrink:0;color:#fff;}
+  .r1 .nm{width:56px;font-size:12.5px;flex-shrink:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .r1 .bar-wrap{flex:1;height:8px;border-radius:4px;background:var(--fill);overflow:hidden;}
+  .r1 .bar{height:100%;border-radius:4px;}
+  .r1 .amt{width:74px;text-align:right;font-size:12.5px;font-weight:600;flex-shrink:0;}
+  .r1 .pct{width:40px;text-align:right;font-size:10.5px;color:var(--t3);flex-shrink:0;}
+
+  .r2{padding:9px 0;}
+  .r2 .top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+  .r2 .ic{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:13px;flex-shrink:0;color:#fff;}
+  .r2 .nm{flex:1;font-size:12.5px;}
+  .r2 .pct{font-size:10.5px;color:var(--t3);}
+  .r2 .amt{font-size:12.5px;font-weight:600;margin-left:8px;}
+  .r2 .bar-wrap{height:6px;border-radius:3px;background:var(--fill);overflow:hidden;margin-left:34px;}
+  .r2 .bar{height:100%;border-radius:3px;}
+
+  .r3{display:flex;align-items:center;gap:10px;padding:10px 0;}
+  .r3 .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .r3 .nm{width:60px;font-size:12.5px;flex-shrink:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .r3 .bar-wrap{flex:1;height:6px;border-radius:3px;background:var(--fill);overflow:hidden;}
+  .r3 .bar{height:100%;border-radius:3px;}
+  .r3 .amt{width:78px;text-align:right;font-size:12.5px;font-weight:600;flex-shrink:0;}
+
+  .r0{display:flex;align-items:center;gap:8px;padding:7px 0;}
+  .r0 .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .r0 .nm{flex:1;font-size:12.5px;}
+  .r0 .amt{font-size:12.5px;font-weight:600;}
+
+  .note{font-size:11px;color:#5A6272;line-height:1.75;margin-top:8px;padding:9px 11px;
+    background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .pro{color:#1E7F3C;} .con{color:#B4471A;}
+  .fold{text-align:center;font-size:11.5px;color:var(--t3);padding:10px 0 2px;}
+</style>
+</head>
+<body>
+
+<div class="col">
+  <h2>现状（对照）</h2>
+  <div class="desc">只有色点 + 名称 + 金额，看不出各项占比差异。</div>
+  <div class="phone">
+    <div class="sec-head"><span class="sec-t">分类支出</span><span class="sec-s">总支出 <b>¥1,325.63</b></span></div>
+    <div class="card">
+      <div class="r0"><span class="dot" style="background:var(--c1)"></span><span class="nm">加油</span><span class="amt">¥ 605.00</span></div>
+      <div class="r0"><span class="dot" style="background:var(--c2)"></span><span class="nm">保养</span><span class="amt">¥ 194.71</span></div>
+      <div class="r0"><span class="dot" style="background:var(--c3)"></span><span class="nm">停车</span><span class="amt">¥ 168.00</span></div>
+      <div class="r0"><span class="dot" style="background:var(--c4)"></span><span class="nm">高速</span><span class="amt">¥ 133.76</span></div>
+      <div class="r0"><span class="dot" style="background:var(--c5)"></span><span class="nm">洗车</span><span class="amt">¥ 59.30</span></div>
+      <div class="r0"><span class="dot" style="background:var(--c6)"></span><span class="nm">其他</span><span class="amt">¥ 19.90</span></div>
+    </div>
+    <div class="note">百分比只在环图标签上，列表里完全没有，要对照着看很费劲。</div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>方案 1 · 图标 + 名称 + 比例条 + 金额<span class="tag">最接近截图</span></h2>
+  <div class="desc">一行内四段：圆形图标、名称、占比条、金额。与你给的截图结构一致。</div>
+  <div class="phone">
+    <div class="sec-head"><span class="sec-t">分类支出</span><span class="sec-s">总支出 <b>¥1,325.63</b></span></div>
+    <div class="card">
+      <div class="r1">
+        <span class="ic" style="background:var(--c1)">⛽</span><span class="nm">加油</span>
+        <span class="bar-wrap"><span class="bar" style="width:45.6%;background:var(--c1)"></span></span>
+        <span class="amt">¥605.00</span><span class="pct">45.6%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c2)">🔧</span><span class="nm">保养</span>
+        <span class="bar-wrap"><span class="bar" style="width:14.7%;background:var(--c2)"></span></span>
+        <span class="amt">¥194.71</span><span class="pct">14.7%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c3)">🅿️</span><span class="nm">停车</span>
+        <span class="bar-wrap"><span class="bar" style="width:12.7%;background:var(--c3)"></span></span>
+        <span class="amt">¥168.00</span><span class="pct">12.7%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c4)">🛣️</span><span class="nm">高速</span>
+        <span class="bar-wrap"><span class="bar" style="width:10.1%;background:var(--c4)"></span></span>
+        <span class="amt">¥133.76</span><span class="pct">10.1%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c5)">🧼</span><span class="nm">洗车</span>
+        <span class="bar-wrap"><span class="bar" style="width:4.5%;background:var(--c5)"></span></span>
+        <span class="amt">¥59.30</span><span class="pct">4.5%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c6)">💰</span><span class="nm">其他</span>
+        <span class="bar-wrap"><span class="bar" style="width:1.5%;background:var(--c6)"></span></span>
+        <span class="amt">¥19.90</span><span class="pct">1.5%</span>
+      </div>
+      <div class="fold">收起 ⌃</div>
+    </div>
+    <div class="note">
+      <span class="pro">优点</span>：信息最全，占比一眼可见，与截图一致。<br>
+      <span class="con">注意</span>：一行 5 个元素，窄屏较挤；小占比（1.5%）的条几乎看不见。
+    </div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>方案 2 · 名称/金额同行，比例条独占一行<span class="tag alt">更透气</span></h2>
+  <div class="desc">上下两行：第一行名称 + 金额，第二行是横贯的比例条。</div>
+  <div class="phone">
+    <div class="sec-head"><span class="sec-t">分类支出</span><span class="sec-s">总支出 <b>¥1,325.63</b></span></div>
+    <div class="card">
+      <div class="r2">
+        <div class="top"><span class="ic" style="background:var(--c1)">⛽</span><span class="nm">加油</span><span class="pct">45.6%</span><span class="amt">¥605.00</span></div>
+        <span class="bar-wrap"><span class="bar" style="width:45.6%;background:var(--c1)"></span></span>
+      </div>
+      <div class="r2">
+        <div class="top"><span class="ic" style="background:var(--c2)">🔧</span><span class="nm">保养</span><span class="pct">14.7%</span><span class="amt">¥194.71</span></div>
+        <span class="bar-wrap"><span class="bar" style="width:14.7%;background:var(--c2)"></span></span>
+      </div>
+      <div class="r2">
+        <div class="top"><span class="ic" style="background:var(--c3)">🅿️</span><span class="nm">停车</span><span class="pct">12.7%</span><span class="amt">¥168.00</span></div>
+        <span class="bar-wrap"><span class="bar" style="width:12.7%;background:var(--c3)"></span></span>
+      </div>
+      <div class="r2">
+        <div class="top"><span class="ic" style="background:var(--c4)">🛣️</span><span class="nm">高速</span><span class="pct">10.1%</span><span class="amt">¥133.76</span></div>
+        <span class="bar-wrap"><span class="bar" style="width:10.1%;background:var(--c4)"></span></span>
+      </div>
+      <div class="r2">
+        <div class="top"><span class="ic" style="background:var(--c5)">🧼</span><span class="nm">洗车</span><span class="pct">4.5%</span><span class="amt">¥59.30</span></div>
+        <span class="bar-wrap"><span class="bar" style="width:4.5%;background:var(--c5)"></span></span>
+      </div>
+      <div class="r2">
+        <div class="top"><span class="ic" style="background:var(--c6)">💰</span><span class="nm">其他</span><span class="pct">1.5%</span><span class="amt">¥19.90</span></div>
+        <span class="bar-wrap"><span class="bar" style="width:1.5%;background:var(--c6)"></span></span>
+      </div>
+      <div class="fold">收起 ⌃</div>
+    </div>
+    <div class="note">
+      <span class="pro">优点</span>：条更长更易比较，文字不挤，长分类名不截断。<br>
+      <span class="con">代价</span>：每项占两行，6 项明显变高；与截图结构不完全一致。
+    </div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>方案 3 · 去掉图标，极简条</h2>
+  <div class="desc">保留色点，名称左、金额右，中间比例条。最紧凑。</div>
+  <div class="phone">
+    <div class="sec-head"><span class="sec-t">分类支出</span><span class="sec-s">总支出 <b>¥1,325.63</b></span></div>
+    <div class="card">
+      <div class="r3"><span class="dot" style="background:var(--c1)"></span><span class="nm">加油</span><span class="bar-wrap"><span class="bar" style="width:45.6%;background:var(--c1)"></span></span><span class="amt">¥605.00</span></div>
+      <div class="r3"><span class="dot" style="background:var(--c2)"></span><span class="nm">保养</span><span class="bar-wrap"><span class="bar" style="width:14.7%;background:var(--c2)"></span></span><span class="amt">¥194.71</span></div>
+      <div class="r3"><span class="dot" style="background:var(--c3)"></span><span class="nm">停车</span><span class="bar-wrap"><span class="bar" style="width:12.7%;background:var(--c3)"></span></span><span class="amt">¥168.00</span></div>
+      <div class="r3"><span class="dot" style="background:var(--c4)"></span><span class="nm">高速</span><span class="bar-wrap"><span class="bar" style="width:10.1%;background:var(--c4)"></span></span><span class="amt">¥133.76</span></div>
+      <div class="r3"><span class="dot" style="background:var(--c5)"></span><span class="nm">洗车</span><span class="bar-wrap"><span class="bar" style="width:4.5%;background:var(--c5)"></span></span><span class="amt">¥59.30</span></div>
+      <div class="r3"><span class="dot" style="background:var(--c6)"></span><span class="nm">其他</span><span class="bar-wrap"><span class="bar" style="width:1.5%;background:var(--c6)"></span></span><span class="amt">¥19.90</span></div>
+      <div class="fold">收起 ⌃</div>
+    </div>
+    <div class="note">
+      <span class="pro">优点</span>：最紧凑，改动最小（现有结构只加一根条），不引入图标加载。<br>
+      <span class="con">代价</span>：不如截图丰富；小占比同样难辨。
+    </div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>方案 1 变体 · 小占比保底可见</h2>
+  <div class="desc">同上，但比例条设最小宽度，避免 1~2% 的项完全看不见。</div>
+  <div class="phone">
+    <div class="sec-head"><span class="sec-t">分类支出</span><span class="sec-s">总支出 <b>¥1,325.63</b></span></div>
+    <div class="card">
+      <div class="r1">
+        <span class="ic" style="background:var(--c1)">⛽</span><span class="nm">加油</span>
+        <span class="bar-wrap"><span class="bar" style="width:45.6%;background:var(--c1)"></span></span>
+        <span class="amt">¥605.00</span><span class="pct">45.6%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c2)">🔧</span><span class="nm">保养</span>
+        <span class="bar-wrap"><span class="bar" style="width:14.7%;background:var(--c2)"></span></span>
+        <span class="amt">¥194.71</span><span class="pct">14.7%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c3)">🅿️</span><span class="nm">停车</span>
+        <span class="bar-wrap"><span class="bar" style="width:12.7%;background:var(--c3)"></span></span>
+        <span class="amt">¥168.00</span><span class="pct">12.7%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c4)">🛣️</span><span class="nm">高速</span>
+        <span class="bar-wrap"><span class="bar" style="width:10.1%;background:var(--c4)"></span></span>
+        <span class="amt">¥133.76</span><span class="pct">10.1%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c5)">🧼</span><span class="nm">洗车</span>
+        <span class="bar-wrap"><span class="bar" style="width:6%;background:var(--c5)"></span></span>
+        <span class="amt">¥59.30</span><span class="pct">4.5%</span>
+      </div>
+      <div class="r1">
+        <span class="ic" style="background:var(--c6)">💰</span><span class="nm">其他</span>
+        <span class="bar-wrap"><span class="bar" style="width:4%;background:var(--c6)"></span></span>
+        <span class="amt">¥19.90</span><span class="pct">1.5%</span>
+      </div>
+      <div class="fold">收起 ⌃</div>
+    </div>
+    <div class="note">
+      <b>关键细节</b>：最后两项的条比真实占比宽（6% / 4%），但仍标真实百分比。<br>
+      <span class="pro">优点</span>：不会出现「空条」，一眼能看出「有这么一项」。<br>
+      <span class="con">代价</span>：条长与实际占比不完全对应，有点失真——我倾向<b>不保底</b>，让真实的短条短着。
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

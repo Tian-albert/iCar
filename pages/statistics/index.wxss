@@ -107,11 +107,37 @@
   margin-right: 12rpx;
 }
 .cat-name {
-  flex: 1;
+  /* 定宽而非 flex:1 —— 让各行的比例条起点对齐，长度才可比 */
+  width: 120rpx;
+  flex-shrink: 0;
   font-size: 28rpx;
   color: var(--color-text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/*
+ * 占比条：轨道固定宽度，内部填充按 percent 撑开。
+ * 纯 CSS 宽度百分比，不依赖 canvas。
+ */
+.cat-bar-track {
+  flex: 1;
+  height: 12rpx;
+  margin: 0 16rpx;
+  border-radius: 6rpx;
+  background: var(--color-fill);
+  overflow: hidden;
+}
+.cat-bar {
+  height: 100%;
+  border-radius: 6rpx;
+  /* 占比极小时也留一点可见宽度，否则 1% 的项看起来像没有数据 */
+  min-width: 4rpx;
 }
 .cat-amount {
+  width: 150rpx;
+  text-align: right;
+  flex-shrink: 0;
   font-size: 28rpx;
   font-weight: 600;
   color: var(--color-text-1);

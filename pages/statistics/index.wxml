@@ -93,6 +93,10 @@
         <view wx:for="{{categories}}" wx:key="name" class="cat-row">
           <view class="cat-dot" style="background: {{item.color}};"></view>
           <view class="cat-name">{{item.name}}</view>
+          <!-- 占比条：宽度即该分类占总支出的百分比 -->
+          <view class="cat-bar-track">
+            <view class="cat-bar" style="width: {{item.percent}}%; background: {{item.color}};"></view>
+          </view>
           <view class="cat-amount">¥ {{item.amount}}</view>
         </view>
       </view>
