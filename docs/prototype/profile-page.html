@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「我的」页 · 删登录卡片 + 清除数据 + 推荐给朋友</title>
+<style>
+  :root{
+    --primary:#3B6FF6;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486;
+    --bg:#F5F6F8; --card:#fff; --divider:#F0F1F4; --danger:#F5474F;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:26px 16px 48px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:26px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:375px;}
+  .col h2{font-size:13px;font-weight:600;margin-bottom:3px;}
+  .col .desc{font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:8px;min-height:30px;}
+
+  .phone{
+    width:375px;height:660px;position:relative;overflow:hidden;border-radius:32px;
+    background:var(--bg);box-shadow:0 14px 40px rgba(15,23,42,.2);
+    border:1px solid rgba(0,0,0,.06);
+  }
+  .status{height:38px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 20px;font-size:11px;font-weight:600;}
+  .nav{height:40px;display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:600;}
+  .scroll{height:520px;overflow:hidden;padding:4px 16px 0;}
+
+  .card{background:var(--card);border-radius:14px;margin-bottom:11px;
+    box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden;}
+  .row{display:flex;align-items:center;padding:13px 14px;border-bottom:1px solid var(--divider);}
+  .row:last-child{border-bottom:none;}
+  .row-l{flex:1;font-size:13.5px;}
+  .row-l.danger{color:var(--danger);}
+  .arrow{color:#C6CCD6;font-size:16px;margin-left:6px;line-height:1;}
+
+  /* 开关 */
+  .sw{width:40px;height:22px;border-radius:11px;background:var(--primary);position:relative;flex-shrink:0;}
+  .sw::after{content:'';position:absolute;top:2px;right:2px;width:18px;height:18px;
+    border-radius:50%;background:#fff;}
+
+  .ver{text-align:center;font-size:10.5px;color:#A8B0BC;padding:10px 0 6px;}
+
+  /* 推荐给朋友：独立的大按钮式卡片 */
+  .share-card{
+    background:linear-gradient(135deg,#3B6FF6 0%,#5B8BF8 100%);
+    border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;
+    box-shadow:0 6px 18px rgba(59,111,246,.28);margin-bottom:11px;
+  }
+  .share-ic{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.22);
+    display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+  .share-t{flex:1;}
+  .share-ti{font-size:14px;font-weight:600;color:#fff;}
+  .share-s{font-size:11px;color:rgba(255,255,255,.82);margin-top:2px;line-height:1.4;}
+  .share-a{color:rgba(255,255,255,.9);font-size:16px;}
+
+  /* 底栏 */
+  .tabbar{position:absolute;left:14px;right:14px;bottom:12px;height:54px;
+    display:flex;align-items:center;padding:0 4px;background:rgba(250,251,253,.97);
+    border:1px solid rgba(226,231,240,.9);border-radius:999px;
+    box-shadow:0 5px 15px rgba(15,23,42,.12);}
+  .ind{position:absolute;top:4px;right:4px;width:calc((100% - 8px)/3);height:46px;
+    border-radius:23px;background:rgba(59,111,246,.12);}
+  .ti{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:2px;height:46px;position:relative;z-index:1;}
+  .ti svg{width:20px;height:20px;}
+  .ti .l{font-size:9.5px;color:var(--t3);}
+  .ti.on .l{color:var(--primary);font-weight:600;}
+
+  /* ===== 确认弹窗 ===== */
+  .mask{position:absolute;inset:0;background:rgba(15,23,42,.42);display:flex;
+    align-items:center;justify-content:center;padding:0 42px;z-index:20;}
+  .dialog{width:100%;background:#fff;border-radius:16px;overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,.3);}
+  .dlg-body{padding:22px 20px 18px;text-align:center;}
+  .dlg-ic{width:44px;height:44px;border-radius:50%;background:#FDE8E9;margin:0 auto 12px;
+    display:flex;align-items:center;justify-content:center;font-size:21px;}
+  .dlg-t{font-size:15.5px;font-weight:600;margin-bottom:8px;}
+  .dlg-d{font-size:12px;color:var(--t2);line-height:1.7;text-align:left;}
+  .dlg-d b{color:var(--danger);}
+  .dlg-actions{display:flex;border-top:1px solid var(--divider);}
+  .dlg-btn{flex:1;padding:13px 0;text-align:center;font-size:14.5px;}
+  .dlg-btn.cancel{color:var(--t2);border-right:1px solid var(--divider);}
+  .dlg-btn.confirm{color:var(--danger);font-weight:600;}
+
+  .note{font-size:11px;color:#5A6272;line-height:1.75;margin-top:9px;padding:9px 11px;
+    background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .warn{background:#FFF4E5;color:#8A5300;}
+  .warn b{color:#7A4A00;}
+</style>
+</head>
+<body>
+
+<!-- ============ 主界面 ============ -->
+<div class="col">
+  <h2>改后效果</h2>
+  <div class="desc">删掉登录卡片；设置里加「清除所有数据」（红色）；底部加「把车记本推荐给朋友」。</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+    <div class="nav">我的</div>
+    <div class="scroll">
+      <div style="height:8px"></div>
+
+      <!-- 设置组 1 -->
+      <div class="card">
+        <div class="row">
+          <span class="row-l">保养到期提醒</span>
+          <span class="sw"></span>
+        </div>
+        <div class="row"><span class="row-l">支出类别管理</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">数据导入导出</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">回收站</span><span class="arrow">›</span></div>
+      </div>
+
+      <!-- 设置组 2：危险操作单独一组 -->
+      <div class="card">
+        <div class="row">
+          <span class="row-l danger">清除所有数据</span>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+
+      <!-- 设置组 3 -->
+      <div class="card">
+        <div class="row"><span class="row-l">反馈与建议</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">关于</span><span class="arrow">›</span></div>
+      </div>
+
+      <!-- 推荐给朋友 -->
+      <div class="share-card">
+        <span class="share-ic">💙</span>
+        <div class="share-t">
+          <div class="share-ti">把车记本推荐给朋友</div>
+          <div class="share-s">油车 / 电车 / 混动都能记，自动算油耗电耗</div>
+        </div>
+        <span class="share-a">›</span>
+      </div>
+
+      <div class="ver">车记本 v1.2.0</div>
+    </div>
+
+    <div class="tabbar">
+      <div class="ind"></div>
+      <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7"><rect x="4" y="4" width="7.5" height="9" rx="2"/><rect x="13" y="4" width="7" height="5.5" rx="2"/><rect x="13" y="11.5" width="7" height="8.5" rx="2"/><rect x="4" y="15" width="7.5" height="5" rx="2"/></svg><span class="l">概览</span></div>
+      <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7"><path d="M4 16.5v2a1 1 0 0 0 1 1h1.6a1 1 0 0 0 1-1v-1M19.4 17.5v2a1 1 0 0 1-1 1h-1.6a1 1 0 0 1-1-1v-1M3.5 16.5h17a1 1 0 0 0 1-1v-3.2a1.5 1.5 0 0 0-1.2-1.47l-1.7-.3-1.5-3.5A2 2 0 0 0 15.2 5.6H8.8a2 2 0 0 0-1.9 1.43l-1.5 3.5-1.7.3A1.5 1.5 0 0 0 2.5 12.3v3.2a1 1 0 0 0 1 1Z"/><circle cx="7" cy="14" r="1.3"/><circle cx="17" cy="14" r="1.3"/></svg><span class="l">车辆</span></div>
+      <div class="ti on"><svg viewBox="0 0 24 24" fill="#3B6FF6"><circle cx="12" cy="8" r="4.4"/><path d="M12 13.6c-4.4 0-8 2.9-8 6.5 0 .7.6 1.2 1.3 1.2h13.4c.7 0 1.3-.5 1.3-1.2 0-3.6-3.6-6.5-8-6.5Z"/></svg><span class="l">我的</span></div>
+    </div>
+  </div>
+  <div class="note">
+    <b>三处改动</b>：① 登录卡片已删；② 「清除所有数据」单独一组、红色文字，与普通设置隔开；
+    ③ 「推荐给朋友」做成蓝色渐变卡片放在最底，比普通列表项更醒目，且带副标题说明卖点。
+  </div>
+</div>
+
+<!-- ============ 确认弹窗 ============ -->
+<div class="col">
+  <h2>「清除所有数据」的二次确认</h2>
+  <div class="desc">这是不可撤销的破坏性操作，必须二次确认，且文案要说清后果。</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+    <div class="nav">我的</div>
+    <div class="scroll">
+      <div style="height:8px"></div>
+      <div class="card">
+        <div class="row"><span class="row-l">保养到期提醒</span><span class="sw"></span></div>
+        <div class="row"><span class="row-l">支出类别管理</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">数据导入导出</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">回收站</span><span class="arrow">›</span></div>
+      </div>
+      <div class="card">
+        <div class="row"><span class="row-l danger">清除所有数据</span><span class="arrow">›</span></div>
+      </div>
+      <div class="card">
+        <div class="row"><span class="row-l">反馈与建议</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">关于</span><span class="arrow">›</span></div>
+      </div>
+    </div>
+
+    <!-- 弹窗 -->
+    <div class="mask">
+      <div class="dialog">
+        <div class="dlg-body">
+          <div class="dlg-ic">⚠️</div>
+          <div class="dlg-t">清除所有数据？</div>
+          <div class="dlg-d">
+            将删除本机的<b>全部车辆、加油/充电、保养、维修、支出记录与自定义类别</b>，
+            包括回收站内容。<br><br>
+            此操作<b>不可撤销</b>。建议先到「数据导入导出」备份一份。
+          </div>
+        </div>
+        <div class="dlg-actions">
+          <div class="dlg-btn cancel">取消</div>
+          <div class="dlg-btn confirm">清除</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note warn">
+    <b>必须二次确认的理由</b>：清空后用户所有记账数据一次性消失，且无法恢复。
+    文案里明确提到「建议先备份」，把用户往正确操作上引。
+  </div>
+</div>
+
+<!-- ============ 推荐卡片的两种做法 ============ -->
+<div class="col">
+  <h2>「推荐给朋友」另一种做法</h2>
+  <div class="desc">如果觉得蓝色卡片太抢眼，可以做成普通列表项（和「关于」并列）。</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●● ⌁ ▮</span></div>
+    <div class="nav">我的</div>
+    <div class="scroll">
+      <div style="height:8px"></div>
+      <div class="card">
+        <div class="row"><span class="row-l">保养到期提醒</span><span class="sw"></span></div>
+        <div class="row"><span class="row-l">支出类别管理</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">数据导入导出</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">回收站</span><span class="arrow">›</span></div>
+      </div>
+      <div class="card">
+        <div class="row"><span class="row-l danger">清除所有数据</span><span class="arrow">›</span></div>
+      </div>
+      <div class="card">
+        <div class="row"><span class="row-l">反馈与建议</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">把车记本推荐给朋友</span><span class="arrow">›</span></div>
+        <div class="row"><span class="row-l">关于</span><span class="arrow">›</span></div>
+      </div>
+      <div class="ver">车记本 v1.2.0</div>
+    </div>
+    <div class="tabbar">
+      <div class="ind"></div>
+      <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7"><rect x="4" y="4" width="7.5" height="9" rx="2"/><rect x="13" y="4" width="7" height="5.5" rx="2"/><rect x="13" y="11.5" width="7" height="8.5" rx="2"/><rect x="4" y="15" width="7.5" height="5" rx="2"/></svg><span class="l">概览</span></div>
+      <div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7"><path d="M4 16.5v2a1 1 0 0 0 1 1h1.6a1 1 0 0 0 1-1v-1M19.4 17.5v2a1 1 0 0 1-1 1h-1.6a1 1 0 0 1-1-1v-1M3.5 16.5h17a1 1 0 0 0 1-1v-3.2a1.5 1.5 0 0 0-1.2-1.47l-1.7-.3-1.5-3.5A2 2 0 0 0 15.2 5.6H8.8a2 2 0 0 0-1.9 1.43l-1.5 3.5-1.7.3A1.5 1.5 0 0 0 2.5 12.3v3.2a1 1 0 0 0 1 1Z"/><circle cx="7" cy="14" r="1.3"/><circle cx="17" cy="14" r="1.3"/></svg><span class="l">车辆</span></div>
+      <div class="ti on"><svg viewBox="0 0 24 24" fill="#3B6FF6"><circle cx="12" cy="8" r="4.4"/><path d="M12 13.6c-4.4 0-8 2.9-8 6.5 0 .7.6 1.2 1.3 1.2h13.4c.7 0 1.3-.5 1.3-1.2 0-3.6-3.6-6.5-8-6.5Z"/></svg><span class="l">我的</span></div>
+    </div>
+  </div>
+  <div class="note">
+    <b>两种做法的取舍</b>：<br>
+    · <b>蓝色渐变卡片</b>：视觉突出，推荐意愿更强，但在这页略显突兀<br>
+    · <b>普通列表项</b>：与整页风格统一，但容易被忽略<br>
+    <br>我倾向前者——「推荐给朋友」本质是希望用户主动传播，值得一个更醒目的位置。
+  </div>
+</div>
+
+</body>
+</html>

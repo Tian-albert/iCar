@@ -1,12 +1,4 @@
 <view class="page">
-  <!-- 用户信息 -->
-  <view class="user-card">
-    <view class="user-avatar">👤</view>
-    <view class="user-info">
-      <view class="user-name">{{nickname}}</view>
-    </view>
-  </view>
-
   <!-- 设置列表 -->
   <view class="card">
     <view class="row">
@@ -27,6 +19,14 @@
     </view>
   </view>
 
+  <!-- 危险操作单独一组：与普通设置隔开，避免误点 -->
+  <view class="card">
+    <view hover-class="hover-dim" class="row" bindtap="onClearAll">
+      <view class="row-label row-danger">清除所有数据</view>
+      <view class="row-arrow">›</view>
+    </view>
+  </view>
+
   <view class="card">
     <view hover-class="hover-dim" class="row" bindtap="onFeedback">
       <view class="row-label">反馈与建议</view>
@@ -36,6 +36,14 @@
       <view class="row-label">关于</view>
       <view class="row-arrow">›</view>
     </view>
+  </view>
+
+  <!-- 推荐给朋友：单独一组放在最下，位置独立而突出，但样式与整页统一 -->
+  <view class="card">
+    <button class="share-btn" open-type="share" hover-class="hover-dim">
+      <view class="row-label">把车记本推荐给朋友</view>
+      <view class="row-arrow">›</view>
+    </button>
   </view>
 
   <view class="version">车记本 v1.2.0</view>

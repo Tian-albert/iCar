@@ -5,26 +5,6 @@
   padding-bottom: calc(168rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
-.user-card {
-  display: flex;
-  align-items: center;
-  background: var(--color-dark-card);
-  border-radius: var(--radius-card);
-  padding: 40rpx 32rpx;
-  margin-bottom: 24rpx;
-}
-.user-avatar {
-  font-size: 80rpx;
-  margin-right: 24rpx;
-}
-.user-info {
-  flex: 1;
-}
-.user-name {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: var(--color-card);
-}
 .card {
   margin-bottom: 24rpx;
 }
@@ -42,9 +22,38 @@
   font-size: 28rpx;
   color: var(--color-text-1);
 }
+/* 危险操作：红色文字，配合「单独一组」形成视觉隔离 */
+.row-danger {
+  color: var(--color-danger);
+}
 .row-arrow {
   font-size: 40rpx;
   color: var(--color-text-3);
+}
+
+/*
+ * 「把车记本推荐给朋友」：用 button 承载以支持 open-type="share"，
+ * 但外观完全对齐普通 .row —— 既融入整页风格，又因单独成组而突出。
+ *
+ * 负外边距抵消 .card 的左右内边距，否则按钮会缩进、与上面的 row 不对齐。
+ */
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 104rpx;
+  margin: 0 calc(0rpx - var(--sp-4));
+  padding: 0 var(--sp-4);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font-size: inherit;
+  line-height: normal;
+  text-align: left;
+}
+/* 去掉 button 的默认 ::after 边框 */
+.share-btn::after {
+  border: none;
 }
 .version {
   margin-top: 40rpx;
