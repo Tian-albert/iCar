@@ -1,0 +1,7 @@
+<!-- 我的 Tab：薄壳页，内容由共享的 tab-swiper 组件承载 -->
+<view class="tab-shell">
+  <tab-swiper
+    id="tabSwiper"
+    initial="2"
+    bind:indicator="onIndicator" />
+</view>

@@ -29,11 +29,9 @@ describe('「概览」改名三处必须一致', () => {
     expect(item.text).toBe('概览');
   });
 
-  it('宿主页是启动首页，且在 app.json 的 pages 首项', () => {
+  it('「概览」是启动首页，且在 app.json 的 pages 首项', () => {
     const app = JSON.parse(read('app.json'));
-    expect(app.pages[0]).toBe('pages/tab-host/index');
-    // 三个 tab 现在都在宿主页里，由 swiper 承载
-    expect(app.tabBar.list.every((x: any) => x.pagePath === 'pages/tab-host/index')).toBe(true);
+    expect(app.pages[0]).toBe('pages/tab-overview/index');
   });
 
   it('自定义 TabBar 文案与图标同步', () => {
@@ -44,13 +42,13 @@ describe('「概览」改名三处必须一致', () => {
     expect(src).not.toContain("text: '保养'");
   });
 
-  it('自定义 TabBar 与宿主页指向同一路径', () => {
+  it('自定义 TabBar 与 app.json 的 tabBar 路径一致', () => {
     const app = JSON.parse(read('app.json'));
     const item = app.tabBar.list.filter((x: any) => x.text === '概览')[0];
-    expect(item.pagePath).toBe('pages/tab-host/index');
+    expect(item.pagePath).toBe('pages/tab-overview/index');
 
     const src = read('custom-tab-bar/index.ts');
-    expect(src).toContain("pagePath: '/pages/tab-host/index'");
+    expect(src).toContain("pagePath: '/pages/tab-overview/index'");
   });
 });
 

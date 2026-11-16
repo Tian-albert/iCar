@@ -81,12 +81,12 @@ describe('点击目标', () => {
   });
 });
 
-describe('宿主页结构', () => {
-  const wxml: string = fsx.readFileSync('pages/tab-host/index.wxml', 'utf-8');
-  const ts: string = fsx.readFileSync('pages/tab-host/index.ts', 'utf-8');
+describe('共享 swiper 组件', () => {
+  const wxml: string = fsx.readFileSync('components/tab-swiper/index.wxml', 'utf-8');
+  const ts: string = fsx.readFileSync('components/tab-swiper/index.ts', 'utf-8');
   const appJson = JSON.parse(fsx.readFileSync('app.json', 'utf-8'));
 
-  it('宿主页用 swiper 承载三个 tab', () => {
+  it('swiper 承载三个 tab 的内容组件', () => {
     expect(wxml).toContain('<swiper');
     expect(wxml).toContain('<swiper-item');
     expect(wxml).toContain('tab-overview');
@@ -95,34 +95,63 @@ describe('宿主页结构', () => {
   });
 
   it('监听 transition（跟手）与 change（切换完成）', () => {
-    expect(wxml).toContain('bindtransition="onSwiperTransition"');
-    expect(wxml).toContain('bindchange="onSwiperChange"');
+    expect(wxml).toContain('bindtransition="onTransition"');
+    expect(wxml).toContain('bindchange="onChange"');
   });
 
-  it('把指示块位置传给底部栏', () => {
-    expect(ts).toContain('setIndicatorOffset');
+  it('把指示块位置通过 triggerEvent 上报给页面', () => {
+    expect(ts).toContain("triggerEvent('indicator'");
     expect(ts).toContain('indicatorOffset');
   });
 
   it('暴露 switchToTab 供底部栏点击调用', () => {
     expect(ts).toContain('switchToTab');
+    expect(ts).toContain('notifyCurrent');
   });
 
-  it('tabBar.list 三个项都指向宿主页', () => {
+  it('内容组件通过 ready 事件上报实例（selectComponent 选不到兄弟组件）', () => {
+    expect(ts).toContain("onChildReady");
+    expect(ts).toContain('triggerEvent');
+  });
+
+  it('tabBar.list 的 pagePath 互不重复（微信强制要求）', () => {
     expect(appJson.tabBar.list.length).toBe(3);
-    for (const item of appJson.tabBar.list) {
-      expect(item.pagePath).toBe('pages/tab-host/index');
+    const paths = appJson.tabBar.list.map((x: any) => x.pagePath);
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it('tabBar.list 与 pages 中的三个 tab 页面一致', () => {
+    const paths = appJson.tabBar.list.map((x: any) => x.pagePath);
+    for (const p of paths) {
+      expect(appJson.pages).toContain(p);
     }
   });
 
-  it('宿主页是启动首页', () => {
-    expect(appJson.pages[0]).toBe('pages/tab-host/index');
+  it('「概览」是启动首页', () => {
+    expect(appJson.pages[0]).toBe('pages/tab-overview/index');
   });
+});
 
-  it('宿主页通过 onShown 通知组件刷新（组件没有 onShow）', () => {
-    expect(ts).toContain('notifyShown');
-    expect(ts).toContain('onShown');
-  });
+describe('三个 tab 薄壳页', () => {
+  const shells = [
+    { p: 'pages/tab-overview', idx: 0 },
+    { p: 'pages/tab-vehicles', idx: 1 },
+    { p: 'pages/tab-profile', idx: 2 }
+  ];
+
+  for (const s of shells) {
+    it(`${s.p} 渲染共享的 tab-swiper 组件`, () => {
+      const wxml = fsx.readFileSync(`${s.p}/index.wxml`, 'utf-8');
+      expect(wxml).toContain('tab-swiper');
+      expect(wxml).toContain('bind:indicator="onIndicator"');
+      expect(wxml).toContain(`initial="${s.idx}"`);
+    });
+
+    it(`${s.p} 的 json 声明了 tab-swiper 组件`, () => {
+      const json = JSON.parse(fsx.readFileSync(`${s.p}/index.json`, 'utf-8'));
+      expect(json.usingComponents['tab-swiper']).toBe('/components/tab-swiper/index');
+    });
+  }
 });
 
 describe('三个 tab 都是组件', () => {

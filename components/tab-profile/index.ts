@@ -5,6 +5,14 @@ import { getUser, setRemindEnabled } from '../../services/user.service';
 import { FEEDBACK_EMAIL } from '../../utils/app-config';
 
 Component({
+  properties: {
+    /** 本组件在 tab 列表中的索引（用于上报实例） */
+    index: {
+      type: Number,
+      value: 2
+    }
+  },
+
   data: {
     activeColor: COMPONENT_ACTIVE_COLOR,
     nickname: '微信用户',
@@ -14,6 +22,10 @@ Component({
   lifetimes: {
     attached() {
       (this as any).load();
+    },
+    ready() {
+      // 把实例上报给父级（tab-swiper），父级切 tab 时据此调用 onShown 刷新
+      this.triggerEvent('ready', { index: this.data.index, instance: this });
     }
   },
 

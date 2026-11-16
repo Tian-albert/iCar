@@ -1,6 +1,8 @@
 {
   "pages": [
-    "pages/tab-host/index",
+    "pages/tab-overview/index",
+    "pages/tab-vehicles/index",
+    "pages/tab-profile/index",
     "pages/icon-crop/index",
     "pages/vehicle-form/index",
     "pages/entry/index",
@@ -34,15 +36,15 @@
     "backgroundColor": "#ffffff",
     "list": [
       {
-        "pagePath": "pages/tab-host/index",
+        "pagePath": "pages/tab-overview/index",
         "text": "概览"
       },
       {
-        "pagePath": "pages/tab-host/index",
+        "pagePath": "pages/tab-vehicles/index",
         "text": "车辆"
       },
       {
-        "pagePath": "pages/tab-host/index",
+        "pagePath": "pages/tab-profile/index",
         "text": "我的"
       }
     ]

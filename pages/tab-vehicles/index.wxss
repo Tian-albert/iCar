@@ -1,0 +1,5 @@
+/* 车辆 Tab 薄壳页 */
+.tab-shell {
+  height: 100vh;
+  overflow: hidden;
+}

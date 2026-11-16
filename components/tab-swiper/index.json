@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "iCar",
+  "component": true,
   "usingComponents": {
     "tab-overview": "/components/tab-overview/index",
     "tab-vehicles": "/components/tab-vehicles/index",

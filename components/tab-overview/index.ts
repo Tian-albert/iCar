@@ -95,6 +95,10 @@ Component({
     attached() {
       // 组件挂载即拉一次数据；之后每次切到本 tab 由宿主页调 onShown 刷新
       (this as any).load();
+    },
+    ready() {
+      // 把实例上报给父级（tab-swiper），父级切 tab 时据此调用 onShown 刷新
+      this.triggerEvent('ready', { index: this.data.index, instance: this });
     }
   },
 

@@ -23,11 +23,11 @@ Component({
   data: {
     selected: 0,
     list: [
-      // 三个 tab 都在宿主页（pages/tab-host）里，由 swiper 承载，
-      // 所以 pagePath 都指向宿主页；点击时通知宿主页切 swiper。
-      { pagePath: '/pages/tab-host/index', text: '概览', icon: 'overview' },
-      { pagePath: '/pages/tab-host/index', text: '车辆', icon: 'car' },
-      { pagePath: '/pages/tab-host/index', text: '我的', icon: 'user' }
+      // 三个 tab 各自是独立页面（tabBar.list 的 pagePath 不能重复），
+      // 但共享同一个 swiper 组件，所以点击时是操作当前页的 swiper 而不是切页。
+      { pagePath: '/pages/tab-overview/index', text: '概览', icon: 'overview' },
+      { pagePath: '/pages/tab-vehicles/index', text: '车辆', icon: 'car' },
+      { pagePath: '/pages/tab-profile/index', text: '我的', icon: 'user' }
     ] as TabItem[],
     // WXML 里不能直接引用 import 的常量，必须经 data 传入
     lineIcons: TAB_ICONS_LINE,
@@ -41,9 +41,9 @@ Component({
     /**
      * 点击底部栏某个 tab。
      *
-     * 三个 tab 现在都在宿主页（pages/tab-host）里，由 swiper 承载，
-     * 所以这里不是 wx.switchTab，而是通知宿主页把 swiper 滑过去。
-     * 宿主页不存在时（异常兜底）退回 switchTab。
+     * 三个 tab 共享同一个 swiper 组件，所以这里**不是** wx.switchTab（那会重建页面），
+     * 而是让**当前页**把 swiper 滑过去 —— 页面内容平滑移动，不重新渲染。
+     * 当前页拿不到 swiper 时才退回原生切页（异常兜底）。
      */
     switchTab(e: WechatMiniprogram.TouchEvent) {
       const index = Number(e.currentTarget.dataset.index);
@@ -51,15 +51,15 @@ Component({
       if (typeof index !== 'number' || index < 0) return;
 
       const pages = getCurrentPages();
-      const host = pages[pages.length - 1] as any;
+      const current = pages[pages.length - 1] as any;
 
-      if (host && typeof host.switchToTab === 'function') {
-        host.switchToTab(index);
+      if (current && typeof current.switchToTab === 'function') {
+        current.switchToTab(index);
         this.setData({ selected: index, indicatorIndex: index });
         return;
       }
 
-      // 兜底：宿主页拿不到时走原生切页
+      // 兜底：当前页拿不到 swiper 时走原生切页
       if (path) {
         wx.switchTab({ url: path });
         this.setData({ selected: index, indicatorIndex: index });
