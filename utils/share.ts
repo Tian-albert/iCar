@@ -5,8 +5,14 @@
 // vehicle-detail 的 onLoad 判定"车辆不存在"并直接 navigateBack，
 // 接收方看到的是闪退式的空白页。
 
-/** 统一落地页：Tab 宿主页（车辆 tab，新用户会看到空态 + 添加车辆引导） */
-export const SHARE_PATH = '/pages/tab-host/index';
+/**
+ * 统一落地页：车辆 tab（新用户会看到空态 + 添加车辆引导）。
+ *
+ * 三个 tab 各自是独立页面（tabBar.list 的 pagePath 不能重复），
+ * 但共享同一个 swiper 组件，所以分享落地到「车辆」页即可，
+ * 由该页的 initial 决定初始停在第几个 tab。
+ */
+export const SHARE_PATH = '/pages/tab-vehicles/index';
 
 /** 分享封面：500x400（5:4），114KB，小于微信 128KB 上限 */
 export const SHARE_IMAGE = '/assets/share-cover.png';

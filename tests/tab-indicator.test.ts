@@ -189,3 +189,57 @@ describe('旧的手势模块已移除', () => {
     }
   });
 });
+
+describe('页面路径完整性（防悬空引用）', () => {
+  const fs = require('fs') as any;
+  const path = require('path') as any;
+  const appJson = JSON.parse(fs.readFileSync('app.json', 'utf-8'));
+  const pages: string[] = appJson.pages;
+
+  /** 递归收集源码文件 */
+  function walk(dir: string, out: string[] = []): string[] {
+    for (const name of fs.readdirSync(dir)) {
+      if (name === 'node_modules' || name === '.git' || name === 'tests' || name === 'docs') {
+        continue;
+      }
+      const full = path.join(dir, name);
+      const st = fs.statSync(full);
+      if (st.isDirectory()) walk(full, out);
+      else if (/\.(ts|json|wxml)$/.test(name)) out.push(full);
+    }
+    return out;
+  }
+
+  it('源码里引用的每个 /pages/xxx/index 都必须存在于 app.json', () => {
+    const files = walk('.');
+    const bad: string[] = [];
+    const re = /\/pages\/([A-Za-z0-9_-]+)\/index/g;
+
+    for (const f of files) {
+      const src = fs.readFileSync(f, 'utf-8');
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(src)) !== null) {
+        const p = `pages/${m[1]}/index`;
+        if (pages.indexOf(p) < 0) bad.push(`${f} -> ${p}`);
+      }
+    }
+
+    // 指向不存在的页面会让开发者工具直接报 ENOENT（曾经踩过）
+    expect(bad).toEqual([]);
+  });
+
+  it('每个 tab 页的四个文件都齐全', () => {
+    for (const p of ['pages/tab-overview', 'pages/tab-vehicles', 'pages/tab-profile']) {
+      for (const ext of ['ts', 'wxml', 'wxss', 'json']) {
+        expect(fs.existsSync(`${p}/index.${ext}`)).toBe(true);
+      }
+    }
+  });
+
+  it('不存在残留的嵌套目录（pages/xxx/index/index.*）', () => {
+    for (const p of ['pages/tab-overview', 'pages/tab-vehicles', 'pages/tab-profile']) {
+      expect(fs.existsSync(`${p}/index`)).toBe(false);
+    }
+    expect(fs.existsSync('pages/tab-host')).toBe(false);
+  });
+});
