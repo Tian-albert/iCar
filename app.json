@@ -1,8 +1,6 @@
 {
   "pages": [
-    "pages/reminder/index",
-    "pages/index/index",
-    "pages/user/index",
+    "pages/tab-host/index",
     "pages/icon-crop/index",
     "pages/vehicle-form/index",
     "pages/entry/index",
@@ -36,15 +34,15 @@
     "backgroundColor": "#ffffff",
     "list": [
       {
-        "pagePath": "pages/reminder/index",
+        "pagePath": "pages/tab-host/index",
         "text": "概览"
       },
       {
-        "pagePath": "pages/index/index",
+        "pagePath": "pages/tab-host/index",
         "text": "车辆"
       },
       {
-        "pagePath": "pages/user/index",
+        "pagePath": "pages/tab-host/index",
         "text": "我的"
       }
     ]

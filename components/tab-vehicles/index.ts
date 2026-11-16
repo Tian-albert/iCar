@@ -12,9 +12,7 @@ import { listRefuels, getConsumptions } from '../../services/refuel.service';
 import { Car } from '../../types/models';
 import { displayIcon, isImageIcon } from '../../utils/icons';
 import { serviceDaysSince } from '../../utils/date';
-import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { pickMainCar } from '../../services/overview.service';
-import { createTabSwipeHandlers, TAB_PATHS } from '../../utils/tab-swipe-page';
 
 interface CarView extends Car {
   pinned: boolean;
@@ -89,7 +87,7 @@ function maintainSummary(
   return { text: '--', label: '保养', state: 'ok' };
 }
 
-Page({
+Component({
   data: {
     cars: [] as CarView[],
     hero: null as HeroView | null,
@@ -99,29 +97,22 @@ Page({
     pendingCount: 0
   },
 
-  // 横向滑动：底部栏胶囊跟手，松手切换相邻 tab
-  ...createTabSwipeHandlers({ index: 1, count: 3, paths: TAB_PATHS }),
-
-  onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      // 复位胶囊位移：从别处滑回来时不应停在半路
-      this.getTabBar().setData({ selected: 1, offsetX: 0, dragging: false });
+  lifetimes: {
+    attached() {
+      (this as any).load();
     }
-    this.load();
-    enableShareMenu();
   },
 
-  onShareAppMessage() {
-    const hero = this.data.hero;
-    return buildShareMessage({
-      highlight: hero ? `我的${hero.name}已行驶 ${hero.mileagesText} km` : ''
-    });
+  methods: {
+  /** 宿主页切到本组件时调用：刷新数据 */
+  onShown() {
+    this.load();
   },
-  onShareTimeline() {
+
+  /** 供宿主页取分享内容 */
+  getShareHighlight(): string {
     const hero = this.data.hero;
-    return buildTimelineMessage({
-      highlight: hero ? `我的${hero.name}已行驶 ${hero.mileagesText} km` : ''
-    });
+    return hero ? `我的${hero.name}已行驶 ${hero.mileagesText} km` : '';
   },
 
   load() {
@@ -278,5 +269,6 @@ Page({
     setPinnedCarId(storage, nextId);
     this.load();
     wx.showToast({ title: nextId ? '已置顶' : '已取消置顶', icon: 'none' });
+  }
   }
 });

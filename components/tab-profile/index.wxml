@@ -1,8 +1,5 @@
-<view class="page"
-    bindtouchstart="onTouchStart"
-    bindtouchmove="onTouchMove"
-    bindtouchend="onTouchEnd"
-    bindtouchcancel="onTouchCancel">
+<scroll-view class="page-scroll" scroll-y="{{true}}" enable-flex="{{true}}">
+  <view class="page">
   <!-- 用户信息 -->
   <view class="user-card">
     <view class="user-avatar">👤</view>
@@ -44,3 +41,4 @@
 
   <view class="version">车记本 v1.2.0</view>
 </view>
+</scroll-view>

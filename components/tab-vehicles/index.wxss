@@ -1,5 +1,11 @@
+/* 滚动容器：swiper-item 内必须显式指定滚动容器 */
+.page-scroll {
+  width: 100%;
+  height: 100%;
+}
+
 .page {
-  min-height: 100vh;
+  min-height: 100%;
   padding: 24rpx;
   /* 悬浮胶囊底栏：胶囊高 108rpx + 底部偏移 20rpx + 安全区 + 呼吸留白 */
   padding-bottom: calc(168rpx + env(safe-area-inset-bottom));

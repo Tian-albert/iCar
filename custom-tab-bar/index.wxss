@@ -1,4 +1,4 @@
-/* 悬浮胶囊底部栏：脱离屏幕底部、毛玻璃背景、选中项淡蓝胶囊 */
+/* 悬浮胶囊底部栏：脱离屏幕底部、毛玻璃背景、选中项淡蓝底块 */
 .tab-bar {
   position: fixed;
   /* 左右留白 + 底部留白，让胶囊真正「浮」起来 */
@@ -21,6 +21,23 @@
   z-index: 100;
 }
 
+/*
+ * 指示块：选中项的浅蓝底块。
+ * 绝对定位在胶囊内，随滑动连续位移（transform 由 JS 驱动）。
+ * 宽度与每个 tab 等宽，由 left:0 + width:33.33% 决定，translateX 按 tab 步长给。
+ */
+.tab-indicator {
+  position: absolute;
+  top: 8rpx;
+  left: 8rpx;
+  width: calc((100% - 16rpx) / 3);
+  height: 92rpx;
+  border-radius: 46rpx;
+  background: rgba(59, 111, 246, 0.12);
+  pointer-events: none;
+  transition: transform 0.12s ease-out;
+}
+
 .tab-item {
   flex: 1;
   display: flex;
@@ -28,13 +45,8 @@
   align-items: center;
   justify-content: center;
   height: 92rpx;
-  border-radius: 46rpx;
-  transition: background-color 0.2s ease;
-}
-
-/* 选中项：淡蓝胶囊底 */
-.tab-active {
-  background: rgba(59, 111, 246, 0.12);
+  position: relative;
+  z-index: 1;
 }
 
 .tab-icon {
@@ -48,9 +60,10 @@
   font-size: 20rpx;
   line-height: 1;
   color: #6B7486;
+  transition: color 0.15s ease;
 }
 
-.tab-active .tab-text {
+.tab-text-on {
   color: #3B6FF6;
   font-weight: 600;
 }

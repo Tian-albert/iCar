@@ -1,15 +1,18 @@
-<view class="tab-bar" style="transform: translateX({{offsetX}}px);">
+<view class="tab-bar">
+  <!-- 指示块：独立于图标，随滑动连续移动（胶囊本身不动） -->
+  <view class="tab-indicator" style="transform: translateX({{indicatorOffset}}px);"></view>
+
   <view
     wx:for="{{list}}"
     wx:key="pagePath"
-    class="tab-item {{selected === index && !dragging ? 'tab-active' : ''}}"
+    class="tab-item"
     data-path="{{item.pagePath}}"
     data-index="{{index}}"
     bindtap="switchTab">
     <image
-      class="tab-icon"
-      src="{{selected === index ? fillIcons[item.icon] : lineIcons[item.icon]}}"
+      class="tab-icon {{indicatorIndex === index ? 'tab-icon-on' : ''}}"
+      src="{{indicatorIndex === index ? fillIcons[item.icon] : lineIcons[item.icon]}}"
       mode="aspectFit" />
-    <view class="tab-text">{{item.text}}</view>
+    <view class="tab-text {{indicatorIndex === index ? 'tab-text-on' : ''}}">{{item.text}}</view>
   </view>
 </view>

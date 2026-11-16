@@ -71,9 +71,9 @@ describe('自定义图标必须走 <image>，不能当文本渲染', () => {
 });
 
 describe('概览页环图', () => {
-  const ts = read('pages/reminder/index.ts');
-  const wxml = read('pages/reminder/index.wxml');
-  const wxss = read('pages/reminder/index.wxss');
+  const ts = read('components/tab-overview/index.ts');
+  const wxml = read('components/tab-overview/index.wxml');
+  const wxss = read('components/tab-overview/index.wxss');
 
   it('无数据时也会重设画布尺寸（否则残留上一次的环图）', () => {
     // canvas.width 赋值必须在「无 segments 就 return」之前
@@ -166,7 +166,7 @@ describe('版本号 1.2.0 四处一致', () => {
   it('package.json / 关于页 / 我的页 / 导出清单', () => {
     expect(JSON.parse(read('package.json')).version).toBe('1.2.0');
     expect(read('pages/about/index.ts')).toContain("version: '1.2.0'");
-    expect(read('pages/user/index.wxml')).toContain('v1.2.0');
+    expect(read('components/tab-profile/index.wxml')).toContain('v1.2.0');
     expect(read('services/io.service.ts')).toContain("appVersion: '1.2.0'");
   });
 

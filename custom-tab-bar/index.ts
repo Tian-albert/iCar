@@ -7,8 +7,9 @@
 // 基线在不同机型上也不一致。这里用手绘 SVG 的 base64 data URI
 // （小程序 WXML 不支持内联 <svg>）。
 //
-// 滑动联动：页面横向滑动时通过 setTabBarOffset 把进度传进来，
-// 胶囊跟着横向位移；松手后由页面决定切到哪个 tab。
+// 滑动联动：三个 tab 在同一个宿主页里由 swiper 承载，页面滑动时
+// 宿主页把「指示块该在哪」传进来（setIndicatorOffset）。
+// **胶囊本身不动**，只有选中项的浅蓝底块跟着滑动——iOS Tab Bar 的观感。
 import { TAB_ICONS_LINE, TAB_ICONS_FILL } from '../utils/tab-icons';
 
 interface TabItem {
@@ -22,47 +23,56 @@ Component({
   data: {
     selected: 0,
     list: [
-      // 该页已由「保养」改为全局「概览」面板（保养提醒作为其中一个区块）
-      { pagePath: '/pages/reminder/index', text: '概览', icon: 'overview' },
-      { pagePath: '/pages/index/index', text: '车辆', icon: 'car' },
-      { pagePath: '/pages/user/index', text: '我的', icon: 'user' }
+      // 三个 tab 都在宿主页（pages/tab-host）里，由 swiper 承载，
+      // 所以 pagePath 都指向宿主页；点击时通知宿主页切 swiper。
+      { pagePath: '/pages/tab-host/index', text: '概览', icon: 'overview' },
+      { pagePath: '/pages/tab-host/index', text: '车辆', icon: 'car' },
+      { pagePath: '/pages/tab-host/index', text: '我的', icon: 'user' }
     ] as TabItem[],
     // WXML 里不能直接引用 import 的常量，必须经 data 传入
     lineIcons: TAB_ICONS_LINE,
     fillIcons: TAB_ICONS_FILL,
-    /** 胶囊横向位移（px），滑动时跟随手指 */
-    offsetX: 0,
-    /** 滑动中：禁用胶囊底的高亮切换，等松手后再定 */
-    dragging: false
+    /** 指示块的横向偏移（px），滑动时跟随 */
+    indicatorOffset: 0,
+    /** 指示块当前覆盖的 tab（用于高亮图标） */
+    indicatorIndex: 0
   },
   methods: {
-    switchTab(e: WechatMiniprogram.TouchEvent) {
-      const path = e.currentTarget.dataset.path as string;
-      const index = Number(e.currentTarget.dataset.index);
-      if (!path) return;
-      wx.switchTab({ url: path });
-      this.setData({ selected: index, offsetX: 0, dragging: false });
-    },
     /**
-     * 页面滑动时调用：更新胶囊位移。
+     * 点击底部栏某个 tab。
      *
-     * progress 是连续进度（0~2），本方法换算成像素位移。
-     * 换算逻辑放在 utils/tab-swipe（页面与组件共用同一套步长定义）。
+     * 三个 tab 现在都在宿主页（pages/tab-host）里，由 swiper 承载，
+     * 所以这里不是 wx.switchTab，而是通知宿主页把 swiper 滑过去。
+     * 宿主页不存在时（异常兜底）退回 switchTab。
      */
-    setSwipeOffset(progress: number, step: number, maxOffset: number) {
-      const raw = (progress - this.data.selected) * step;
-      const abs = Math.abs(raw);
-      let diff = raw;
-      if (abs > maxOffset) {
-        // 超出部分做阻尼，且始终不超过 maxOffset 的 1.15 倍
-        const capped = Math.min(maxOffset + (abs - maxOffset) * 0.25, maxOffset * 1.15);
-        diff = raw > 0 ? capped : -capped;
+    switchTab(e: WechatMiniprogram.TouchEvent) {
+      const index = Number(e.currentTarget.dataset.index);
+      const path = e.currentTarget.dataset.path as string;
+      if (typeof index !== 'number' || index < 0) return;
+
+      const pages = getCurrentPages();
+      const host = pages[pages.length - 1] as any;
+
+      if (host && typeof host.switchToTab === 'function') {
+        host.switchToTab(index);
+        this.setData({ selected: index, indicatorIndex: index });
+        return;
       }
-      this.setData({ offsetX: diff, dragging: true });
+
+      // 兜底：宿主页拿不到时走原生切页
+      if (path) {
+        wx.switchTab({ url: path });
+        this.setData({ selected: index, indicatorIndex: index });
+      }
     },
-    /** 页面松手：复位或落位 */
-    endSwipe(offsetX: number) {
-      this.setData({ offsetX, dragging: false });
+
+    /**
+     * 宿主页调用：更新指示块位置与高亮项。
+     *
+     * 滑动过程中连续调用，指示块因此能跟手移动。
+     */
+    setIndicatorOffset(offset: number, index: number) {
+      this.setData({ indicatorOffset: offset, indicatorIndex: index });
     }
   }
 });

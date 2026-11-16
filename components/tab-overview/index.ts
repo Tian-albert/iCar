@@ -8,9 +8,7 @@ import {
   toIntegerPercents,
   OverviewSnapshot
 } from '../../services/overview.service';
-import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { renderDonut, computeDonutLayout, DonutSegment } from '../../utils/chart-render';
-import { createTabSwipeHandlers, TAB_PATHS } from '../../utils/tab-swipe-page';
 
 /** 环图逻辑尺寸（px，375 屏宽下 104px ≈ 208rpx） */
 const DONUT_SIZE = 104;
@@ -73,7 +71,7 @@ function daysAgoText(days: number | null): string {
   return `${days} 天前`;
 }
 
-Page({
+Component({
   data: {
     hasCar: false,
     carCount: 0,
@@ -93,31 +91,27 @@ Page({
     mainCarId: ''
   },
 
-  // 横向滑动：底部栏胶囊跟手，松手切换相邻 tab
-  ...createTabSwipeHandlers({ index: 0, count: 3, paths: TAB_PATHS }),
+  lifetimes: {
+    attached() {
+      // 组件挂载即拉一次数据；之后每次切到本 tab 由宿主页调 onShown 刷新
+      (this as any).load();
+    }
+  },
 
-  onShareAppMessage() {
-    return buildShareMessage({ highlight: this.shareHighlight() });
-  },
-  onShareTimeline() {
-    return buildTimelineMessage({ highlight: this.shareHighlight() });
-  },
-  shareHighlight(): string {
+  methods: {
+  /** 供宿主页取分享内容（组件内不能直接接管页面分享） */
+  getShareHighlight(): string {
     if (!this.data.hasCar) return '';
     return `今年已记 ${this.data.yearTotalText} 元，${this.data.carCount} 辆车一目了然`;
   },
 
-  onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      // 复位胶囊位移：从别处滑回来时不应停在半路
-      this.getTabBar().setData({ selected: 0, offsetX: 0, dragging: false });
-    }
-    enableShareMenu();
+  /**
+   * 宿主页在 swiper 切到本组件时调用：刷新数据并重绘环图。
+   *
+   * 组件没有 onShow，必须由宿主页主动通知，否则切回来时数据是旧的。
+   */
+  onShown() {
     this.load();
-  },
-
-  onReady() {
-    this.drawDonut();
   },
 
   load() {
@@ -253,5 +247,6 @@ Page({
 
   onAddCar() {
     wx.navigateTo({ url: '/pages/vehicle-form/index' });
+  }
   }
 });

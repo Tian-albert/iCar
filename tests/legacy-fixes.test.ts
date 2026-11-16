@@ -145,7 +145,7 @@ describe('③ 内联色值集中在 utils/tokens', () => {
     const files = [
       'pages/category-manage/index.wxml',
       'pages/maintain-item-form/index.wxml',
-      'pages/user/index.wxml',
+      'components/tab-profile/index.wxml',
       'pages/icon-crop/index.wxml'
     ];
     for (const f of files) {

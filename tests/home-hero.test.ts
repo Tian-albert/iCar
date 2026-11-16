@@ -106,8 +106,8 @@ describe('主车选择：置顶优先，否则第一辆', () => {
 });
 
 describe('置顶功能必须有 UI 入口（曾因重写页面丢失）', () => {
-  const wxml = require('fs').readFileSync('pages/index/index.wxml', 'utf-8') as string;
-  const ts = require('fs').readFileSync('pages/index/index.ts', 'utf-8') as string;
+  const wxml = require('fs').readFileSync('components/tab-vehicles/index.wxml', 'utf-8') as string;
+  const ts = require('fs').readFileSync('components/tab-vehicles/index.ts', 'utf-8') as string;
 
   it('页面存在 onTogglePin 方法', () => {
     expect(ts).toContain('onTogglePin');
@@ -321,7 +321,7 @@ describe('保养摘要取值规则', () => {
 });
 
 describe('Hero 动作区的跳转目标', () => {
-  const ts: string = require('fs').readFileSync('pages/index/index.ts', 'utf-8');
+  const ts: string = require('fs').readFileSync('components/tab-vehicles/index.ts', 'utf-8');
 
   it('「保养」进保养项管理页', () => {
     const block = /onOpenMaintain\(\)[\s\S]{0,600}?\n  \},/.exec(ts);

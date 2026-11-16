@@ -159,7 +159,7 @@ describe('导出尺寸：取样区必须用物理像素', () => {
 describe('版本号一致性', () => {
   it('四个位置版本号一致', () => {
     const about = fsx.readFileSync('pages/about/index.ts', 'utf-8');
-    const user = fsx.readFileSync('pages/user/index.wxml', 'utf-8');
+    const user = fsx.readFileSync('components/tab-profile/index.wxml', 'utf-8');
     const io = fsx.readFileSync('services/io.service.ts', 'utf-8');
     const pkg = JSON.parse(fsx.readFileSync('package.json', 'utf-8'));
 

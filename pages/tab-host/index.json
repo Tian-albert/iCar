@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "iCar",
+  "usingComponents": {
+    "tab-overview": "/components/tab-overview/index",
+    "tab-vehicles": "/components/tab-vehicles/index",
+    "tab-profile": "/components/tab-profile/index"
+  }
+}

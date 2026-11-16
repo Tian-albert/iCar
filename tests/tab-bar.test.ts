@@ -60,9 +60,12 @@ describe('图标：手绘 SVG 而非 emoji', () => {
 });
 
 describe('组件：按选中态切换图标', () => {
-  it('WXML 用 image 渲染并在选中时切换', () => {
+  it('WXML 用 image 渲染，高亮由 indicatorIndex 决定', () => {
     expect(wxml).toContain('<image');
-    expect(wxml).toContain('selected === index ? fillIcons[item.icon] : lineIcons[item.icon]');
+    // 高亮项由指示块的位置决定（滑动时连续变化），不再是固定的 selected
+    expect(wxml).toContain(
+      'indicatorIndex === index ? fillIcons[item.icon] : lineIcons[item.icon]'
+    );
     expect(wxml).toContain('mode="aspectFit"');
   });
 
@@ -108,21 +111,35 @@ describe('形态：悬浮胶囊 + 毛玻璃', () => {
     expect(wxss).toContain('env(safe-area-inset-bottom)');
   });
 
-  it('选中项有淡蓝胶囊底与高亮文字', () => {
-    expect(wxss).toMatch(/\.tab-active \{[\s\S]{0,120}background:/);
-    expect(wxss).toMatch(/\.tab-active \.tab-text \{[\s\S]{0,120}#3B6FF6/);
+  it('指示块是独立的绝对定位元素（不推动图标布局）', () => {
+    expect(wxss).toMatch(/\.tab-indicator \{[\s\S]{0,200}position:\s*absolute/);
+    expect(wxml).toContain('class="tab-indicator"');
   });
 
-  it('选中态底色是半透明淡蓝（不是实心蓝块）', () => {
-    const m = wxss.match(/\.tab-active \{[\s\S]{0,120}?background:\s*([^;]+);/);
+  it('指示块用 transform 横向位移（跟手）', () => {
+    expect(wxml).toContain('transform: translateX({{indicatorOffset}}px)');
+  });
+
+  it('指示块底色是半透明淡蓝（不是实心蓝块）', () => {
+    const m = wxss.match(/\.tab-indicator \{[\s\S]{0,400}?background:\s*([^;]+);/);
     expect(m).toBeTruthy();
     expect(m![1]).toContain('rgba');
     expect(m![1]).toContain('0.1');
   });
+
+  it('高亮文字与图标用独立类，胶囊本身不移动', () => {
+    expect(wxss).toMatch(/\.tab-text-on \{[\s\S]{0,120}#3B6FF6/);
+    // 胶囊不参与位移：位移只在指示块上
+    expect(wxss).not.toMatch(/\.tab-bar \{[\s\S]{0,900}transform:/);
+  });
 });
 
 describe('页面底部留白与悬浮胶囊匹配', () => {
-  const pages = ['pages/reminder/index.wxss', 'pages/index/index.wxss', 'pages/user/index.wxss'];
+  const pages = [
+    'components/tab-overview/index.wxss',
+    'components/tab-vehicles/index.wxss',
+    'components/tab-profile/index.wxss'
+  ];
 
   for (const p of pages) {
     it(`${p} 预留了胶囊高度 + 安全区`, () => {

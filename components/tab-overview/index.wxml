@@ -1,0 +1,96 @@
+<!-- 概览 Tab 内容（组件）：由宿主页的 swiper 承载 -->
+<scroll-view class="page-scroll" scroll-y="{{true}}" enable-flex="{{true}}">
+  <view class="page">
+    <block wx:if="{{hasCar}}">
+      <!-- A 全局指标条 -->
+      <view class="head-line">{{carCount}} 辆车 · 总里程 {{totalMileageText}} km</view>
+      <view class="metrics">
+        <view class="m-cell">
+          <view class="m-val">¥{{monthCostText}}</view>
+          <view class="m-lbl">本月总支出</view>
+        </view>
+        <view class="m-cell {{pendingCount > 0 ? 'm-warn' : ''}}">
+          <view class="m-val">{{pendingCount}}</view>
+          <view class="m-lbl">待保养</view>
+        </view>
+        <view class="m-cell">
+          <view class="m-val m-val-sm">{{lastRecordText}}</view>
+          <view class="m-lbl">最近记账</view>
+        </view>
+      </view>
+
+      <!-- E 漏记提醒（弱提示，不用红色） -->
+      <view wx:if="{{stale}}" class="stale">
+        <text class="stale-ic">🕒</text>
+        <text>{{stale.carName}} 已 {{stale.days}} 天没记账了</text>
+      </view>
+
+      <!-- B 保养总览（全部车） -->
+      <view class="sec-title">保养提醒</view>
+      <view class="card">
+        <view wx:if="{{maintain.length === 0}}" class="mnt-empty">所有保养项都在周期内</view>
+        <view
+          wx:for="{{maintain}}"
+          wx:key="key"
+          class="mnt-row"
+          hover-class="hover-dim"
+          data-car="{{item.carSourceId}}"
+          bindtap="onTapMaintain">
+          <text class="mnt-car">{{item.carName}}</text>
+          <text class="mnt-name">{{item.name}}</text>
+          <text class="mnt-remain {{item.level}}">{{item.remainText}}</text>
+          <text class="go">›</text>
+        </view>
+        <view wx:if="{{pendingCount > 0}}" class="mnt-all" hover-class="hover-dim" bindtap="onManageMaintain">
+          管理保养项 ›
+        </view>
+      </view>
+
+      <!-- C 今年花费 · 按车 -->
+      <view class="sec-title">今年花费 · 按车</view>
+      <view class="card">
+        <view class="cost-wrap">
+          <!-- 无支出时收起画布但不卸载：节点保留，数据回来后仍可直接绘制 -->
+          <canvas type="2d" id="overviewDonut" class="donut-canvas {{hasYearCost ? '' : 'donut-idle'}}"></canvas>
+          <view wx:if="{{hasYearCost}}" class="legend">
+            <view wx:for="{{carCosts}}" wx:key="carSourceId" class="lg-row">
+              <view class="lg-dot" style="background: {{item.color}};"></view>
+              <text class="lg-name">{{item.carName}}</text>
+              <text class="lg-val">¥{{item.amountText}}</text>
+              <text class="lg-pct">{{item.percentText}}</text>
+            </view>
+          </view>
+          <view wx:else class="cost-empty">今年还没有支出记录，记一笔后即可查看各车花费占比</view>
+        </view>
+      </view>
+
+      <!-- D 最近记录（跨车流水，3 条） -->
+      <view class="sec-title">最近记录</view>
+      <view class="card">
+        <view wx:if="{{recent.length === 0}}" class="mnt-empty">还没有记录，去「车辆」页记一笔</view>
+        <view
+          wx:for="{{recent}}"
+          wx:key="key"
+          class="rec-row"
+          hover-class="hover-dim"
+          data-car="{{item.carSourceId}}"
+          data-section="{{item.section}}"
+          bindtap="onTapRecord">
+          <text class="rec-date">{{item.dateText}}</text>
+          <text class="rec-car">{{item.carName}}</text>
+          <text class="rec-type">{{item.typeLabel}}</text>
+          <text class="rec-amt">¥{{item.amountText}}</text>
+          <text class="go">›</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 空态 -->
+    <view wx:else class="empty-state">
+      <view class="empty-state-icon">🚗</view>
+      <view class="empty-state-title">还没有车辆</view>
+      <view class="empty-state-desc">先添加你的爱车，开始记录加油、保养与支出</view>
+      <view class="empty-state-action" hover-class="hover-dim" bindtap="onAddCar">＋ 添加车辆</view>
+    </view>
+  </view>
+</scroll-view>
