@@ -44,9 +44,10 @@ describe('导出在受限环境下给出可操作提示', () => {
     expect(ts).toContain('accessSync');
     // 必须比对实际调用（wx.shareFileMessage({），否则会命中前面 canIUse 里的同名文本
     const write = ts.indexOf('writeFileSync');
-    const access = ts.indexOf('accessSync');
     const share = ts.indexOf('wx.shareFileMessage({');
     expect(write).toBeGreaterThan(0);
+    // 写文件之后、调用分享之前，必须有一次 accessSync 校验
+    const access = ts.indexOf('accessSync', write);
     expect(access).toBeGreaterThan(write);
     expect(share).toBeGreaterThan(access);
   });
@@ -54,10 +55,52 @@ describe('导出在受限环境下给出可操作提示', () => {
   it('用户取消分享不弹错误', () => {
     expect(ts).toMatch(/indexOf\('cancel'\)/);
   });
+});
 
-  it('分享失败时提供「保存到手机」兜底', () => {
+describe('「保存」按平台分流（saveFileToDisk 仅 PC 端支持）', () => {
+  it('检测 PC 端并按平台给不同文案', () => {
+    expect(ts).toContain('isPc');
+    expect(ts).toContain("info.platform === 'windows'");
+    expect(ts).toContain('保存到电脑');
+    expect(ts).toContain('再次发送备份');
+  });
+
+  it('saveFileToDisk 只在 PC 分支调用，不再作为手机端兜底', () => {
     expect(ts).toContain('saveFileToDisk');
-    expect(wxml).toContain('保存到手机');
+    // 手机端若还调它，必然失败——这正是上一版「保存到手机」报错的原因
+    const pcBranch = ts.slice(ts.indexOf('if (this.data.isPc)'));
+    const nextFn = pcBranch.indexOf('reshare(');
+    expect(nextFn).toBeGreaterThan(0);
+    // PC 分支里才有 saveToDisk，手机分支走 reshare
+    expect(pcBranch.slice(0, nextFn)).toContain('this.saveToDisk');
+  });
+
+  it('手机端走「再次发送」，把文件发到聊天记录', () => {
+    expect(ts).toMatch(/reshare\(filePath/);
+    expect(ts).toMatch(/reshare\(filePath: string[\s\S]{0,200}shareFileMessage/);
+  });
+
+  it('页面不再出现「保存到手机」（该能力在手机上不存在）', () => {
+    expect(wxml).not.toContain('保存到手机');
+    // 按钮文案是变量，具体值由 TS 按平台给
+    expect(wxml).toContain('{{saveLabel}}');
+  });
+
+  it('按钮常驻：导出后写入本地记录，重进页面能找回', () => {
+    expect(ts).toContain('LAST_FILE_KEY');
+    expect(ts).toContain('setStorageSync');
+    expect(ts).toContain('getStorageSync');
+  });
+
+  it('文件被系统清理时给出明确提示并清空按钮', () => {
+    expect(ts).toMatch(/文件已失效/);
+    expect(ts).toMatch(/lastFilePath: ''/);
+  });
+
+  it('不使用 openDocument 预览（json 不在其类型白名单内）', () => {
+    // 官方 fileType 仅支持 doc/docx/xls/xlsx/ppt/pptx/pdf，按 txt 打开会类型报错。
+    // 只匹配调用，注释里提到该 API 不算
+    expect(ts).not.toMatch(/wx\.openDocument\s*\(/);
   });
 });
 

@@ -4,7 +4,8 @@
     <view class="tip">生成一个备份文件并发送到聊天（建议发给「文件传输助手」长期保存）。</view>
     <view class="tip">自定义图标不会被导出，恢复时会换成对应的预设图标。</view>
     <button class="btn-primary" bindtap="onExportFile">导出备份文件</button>
-    <button wx:if="{{lastFilePath}}" class="btn-secondary file-btn" bindtap="onSaveToPhone">保存到手机</button>
+    <button wx:if="{{lastFilePath}}" class="btn-secondary file-btn" bindtap="onSaveToPhone">{{saveLabel}}</button>
+    <view wx:if="{{lastFilePath && !isPc}}" class="tip">手机上无法直接写入文件管理器（微信限制）。建议把备份发到「文件传输助手」长期保存。</view>
   </view>
 
   <view class="card">

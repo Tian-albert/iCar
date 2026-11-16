@@ -10,6 +10,9 @@ import { ensurePrivacyAuthorize } from '../../utils/privacy';
 const FILE_PREFIX = 'iCar-backup-';
 const FILE_EXT = 'json';
 
+/** 记录最近一次导出的文件路径，供按钮常驻显示（页面重进也能找回） */
+const LAST_FILE_KEY = 'icar:last-backup';
+
 /** 是否在微信开发者工具中（shareFileMessage 在此环境不可用） */
 function isDevTools(): boolean {
   try {
@@ -20,11 +23,41 @@ function isDevTools(): boolean {
   }
 }
 
+/** 是否 PC 端微信（只有 PC 端才有「另存为」能力） */
+function isPc(): boolean {
+  try {
+    const info = wx.getSystemInfoSync();
+    return info.platform === 'windows' || info.platform === 'mac';
+  } catch (e) {
+    return false;
+  }
+}
+
 Page({
   data: {
-    /** 最近一次导出生成的文件路径，供「保存到手机」使用 */
+    /** 最近一次导出生成的文件路径，供「保存/打开」使用 */
     lastFilePath: '',
-    lastFileName: ''
+    lastFileName: '',
+    /** PC 端才有真正的「另存为」；手机端只能发到聊天 */
+    isPc: false,
+    /** 按钮文案随平台变化，避免给用户不可能的预期 */
+    saveLabel: '再次发送备份'
+  },
+
+  onLoad() {
+    const pc = isPc();
+    this.setData({ isPc: pc, saveLabel: pc ? '保存到电脑' : '再次发送备份' });
+
+    // 找回上次导出的文件，让按钮常驻（文件被清理时自动隐藏）
+    try {
+      const saved = wx.getStorageSync(LAST_FILE_KEY);
+      if (saved && saved.path) {
+        wx.getFileSystemManager().accessSync(saved.path);
+        this.setData({ lastFilePath: saved.path, lastFileName: saved.name || '' });
+      }
+    } catch (e) {
+      // 文件已不存在，忽略
+    }
   },
 
   /**
@@ -84,6 +117,11 @@ Page({
     }
 
     this.setData({ lastFilePath: filePath, lastFileName: fileName });
+    try {
+      wx.setStorageSync(LAST_FILE_KEY, { path: filePath, name: fileName });
+    } catch (e) {
+      // 记录失败不影响导出本身
+    }
 
     wx.shareFileMessage({
       filePath,
@@ -95,41 +133,81 @@ Page({
         const msg = String((err && (err as any).errMsg) || '');
         // 用户主动取消不算失败，别弹错误
         if (msg.indexOf('cancel') >= 0) return;
-
-        // 分享失败时，至少让用户能把文件留下来（微信的「保存到手机」入口）
-        wx.showModal({
-          title: '分享未完成',
-          content:
-            '文件已生成在本机，但没能调起分享。可点击「保存到手机」把文件存下来，再自行发送。',
-          confirmText: '保存到手机',
-          success: r => {
-            if (!r.confirm) return;
-            this.saveToAlbum(filePath);
-          }
-        });
+        wx.showToast({ title: '发送失败，可点下方按钮再处理', icon: 'none' });
       }
     });
   },
 
-  /** 兜底：把备份文件保存到手机（用户可自行在文件管理里找到并发送） */
-  saveToAlbum(filePath: string) {
+  /**
+   * 处理已生成的备份文件。按平台分流，因为两端能力根本不同：
+   *
+   * - **PC 端**：`wx.saveFileToDisk` 支持，弹系统「另存为」，真正落到电脑磁盘。
+   * - **手机端**：该接口**不支持**（官方文档原文「仅在 PC 端支持」）。
+   *   小程序运行在沙箱里，没有任何 API 能把文件写进系统文件管理器，
+   *   `wx.openDocument` 的类型白名单也不含 json，无法预览。
+   *   手机上唯一能把文件带出去的路径就是**发到聊天**（文件传输助手），
+   *   所以按钮做成「再次发送」，而不是给一个注定失败的「保存到手机」。
+   */
+  onSaveToPhone() {
+    const filePath = this.data.lastFilePath;
     if (!filePath) {
-      wx.showToast({ title: '请先导出', icon: 'none' });
+      wx.showToast({ title: '请先导出备份', icon: 'none' });
       return;
     }
+
+    // 文件可能已被系统清理（沙箱空间不足时微信会自动回收）
+    try {
+      wx.getFileSystemManager().accessSync(filePath);
+    } catch (e) {
+      wx.showModal({
+        title: '文件已失效',
+        content: '备份文件已被系统清理，请重新导出。',
+        showCancel: false,
+        success: () => this.setData({ lastFilePath: '', lastFileName: '' })
+      });
+      return;
+    }
+
+    if (this.data.isPc) {
+      this.saveToDisk(filePath);
+      return;
+    }
+    this.reshare(filePath, this.data.lastFileName);
+  },
+
+  /** PC 端：调起系统「另存为」 */
+  saveToDisk(filePath: string) {
     if (!wx.saveFileToDisk) {
-      wx.showToast({ title: '当前微信版本不支持保存', icon: 'none' });
+      wx.showToast({ title: '当前微信版本不支持另存为', icon: 'none' });
       return;
     }
     wx.saveFileToDisk({
       filePath,
-      success: () => wx.showToast({ title: '已保存到手机', icon: 'none' }),
-      fail: () => wx.showToast({ title: '保存失败', icon: 'none' })
+      success: () => wx.showToast({ title: '已保存到电脑', icon: 'none' }),
+      fail: err => {
+        const msg = String((err && (err as any).errMsg) || '');
+        if (msg.indexOf('cancel') >= 0) return;
+        wx.showToast({ title: '保存失败，请改用「导出备份文件」', icon: 'none' });
+      }
     });
   },
 
-  onSaveToPhone() {
-    this.saveToAlbum(this.data.lastFilePath);
+  /** 手机端：再次调起分享，把备份文件发到聊天记录 */
+  reshare(filePath: string, fileName: string) {
+    if (!wx.canIUse('shareFileMessage')) {
+      wx.showToast({ title: '当前微信版本不支持发送文件', icon: 'none' });
+      return;
+    }
+    wx.shareFileMessage({
+      filePath,
+      fileName: fileName || undefined,
+      success: () => wx.showToast({ title: '已发送', icon: 'none' }),
+      fail: err => {
+        const msg = String((err && (err as any).errMsg) || '');
+        if (msg.indexOf('cancel') >= 0) return;
+        wx.showToast({ title: '发送失败，请重试', icon: 'none' });
+      }
+    });
   },
 
   /** 从聊天记录选择备份文件并恢复 */
