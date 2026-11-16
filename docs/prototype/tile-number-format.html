@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图块大数字：万/百万 与 降字号 方案对比</title>
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --divider:#F0F1F4; --fill:#F2F3F5;
+    --c1:#3B82F6; --c2:#22C55E; --c3:#F59E0B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:24px 14px 48px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:22px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:330px;flex-shrink:0;}
+  h2{font-size:13.5px;font-weight:600;margin-bottom:4px;}
+  .badge{display:inline-block;font-size:9px;padding:1.5px 6px;border-radius:5px;
+    font-weight:600;margin-left:5px;vertical-align:middle;}
+  .badge.best{background:#E4F6EA;color:#1E7F3C;}
+  .badge.alt{background:#E3EAF8;color:#3B6FF6;}
+  .badge.warn{background:#FFF3E0;color:#8A5300;}
+  .sub-desc{font-size:11px;color:var(--t2);line-height:1.65;margin-bottom:10px;min-height:32px;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .tile{
+    background:var(--card);border-radius:16px;padding:12px 12px 11px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);
+    position:relative;overflow:hidden;
+  }
+  .tile-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;
+    border-radius:16px 0 0 16px;}
+  .t-head{display:flex;align-items:center;gap:6px;margin-bottom:9px;}
+  .t-ic{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;
+    justify-content:center;font-size:12px;flex-shrink:0;}
+  .t-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .t-days{flex-shrink:0;font-size:9px;color:var(--t3);background:var(--fill);
+    padding:2px 5px;border-radius:7px;line-height:1.3;white-space:nowrap;}
+  .t-main{display:flex;align-items:baseline;}
+  .t-cost{font-size:20px;font-weight:700;letter-spacing:-.5px;line-height:1;}
+  .t-per{font-size:10.5px;font-weight:500;color:var(--t3);margin-left:1px;}
+  .t-divider{height:1px;background:var(--divider);margin:9px 0 8px;}
+
+  .t-foot{display:flex;align-items:flex-start;}
+  .t-group{flex:1;min-width:0;}
+  .t-v{font-weight:600;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;line-height:1.25;}
+  .t-k{font-size:9.5px;color:var(--t3);margin-top:2px;line-height:1.2;}
+  .t-vline{width:1px;height:22px;background:var(--divider);
+    flex-shrink:0;align-self:center;margin:0 6px;}
+
+  .scen{font-size:10.5px;color:#8A93A6;padding:8px 0 4px;font-weight:600;
+    letter-spacing:.3px;}
+
+  .note{font-size:11px;color:#5A6272;line-height:1.85;margin-top:10px;
+    padding:10px 12px;background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .note code{background:#F2F3F5;padding:0 4px;border-radius:3px;font-size:10.5px;}
+  .pro{color:#1E7F3C;} .con{color:#B4471A;}
+  .warnbox{background:#FFF4E5 !important;color:#8A5300;}
+  .warnbox b{color:#7A4A00;}
+
+  table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:8px;}
+  th,td{padding:5px 6px;text-align:left;border-bottom:1px solid #F0F1F4;
+    vertical-align:top;line-height:1.5;}
+  th{color:#8A93A6;font-weight:600;font-size:10px;}
+  td code{background:#F2F3F5;padding:0 3px;border-radius:3px;font-size:10px;}
+  .bad{color:#B4471A;}
+  .good{color:#1E7F3C;}
+</style>
+</head>
+<body>
+
+<!-- ============ 方案 A ============ -->
+<div class="col">
+  <h2>方案 A · 分段阈值<span class="badge best">推荐</span></h2>
+  <div class="sub-desc">
+    金额 &lt; 10万 用完整千分位（保精度），≥ 10万 转「万」并用 2 位小数。<br>
+    里程同规则，阈值 10万 km。
+  </div>
+
+  <div class="scen">▍小数据（常见）</div>
+  <div class="grid" id="a-small"></div>
+
+  <div class="scen">▍中数据（豪车 / 多年）</div>
+  <div class="grid" id="a-mid"></div>
+
+  <div class="scen">▍大数据（极值）</div>
+  <div class="grid" id="a-big"></div>
+
+  <div class="note">
+    <span class="pro">好</span>：99,999 以内保持<b>精确值</b>（用户最想看准数），
+    超过才压缩；压缩后最多 7 个字符，<b>三档都不溢出</b>。<br>
+    <span class="con">代价</span>：边界处会有跳变 —— 99,999 显示 <code>￥99,999</code>，
+    100,000 突然变 <code>￥10万</code>。但这是可接受的，因为跨过 10 万本身就是量级变化。
+  </div>
+</div>
+
+<!-- ============ 方案 B ============ -->
+<div class="col">
+  <h2>方案 B · 早启用「万」<span class="badge warn">精度损失</span></h2>
+  <div class="sub-desc">
+    ≥ 1万 就用万：<code>￥2.85万</code>。所有数字都很短，但小数据失去精确值。
+  </div>
+
+  <div class="scen">▍小数据（常见）</div>
+  <div class="grid" id="b-small"></div>
+
+  <div class="scen">▍中数据</div>
+  <div class="grid" id="b-mid"></div>
+
+  <div class="scen">▍大数据</div>
+  <div class="grid" id="b-big"></div>
+
+  <div class="note">
+    <span class="pro">好</span>：宽度最稳定，任何量级都不溢出。<br>
+    <span class="con">差</span>：<code>￥28,450</code> 变成 <code>￥2.85万</code>，
+    <b>用户看不到准确金额</b>；而记账类应用里「准确」比「简短」重要。
+    另外 2.85 万 = 28,500，与 28,450 差 50 元，容易被当成记账误差。
+  </div>
+</div>
+
+<!-- ============ 方案 C ============ -->
+<div class="col">
+  <h2>方案 C · 不换单位，自动降字号<span class="badge alt">保精度</span></h2>
+  <div class="sub-desc">
+    数字一律完整千分位，过宽时把字号从 11.5px 降到 10.5 / 9.5。
+  </div>
+
+  <div class="scen">▍小数据（11.5px）</div>
+  <div class="grid" id="c-small"></div>
+
+  <div class="scen">▍中数据（10.5px）</div>
+  <div class="grid" id="c-mid"></div>
+
+  <div class="scen">▍大数据（9.5px，几乎到极限）</div>
+  <div class="grid" id="c-big"></div>
+
+  <div class="note">
+    <span class="pro">好</span>：始终显示<b>精确值</b>，不牺牲可读性语义。<br>
+    <span class="con">差</span>：<b>同屏字号不一致</b> —— 两辆车一辆 11.5px、一辆 9.5px，
+    并排看很乱；再大就降不动了（9px 已是下限），
+    7 位数仍会溢出。<b>只能当兜底，不能当主方案。</b>
+  </div>
+</div>
+
+<!-- ============ 规则与建议 ============ -->
+<div class="col" style="width:390px;">
+  <h2>推荐规则（A + C 兜底）</h2>
+
+  <div class="note">
+    <b>金额</b>
+    <table>
+      <tr><th>范围</th><th>显示</th><th>例</th></tr>
+      <tr><td>&lt; 100,000</td><td>完整千分位</td><td><code>￥28,450</code></td></tr>
+      <tr><td>100,000 ~ 99,999,999</td><td>万，最多 2 位小数，去尾 0</td><td><code>￥12.85万</code> / <code>￥10万</code></td></tr>
+      <tr><td>≥ 1 亿</td><td>亿，2 位小数</td><td><code>￥1.28亿</code></td></tr>
+    </table>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>里程</b>
+    <table>
+      <tr><th>范围</th><th>显示</th><th>例</th></tr>
+      <tr><td>&lt; 100,000</td><td>完整千分位 + km</td><td><code>46,500 km</code></td></tr>
+      <tr><td>100,000 ~ 99,999,999</td><td>万 km，最多 2 位小数</td><td><code>12.35万 km</code> / <code>46.5万 km</code></td></tr>
+      <tr><td>≥ 1 亿</td><td>亿 km</td><td><code>1.28亿 km</code></td></tr>
+    </table>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>每公里成本（5 号那个大数字）</b>
+    <table>
+      <tr><th>情况</th><th>显示</th><th>例</th></tr>
+      <tr><td>常规</td><td>固定 2 位小数</td><td><code>￥0.61</code></td></tr>
+      <tr><td>&lt; 0.01（里程极大）</td><td>保留 3 位</td><td><code>￥0.008</code></td></tr>
+      <tr><td>≥ 10（豪车 / 短里程）</td><td>1 位小数</td><td><code>￥12.5</code></td></tr>
+    </table>
+    <div style="margin-top:6px;color:#B4471A;">
+      注意：若里程为 0（刚建档未记录），<b>除法会得到 Infinity</b>，
+      必须显示 <code>--</code> 并给出「暂无里程」提示，不能显示 ￥Infinity。
+    </div>
+  </div>
+
+  <div class="note warnbox" style="margin-top:10px;">
+    <b>为什么小数据不转「万」</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      这是记账应用，用户对金额<b>精确度敏感</b>。<br>
+      <code>￥28,450</code> 一眼就是准确值；<code>￥2.85万</code> 反而要心算
+      28,500，还可能怀疑是不是少记了 50 元。<br><br>
+      真正需要压缩的是 <b>10 万以上</b>——那时用户对「万」这个量级是自然的。
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>四舍五入的具体做法</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      <code>12.845万</code> 是 <code>￥128,450</code>，2 位小数 → <code>12.85万</code><br>
+      <code>12.804万</code> → <code>12.8万</code>（去掉尾 0，不留 <code>12.80</code>）<br>
+      <code>10.001万</code> → <code>10万</code><br><br>
+      去尾 0 很重要：<code>￥10.00万</code> 比 <code>￥10万</code> 啰嗦且更容易溢出。
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 数据场景 ============ */
+const SCEN = {
+  small: [
+    { name:'CRV', icon:'🚙', color:'#3B82F6', iconBg:'#EEF3FE', days:1240,
+      spend:28450,  driven:46500,  perKm:0.61 },
+    { name:'汉DM-i', icon:'🚗', color:'#22C55E', iconBg:'#E8F7EE', days:920,
+      spend:16340,  driven:33800,  perKm:0.48 }
+  ],
+  mid: [
+    { name:'奔驰GLE', icon:'🚙', color:'#3B82F6', iconBg:'#EEF3FE', days:1820,
+      spend:128450, driven:123500, perKm:1.04 },
+    { name:'保时捷', icon:'🚗', color:'#F59E0B', iconBg:'#FFF3E0', days:2400,
+      spend:964800, driven:86400,  perKm:11.2 }
+  ],
+  big: [
+    { name:'老捷达', icon:'🚙', color:'#3B82F6', iconBg:'#EEF3FE', days:6200,
+      spend:1284500, driven:1234500, perKm:1.04 },
+    { name:'货车',   icon:'🚚', color:'#22C55E', iconBg:'#E8F7EE', days:3600,
+      spend:888800,  driven:986500,  perKm:0.90 }
+  ]
+};
+
+/* ============ 格式化 ============ */
+function trimZero(s) {
+  return s.indexOf('.') >= 0 ? s.replace(/\.?0+$/, '') : s;
+}
+
+/** 金额：<10万 完整；≥10万 用万；≥1亿 用亿 */
+function fmtMoneyA(n) {
+  if (!isFinite(n) || n < 0) return '--';
+  if (n < 100000) return '￥' + Math.round(n).toLocaleString('en-US');
+  if (n < 1e8) return '￥' + trimZero((n / 1e4).toFixed(2)) + '万';
+  return '￥' + trimZero((n / 1e8).toFixed(2)) + '亿';
+}
+
+/** 方案 B：≥1万 就用万 */
+function fmtMoneyB(n) {
+  if (!isFinite(n) || n < 0) return '--';
+  if (n < 10000) return '￥' + Math.round(n).toLocaleString('en-US');
+  if (n < 1e8) return '￥' + trimZero((n / 1e4).toFixed(2)) + '万';
+  return '￥' + trimZero((n / 1e8).toFixed(2)) + '亿';
+}
+
+/** 方案 C：完整千分位 */
+function fmtMoneyC(n) {
+  if (!isFinite(n) || n < 0) return '--';
+  return '￥' + Math.round(n).toLocaleString('en-US');
+}
+
+function fmtKmA(n) {
+  if (!isFinite(n) || n < 0) return '--';
+  if (n < 100000) return Math.round(n).toLocaleString('en-US') + ' km';
+  if (n < 1e8) return trimZero((n / 1e4).toFixed(2)) + '万 km';
+  return trimZero((n / 1e8).toFixed(2)) + '亿 km';
+}
+
+function fmtKmC(n) {
+  if (!isFinite(n) || n < 0) return '--';
+  return Math.round(n).toLocaleString('en-US') + ' km';
+}
+
+/** 每公里成本：常规 2 位；<0.01 保留 3 位；≥10 用 1 位 */
+function fmtPerKm(n) {
+  if (!isFinite(n) || n <= 0) return '--';
+  if (n < 0.01) return n.toFixed(3);
+  if (n >= 10) return n.toFixed(1);
+  return n.toFixed(2);
+}
+
+/* 方案 C 的降字号：按字符显示宽度估算 */
+function fontForC(text) {
+  /* 近似宽度：数字/逗号/点 ≈ 0.58em，￥/万/亿/km 等 ≈ 0.9em */
+  let w = 0;
+  for (const ch of text) {
+    w += /[0-9.,]/.test(ch) ? 0.58 : 0.95;
+  }
+  const maxEm = 128.5 / 11.5;   /* 每组可用约 58.8px，换算成 em */
+  const size = Math.min(11.5, maxEm / w * 11.5);
+  return Math.max(9, Math.floor(size * 2) / 2);  /* 0.5px 为步进，下限 9px */
+}
+
+/* ============ 渲染 ============ */
+function tileHtml(c, opts) {
+  const o = opts || {};
+  const money = o.money(c.spend);
+  const km = o.km(c.driven);
+  const moneySize = o.sizeOf ? o.sizeOf(money) : 11.5;
+  const kmSize = o.sizeOf ? o.sizeOf(km) : 11.5;
+
+  return `<div class="tile">
+    <span class="tile-stripe" style="background:${c.color}"></span>
+    <div class="t-head">
+      <span class="t-ic" style="background:${c.iconBg}">${c.icon}</span>
+      <span class="t-name">${c.name}</span>
+      <span class="t-days">服役${c.days.toLocaleString('en-US')}天</span>
+    </div>
+    <div class="t-main">
+      <span class="t-cost" style="color:${c.color}">￥${fmtPerKm(c.perKm)}</span>
+      <span class="t-per">/km</span>
+    </div>
+    <div class="t-divider"></div>
+    <div class="t-foot">
+      <div class="t-group">
+        <div class="t-v" style="font-size:${moneySize}px">${money}</div>
+        <div class="t-k">总花费</div>
+      </div>
+      <div class="t-vline"></div>
+      <div class="t-group">
+        <div class="t-v" style="font-size:${kmSize}px">${km}</div>
+        <div class="t-k">总里程</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function mount(id, list, opts) {
+  document.getElementById(id).innerHTML = list.map(c => tileHtml(c, opts)).join('');
+}
+
+/* 方案 A */
+mount('a-small', SCEN.small, { money: fmtMoneyA, km: fmtKmA });
+mount('a-mid',   SCEN.mid,   { money: fmtMoneyA, km: fmtKmA });
+mount('a-big',   SCEN.big,   { money: fmtMoneyA, km: fmtKmA });
+
+/* 方案 B */
+mount('b-small', SCEN.small, { money: fmtMoneyB, km: fmtKmA });
+mount('b-mid',   SCEN.mid,   { money: fmtMoneyB, km: fmtKmA });
+mount('b-big',   SCEN.big,   { money: fmtMoneyB, km: fmtKmA });
+
+/* 方案 C：完整数字 + 自动降字号 */
+mount('c-small', SCEN.small, { money: fmtMoneyC, km: fmtKmC, sizeOf: fontForC });
+mount('c-mid',   SCEN.mid,   { money: fmtMoneyC, km: fmtKmC, sizeOf: fontForC });
+mount('c-big',   SCEN.big,   { money: fmtMoneyC, km: fmtKmC, sizeOf: fontForC });
+</script>
+</body>
+</html>

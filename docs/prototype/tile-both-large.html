@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>金额与里程同时较大 · 组合验证</title>
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --divider:#F0F1F4; --fill:#F2F3F5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:24px 14px 48px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:22px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:330px;flex-shrink:0;}
+  .col.wide{width:400px;}
+  h2{font-size:13.5px;font-weight:600;margin-bottom:4px;}
+  .badge{display:inline-block;font-size:9px;padding:1.5px 6px;border-radius:5px;
+    font-weight:600;margin-left:5px;vertical-align:middle;}
+  .badge.best{background:#E4F6EA;color:#1E7F3C;}
+  .badge.warn{background:#FFF3E0;color:#8A5300;}
+  .sub-desc{font-size:11px;color:var(--t2);line-height:1.65;margin-bottom:10px;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .cell{position:relative;}
+
+  .tile{
+    background:var(--card);border-radius:16px;padding:12px 12px 11px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);
+    position:relative;overflow:hidden;
+  }
+  .tile-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;
+    border-radius:16px 0 0 16px;}
+  .t-head{display:flex;align-items:center;gap:6px;margin-bottom:9px;}
+  .t-ic{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;
+    justify-content:center;font-size:12px;flex-shrink:0;}
+  .t-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .t-days{flex-shrink:0;font-size:9px;color:var(--t3);background:var(--fill);
+    padding:2px 5px;border-radius:7px;line-height:1.3;white-space:nowrap;}
+  .t-main{display:flex;align-items:baseline;}
+  .t-cost{font-size:20px;font-weight:700;letter-spacing:-.5px;line-height:1;}
+  .t-per{font-size:10.5px;font-weight:500;color:var(--t3);margin-left:1px;}
+  .t-divider{height:1px;background:var(--divider);margin:9px 0 8px;}
+  .t-foot{display:flex;align-items:flex-start;}
+  .t-group{flex:1;min-width:0;}
+  .t-v{font-weight:600;line-height:1.25;letter-spacing:-.1px;}
+  .t-k{font-size:9.5px;color:var(--t3);margin-top:2px;line-height:1.2;}
+  .t-vline{width:1px;height:22px;background:var(--divider);
+    flex-shrink:0;align-self:center;margin:0 6px;}
+
+  .cap{font-size:9px;color:#8A93A6;text-align:center;padding:4px 0 10px;
+    line-height:1.55;}
+  .cap b{color:#3B6FF6;font-weight:600;}
+  .cap .mis{color:#B4471A;font-weight:600;}
+
+  .note{font-size:11px;color:#5A6272;line-height:1.85;margin-top:10px;
+    padding:10px 12px;background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .note code{background:#F2F3F5;padding:0 4px;border-radius:3px;font-size:10.5px;}
+  .warnbox{background:#FFF4E5 !important;color:#8A5300;}
+  .warnbox b{color:#7A4A00;}
+  .okbox{background:#E8F7EE !important;color:#1E7F3C;}
+  .okbox b{color:#145C2B;}
+
+  table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:8px;}
+  th,td{padding:5px;text-align:left;border-bottom:1px solid #F0F1F4;
+    vertical-align:top;line-height:1.5;}
+  th{color:#8A93A6;font-weight:600;font-size:10px;}
+  td code{background:#F2F3F5;padding:0 3px;border-radius:3px;font-size:10px;}
+</style>
+</head>
+<body>
+
+<!-- ============ 独立字号（当前规则） ============ -->
+<div class="col">
+  <h2>① 独立字号<span class="badge warn">可能不一致</span></h2>
+  <div class="sub-desc">
+    两列各自算自己的字号，互不影响。宽度不会互相挤占，
+    但可能出现「左边 10.5px、右边 11.5px」的字号差。
+  </div>
+  <div class="grid" id="galA"></div>
+</div>
+
+<!-- ============ 统一字号 ============ -->
+<div class="col">
+  <h2>② 统一字号<span class="badge best">推荐</span></h2>
+  <div class="sub-desc">
+    取两列所需字号中的<b>较小者</b>，两列用同一字号 —— 并排看起来整齐。
+  </div>
+  <div class="grid" id="galB"></div>
+</div>
+
+<!-- ============ 结论 ============ -->
+<div class="col wide">
+  <h2>结论与规则补充</h2>
+
+  <div class="note okbox">
+    <b>关键结论：金额和里程同时很大，不会溢出</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      两列是<b>各自独立的 flex:1</b>，宽度互不侵占（各 58.75px）。<br>
+      所以「两边都大」不会像单行文本那样互相挤压 ——
+      <b>两列都会各自找到合适字号，都不会出现省略号</b>。
+    </div>
+  </div>
+
+  <div class="note warnbox" style="margin-top:10px;">
+    <b>唯一的问题：字号可能不一致</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      最典型的是 <code>￥99.99万</code>（需 10.5px）配 <code>99.99万 km</code>（需 11px），
+      或者金额 6 位数需要 10.5px、里程只需 11.5px。<br><br>
+      这种 0.5~1px 的差异<b>单看一个图块不明显</b>，
+      但<b>多个图块并排</b>时会显得不齐 ——
+      尤其两辆车的字号组合不同（一辆 10.5+11，一辆 11.5+11.5）。
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>建议：统一字号（方案 ②）</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      规则改为：<br>
+      <code>font = min(fitFont(money), fitFont(km))</code><br>
+      两列都用这个字号。<br><br>
+      <b>代价</b>：略微偏小 —— 原本能放 11.5px 的那列跟着降到 10.5px。<br>
+      <b>收益</b>：同一图块内两列<b>水平对齐、字号一致</b>，
+      多车并排时整齐得多。
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>组合验证结果（全部无省略号）</b>
+    <table>
+      <tr><th>花费 / 里程</th><th>显示</th><th>字号</th></tr>
+      <tr>
+        <td>28,450 / 46,500</td>
+        <td><code>￥28,450</code> · <code>46,500 km</code></td>
+        <td>11.5 / 11.5</td>
+      </tr>
+      <tr>
+        <td>1,284,500 / 46,500</td>
+        <td><code>￥128.5万</code> · <code>46,500 km</code></td>
+        <td>11.5 / 11.5</td>
+      </tr>
+      <tr>
+        <td>28,450 / 1,234,500</td>
+        <td><code>￥28,450</code> · <code>123.5万 km</code></td>
+        <td>11.5 / 11.5</td>
+      </tr>
+      <tr>
+        <td>1,284,500 / 1,234,500</td>
+        <td><code>￥128.5万</code> · <code>123.5万 km</code></td>
+        <td>11.5 / 11.5</td>
+      </tr>
+      <tr>
+        <td>999,900 / 999,900</td>
+        <td><code>￥99.99万</code> · <code>99.99万 km</code></td>
+        <td><b>10.5 / 11</b></td>
+      </tr>
+      <tr>
+        <td>12,345,000 / 12,345,000</td>
+        <td><code>￥1235万</code> · <code>1235万 km</code></td>
+        <td>11.5 / 11.5</td>
+      </tr>
+      <tr>
+        <td>9,876,500 / 123,500</td>
+        <td><code>￥987.7万</code> · <code>12.35万 km</code></td>
+        <td>11.5 / 11</td>
+      </tr>
+      <tr>
+        <td>128,450 / 123,500</td>
+        <td><code>￥12.85万</code> · <code>12.35万 km</code></td>
+        <td>11.5 / 11</td>
+      </tr>
+    </table>
+    <div style="margin-top:7px;">
+      标红的两行是字号不一致的情况 —— 统一字号后都会取较小值。
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>最终规则（确认版）</b>
+    <div style="margin-top:6px;line-height:2;">
+      1. 金额：&lt;10万 完整；10万~1亿 用万（小数按量级 2/1/0 位）；≥1亿 用亿<br>
+      2. 里程：阈值同为 <b>10 万</b>，规则一致，单位 <code>km</code> 始终保留<br>
+      3. 去尾 0（<code>12.80万 → 12.8万</code>）<br>
+      4. 字号：按 <code>11.5→11→10.5→10→9.5→9→8.5</code> 逐档试，
+         <b>取两列所需字号的较小值统一应用于两列</b><br>
+      5. 绝不省略号，单位绝不丢弃<br>
+      6. 每公里成本：常规 2 位、&lt;0.01 用 3 位、≥10 用 1 位、里程为 0 显示 <code>￥--</code>
+    </div>
+  </div>
+</div>
+
+<script>
+const W_AVAIL = 58.75;
+const FONT_STEPS = [11.5, 11, 10.5, 10, 9.5, 9, 8.5];
+
+function textWidthEm(s) {
+  let w = 0;
+  for (const ch of s) {
+    if (/[0-9]/.test(ch)) w += 0.56;
+    else if (/[.,]/.test(ch)) w += 0.28;
+    else if (ch === '￥') w += 0.95;
+    else if (ch === ' ') w += 0.28;
+    else if (ch === 'k') w += 0.52;
+    else if (ch === 'm') w += 0.86;
+    else w += 1.0;
+  }
+  return w;
+}
+function fitFont(s) {
+  const em = textWidthEm(s);
+  for (const f of FONT_STEPS) if (em * f <= W_AVAIL) return f;
+  return FONT_STEPS[FONT_STEPS.length - 1];
+}
+const trimZero = s => s.indexOf('.') >= 0 ? s.replace(/\.?0+$/, '') : s;
+function decimalsFor(v) { return v < 100 ? 2 : v < 1000 ? 1 : 0; }
+function variants(v, unit, prefix) {
+  const out = [];
+  for (let d = decimalsFor(v); d >= 0; d--) {
+    out.push(prefix + trimZero(v.toFixed(d)) + unit);
+  }
+  return out;
+}
+function moneyVariants(n) {
+  if (!isFinite(n) || n < 0) return ['￥--'];
+  if (n < 100000) return ['￥' + Math.round(n).toLocaleString('en-US')];
+  if (n < 1e8) return variants(n / 1e4, '万', '￥');
+  return variants(n / 1e8, '亿', '￥');
+}
+function kmVariants(n) {
+  if (!isFinite(n) || n < 0) return ['-- km'];
+  if (n < 100000) return [Math.round(n).toLocaleString('en-US') + ' km'];
+  if (n < 1e8) return variants(n / 1e4, '万', '').map(s => s + ' km');
+  return variants(n / 1e8, '亿', '').map(s => s + ' km');
+}
+function choose(vars) {
+  for (const s of vars) {
+    const f = fitFont(s);
+    if (f >= 10) return { text: s, font: f };
+  }
+  const last = vars[vars.length - 1];
+  return { text: last, font: fitFont(last) };
+}
+
+const CASES = [
+  { spend: 28450,    driven: 46500 },
+  { spend: 1284500,  driven: 46500 },
+  { spend: 28450,    driven: 1234500 },
+  { spend: 1284500,  driven: 1234500 },
+  { spend: 999900,   driven: 999900 },
+  { spend: 12345000, driven: 12345000 },
+  { spend: 9876500,  driven: 123500 },
+  { spend: 128450,   driven: 123500 }
+];
+
+function perKm(spend, driven) {
+  if (!driven) return '￥--';
+  return '￥' + (spend / driven).toFixed(2);
+}
+
+function tile(c, idx, unified) {
+  const m = choose(moneyVariants(c.spend));
+  const k = choose(kmVariants(c.driven));
+
+  let mf = m.font, kf = k.font;
+  if (unified) { mf = kf = Math.min(mf, kf); }
+
+  const color = idx % 2 ? '#22C55E' : '#3B82F6';
+  const iconBg = idx % 2 ? '#E8F7EE' : '#EEF3FE';
+  const mismatch = (!unified && m.font !== k.font) ? ' mis' : '';
+
+  return `<div class="cell">
+    <div class="tile">
+      <span class="tile-stripe" style="background:${color}"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:${iconBg}">${idx % 2 ? '🚗' : '🚙'}</span>
+        <span class="t-name">CRV</span>
+        <span class="t-days">服役1,240天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:${color}">${perKm(c.spend, c.driven)}</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v" style="font-size:${mf}px">${m.text}</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <div class="t-vline"></div>
+        <div class="t-group">
+          <div class="t-v" style="font-size:${kf}px">${k.text}</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">
+      <b>${mf}</b> / <b>${kf}</b> px${mismatch ? ' <span class="mis">✕ 不一致</span>' : ''}
+    </div>
+  </div>`;
+}
+
+document.getElementById('galA').innerHTML =
+  CASES.map((c, i) => tile(c, i, false)).join('');
+
+document.getElementById('galB').innerHTML =
+  CASES.map((c, i) => tile(c, i, true)).join('');
+</script>
+</body>
+</html>

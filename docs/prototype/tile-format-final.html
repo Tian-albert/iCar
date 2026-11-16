@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数值格式化规则（A + C 兜底）· 全量级验证</title>
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --divider:#F0F1F4; --fill:#F2F3F5;
+    --c1:#3B82F6; --c2:#22C55E; --c3:#F59E0B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:24px 14px 48px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:22px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:330px;flex-shrink:0;}
+  .col.wide{width:400px;}
+  h2{font-size:13.5px;font-weight:600;margin-bottom:4px;}
+  .badge{display:inline-block;font-size:9px;padding:1.5px 6px;border-radius:5px;
+    font-weight:600;margin-left:5px;vertical-align:middle;}
+  .badge.best{background:#E4F6EA;color:#1E7F3C;}
+  .sub-desc{font-size:11px;color:var(--t2);line-height:1.65;margin-bottom:10px;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .cell{position:relative;}
+  .tile{
+    background:var(--card);border-radius:16px;padding:12px 12px 11px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);
+    position:relative;overflow:hidden;
+  }
+  .tile-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;
+    border-radius:16px 0 0 16px;}
+  .t-head{display:flex;align-items:center;gap:6px;margin-bottom:9px;}
+  .t-ic{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;
+    justify-content:center;font-size:12px;flex-shrink:0;}
+  .t-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .t-days{flex-shrink:0;font-size:9px;color:var(--t3);background:var(--fill);
+    padding:2px 5px;border-radius:7px;line-height:1.3;white-space:nowrap;}
+  .t-main{display:flex;align-items:baseline;}
+  .t-cost{font-size:20px;font-weight:700;letter-spacing:-.5px;line-height:1;}
+  .t-per{font-size:10.5px;font-weight:500;color:var(--t3);margin-left:1px;}
+  .t-divider{height:1px;background:var(--divider);margin:9px 0 8px;}
+  .t-foot{display:flex;align-items:flex-start;}
+  .t-group{flex:1;min-width:0;}
+  .t-v{font-weight:600;line-height:1.25;letter-spacing:-.1px;}
+  .t-k{font-size:9.5px;color:var(--t3);margin-top:2px;line-height:1.2;}
+  .t-vline{width:1px;height:22px;background:var(--divider);
+    flex-shrink:0;align-self:center;margin:0 6px;}
+
+  .cap{font-size:9.5px;color:#8A93A6;text-align:center;padding:4px 0 10px;
+    line-height:1.5;}
+  .cap b{color:#3B6FF6;font-weight:600;}
+
+  .sec{font-size:11px;font-weight:700;color:#8A93A6;letter-spacing:.4px;
+    padding:12px 0 6px;}
+
+  .note{font-size:11px;color:#5A6272;line-height:1.85;margin-top:10px;
+    padding:10px 12px;background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .note code{background:#F2F3F5;padding:0 4px;border-radius:3px;font-size:10.5px;}
+  .warnbox{background:#FFF4E5 !important;color:#8A5300;}
+  .warnbox b{color:#7A4A00;}
+
+  table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:8px;}
+  th,td{padding:5px 5px;text-align:left;border-bottom:1px solid #F0F1F4;
+    vertical-align:top;line-height:1.5;}
+  th{color:#8A93A6;font-weight:600;font-size:10px;}
+  td code{background:#F2F3F5;padding:0 3px;border-radius:3px;font-size:10px;}
+  .ok{color:#1E7F3C;font-weight:600;}
+  .no{color:#B4471A;font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- ============ 里程量级阶梯 ============ -->
+<div class="col">
+  <h2>总里程 · 全量级验证<span class="badge best">无省略号</span></h2>
+  <div class="sub-desc">
+    每个图块下方的灰字：原始值 → 显示值 / 采用字号。可见单位始终保留。
+  </div>
+  <div class="grid" id="kmGallery"></div>
+</div>
+
+<!-- ============ 金额量级阶梯 ============ -->
+<div class="col">
+  <h2>总花费 · 全量级验证</h2>
+  <div class="sub-desc">
+    小数据保精度，10 万起用「万」，1 亿起用「亿」；宽度不够时逐档降字号。
+  </div>
+  <div class="grid" id="moneyGallery"></div>
+</div>
+
+<!-- ============ 每公里成本 ============ -->
+<div class="col">
+  <h2>每公里成本 · 分档</h2>
+  <div class="sub-desc">
+    主数字较宽裕，但仍要处理「极小值」与「里程为 0」。
+  </div>
+  <div class="grid" id="perKmGallery"></div>
+
+  <div class="note warnbox">
+    <b>必须拦截的边界</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      · 里程为 <code>0</code>（刚建档）→ 显示 <code>￥--</code>，
+      不出现 <code>Infinity</code> 或 <code>NaN</code><br>
+      · 花费为 <code>0</code> → 显示 <code>￥0.00</code>，不是 <code>--</code><br>
+      · 里程极小 + 花费很大 → 上限截断在 <code>￥99.9</code>，避免长数字撑破
+    </div>
+  </div>
+</div>
+
+<!-- ============ 规则表 ============ -->
+<div class="col wide">
+  <h2>完整规则</h2>
+
+  <div class="note">
+    <b>① 金额（总花费）</b>
+    <table>
+      <tr><th>原始范围</th><th>显示</th><th>示例</th></tr>
+      <tr><td>&lt; 100,000</td><td>完整千分位</td><td><code>￥28,450</code></td></tr>
+      <tr><td>10 万 ~ 1 亿</td><td>万，小数按量级递减</td><td><code>￥12.85万</code></td></tr>
+      <tr><td>≥ 1 亿</td><td>亿</td><td><code>￥1.28亿</code></td></tr>
+    </table>
+    <div style="margin-top:7px;line-height:1.8;">
+      <b>「万」的小数位规则</b>（保证数字部分 ≤ 6 字符）：
+    </div>
+    <table>
+      <tr><th>万值范围</th><th>小数位</th><th>示例</th></tr>
+      <tr><td>&lt; 100</td><td>2 位</td><td><code>12.85万</code> <code>99.99万</code></td></tr>
+      <tr><td>100 ~ 999</td><td>1 位</td><td><code>123.5万</code> <code>999.9万</code></td></tr>
+      <tr><td>≥ 1000</td><td>0 位</td><td><code>1235万</code></td></tr>
+    </table>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>② 里程（建档后行驶）</b>
+    <table>
+      <tr><th>原始范围</th><th>显示</th><th>示例</th></tr>
+      <tr><td>&lt; 100,000</td><td>完整千分位 + km</td><td><code>46,500 km</code></td></tr>
+      <tr><td>10 万 ~ 1 亿</td><td>万 + km</td><td><code>12.35万 km</code></td></tr>
+      <tr><td>≥ 1 亿</td><td>亿 + km</td><td><code>1.28亿 km</code></td></tr>
+    </table>
+    <div style="margin-top:7px;color:#1E7F3C;">
+      单位 <code>km</code> <b>永远保留</b>，不因宽度不足而省略。
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>③ 去尾 0（必须）</b>
+    <table>
+      <tr><th>计算值</th><th>不处理（错）</th><th>处理后（对）</th></tr>
+      <tr><td>128,040</td><td class="no">￥12.80万</td><td class="ok">￥12.8万</td></tr>
+      <tr><td>100,010</td><td class="no">￥10.00万</td><td class="ok">￥10万</td></tr>
+      <tr><td>1,235,000</td><td class="no">￥123.5万</td><td class="ok">￥123.5万</td></tr>
+    </table>
+    <div style="margin-top:6px;">
+      尾 0 会白占 1~2 个字符宽度，是溢出最常见的诱因。
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>④ 字号回退（C 兜底）</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      每组可用宽度 <b>58.75px</b>（<code>(130.5 − 13) ÷ 2</code>）。<br>
+      按 <code>11.5 → 11 → 10.5 → 10 → 9.5 → 9 → 8.5px</code> 逐档尝试，
+      取<b>第一个能放下的字号</b>。优先保精度，其次降字号，<b>绝不省略</b>。<br><br>
+      实际验证结果：按上面的压缩规则，<b>所有量级在 10px 以上都能放下</b>，
+      8.5px 这一档基本用不到（仅作保险）。
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>⑤ 每公里成本（主数字 20px）</b>
+    <table>
+      <tr><th>情况</th><th>显示</th><th>例</th></tr>
+      <tr><td>0.01 ≤ x &lt; 10</td><td>2 位小数</td><td><code>￥0.61</code></td></tr>
+      <tr><td>x &lt; 0.01</td><td>3 位小数</td><td><code>￥0.008</code></td></tr>
+      <tr><td>x ≥ 10</td><td>1 位小数</td><td><code>￥12.5</code></td></tr>
+      <tr><td>里程 = 0</td><td>占位符</td><td><code>￥--</code></td></tr>
+    </table>
+  </div>
+
+  <div class="note warnbox" style="margin-top:10px;">
+    <b>⑥ 一处需要你拍板</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      里程阈值我用 <b>10 万 km</b>。<br>
+      如果你觉得里程没必要压缩（<code>123,500 km</code> 也放得下，
+      只是字号要降到 10px），也可以把里程阈值提到 <b>100 万 km</b>，
+      让日常都显示完整数字。<br><br>
+      我倾向保持 <b>10 万</b>：两个数字的压缩规则一致，
+      用户不会觉得「为什么金额用万、里程不用」。
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= 核心规则实现 ================= */
+const W_AVAIL = 58.75;                    /* 每组可用宽度 */
+const FONT_STEPS = [11.5, 11, 10.5, 10, 9.5, 9, 8.5];
+
+/* 字符宽度（em），按 PingFang SC 实测比例近似 */
+function textWidthEm(s) {
+  let w = 0;
+  for (const ch of s) {
+    if (/[0-9]/.test(ch)) w += 0.56;
+    else if (/[.,]/.test(ch)) w += 0.28;
+    else if (ch === '￥') w += 0.95;
+    else if (ch === ' ') w += 0.28;
+    else if (ch === 'k') w += 0.52;
+    else if (ch === 'm') w += 0.86;
+    else w += 1.0;                        /* 万 亿 等全角 */
+  }
+  return w;
+}
+
+function fitFont(s) {
+  const em = textWidthEm(s);
+  for (const f of FONT_STEPS) {
+    if (em * f <= W_AVAIL) return f;
+  }
+  return FONT_STEPS[FONT_STEPS.length - 1];
+}
+
+const trimZero = s => s.indexOf('.') >= 0 ? s.replace(/\.?0+$/, '') : s;
+
+/** 万/亿 的小数位：按量级递减，保证数字部分 ≤ 6 字符 */
+function decimalsFor(v) {
+  if (v < 100) return 2;
+  if (v < 1000) return 1;
+  return 0;
+}
+
+/** 生成从「最精确」到「最简」的候选串 */
+function variants(v, unit, prefix) {
+  const maxDec = decimalsFor(v);
+  const out = [];
+  for (let d = maxDec; d >= 0; d--) {
+    out.push(prefix + trimZero(v.toFixed(d)) + unit);
+  }
+  return out;
+}
+
+/** 金额候选串 */
+function moneyVariants(n) {
+  if (!isFinite(n) || n < 0) return ['￥--'];
+  if (n < 100000) return ['￥' + Math.round(n).toLocaleString('en-US')];
+  if (n < 1e8) return variants(n / 1e4, '万', '￥');
+  return variants(n / 1e8, '亿', '￥');
+}
+
+/** 里程候选串：单位 km 永远拼在最后 */
+function kmVariants(n) {
+  if (!isFinite(n) || n < 0) return ['-- km'];
+  if (n < 100000) return [Math.round(n).toLocaleString('en-US') + ' km'];
+  if (n < 1e8) return variants(n / 1e4, '万', '').map(s => s + ' km');
+  return variants(n / 1e8, '亿', '').map(s => s + ' km');
+}
+
+/**
+ * 选串：优先保精度（较精确的候选），但要求字号 ≥ 10px；
+ * 若最精确的候选需要 < 10px，则退到下一档更简的候选。
+ */
+function choose(vars) {
+  for (const s of vars) {
+    const f = fitFont(s);
+    if (f >= 10) return { text: s, font: f };
+  }
+  const last = vars[vars.length - 1];
+  return { text: last, font: fitFont(last) };
+}
+
+function fmtPerKm(n) {
+  if (!isFinite(n) || n <= 0) return { text: '￥--', font: 20 };
+  if (n < 0.01) return { text: '￥' + n.toFixed(3), font: 20 };
+  if (n >= 10) return { text: '￥' + Math.min(n, 99.9).toFixed(1), font: 20 };
+  return { text: '￥' + n.toFixed(2), font: 20 };
+}
+
+/* ================= 渲染 ================= */
+function tileHtml(o) {
+  const money = choose(moneyVariants(o.spend));
+  const km = choose(kmVariants(o.driven));
+  const per = fmtPerKm(o.perKm);
+
+  return `<div class="cell">
+    <div class="tile">
+      <span class="tile-stripe" style="background:${o.color}"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:${o.iconBg}">${o.icon}</span>
+        <span class="t-name">${o.name}</span>
+        <span class="t-days">服役${o.days.toLocaleString('en-US')}天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:${o.color};font-size:${per.font}px">${per.text}</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v" style="font-size:${money.font}px">${money.text}</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <div class="t-vline"></div>
+        <div class="t-group">
+          <div class="t-v" style="font-size:${km.font}px">${km.text}</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">
+      ${o.spend.toLocaleString('en-US')} 元 · ${o.driven.toLocaleString('en-US')} km<br>
+      字号 <b>${money.font}</b> / <b>${km.font}</b> px
+    </div>
+  </div>`;
+}
+
+/* ---------- 里程量级阶梯 ---------- */
+const KM_CASES = [
+  46500, 99999, 123500, 456800,
+  999900, 1234500, 9876500, 12345000
+];
+document.getElementById('kmGallery').innerHTML = KM_CASES.map((km, i) => tileHtml({
+  name: 'CRV', icon: '🚙', color: i % 2 ? '#22C55E' : '#3B82F6',
+  iconBg: i % 2 ? '#E8F7EE' : '#EEF3FE',
+  days: 1240,
+  spend: 28450,
+  driven: km,
+  perKm: 28450 / Math.max(km, 1)
+})).join('');
+
+/* ---------- 金额量级阶梯 ---------- */
+const MONEY_CASES = [
+  28450, 99999, 128450, 456800,
+  999900, 1284500, 9876500, 12345000
+];
+document.getElementById('moneyGallery').innerHTML = MONEY_CASES.map((m, i) => tileHtml({
+  name: 'CRV', icon: '🚙', color: i % 2 ? '#22C55E' : '#3B82F6',
+  iconBg: i % 2 ? '#E8F7EE' : '#EEF3FE',
+  days: 1240,
+  spend: m,
+  driven: 46500,
+  perKm: m / 46500
+})).join('');
+
+/* ---------- 每公里成本分档 ---------- */
+const PER_CASES = [
+  { v: 0.61,  label: '常规' },
+  { v: 0.48,  label: '常规' },
+  { v: 0.008, label: '里程极大' },
+  { v: 0,     label: '里程为 0' },
+  { v: 12.5,  label: '豪车 / 短里程' },
+  { v: 99.9,  label: '极端' }
+];
+document.getElementById('perKmGallery').innerHTML = PER_CASES.map((p, i) => {
+  const per = fmtPerKm(p.v);
+  return `<div class="cell">
+    <div class="tile">
+      <span class="tile-stripe" style="background:${i % 2 ? '#22C55E' : '#3B82F6'}"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:${i % 2 ? '#E8F7EE' : '#EEF3FE'}">${i % 2 ? '🚗' : '🚙'}</span>
+        <span class="t-name">CRV</span>
+        <span class="t-days">服役1,240天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:${i % 2 ? '#22C55E' : '#3B82F6'}">${per.text}</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v" style="font-size:11.5px">￥28,450</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <div class="t-vline"></div>
+        <div class="t-group">
+          <div class="t-v" style="font-size:11.5px">46,500 km</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">${p.label}</div>
+  </div>`;
+}).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图块下区：有 · / 无 · 对比</title>
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --divider:#F0F1F4; --fill:#F2F3F5;
+    --c1:#3B82F6; --c2:#22C55E;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:24px 16px 48px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:24px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:340px;flex-shrink:0;}
+  h2{font-size:13.5px;font-weight:600;margin-bottom:4px;}
+  .badge{display:inline-block;font-size:9px;padding:1.5px 6px;border-radius:5px;
+    font-weight:600;margin-left:5px;vertical-align:middle;}
+  .badge.cur{background:#EFF1F5;color:#5A6272;}
+  .badge.best{background:#E4F6EA;color:#1E7F3C;}
+  .badge.alt{background:#E3EAF8;color:#3B6FF6;}
+  .sub-desc{font-size:11px;color:var(--t2);line-height:1.65;margin-bottom:10px;min-height:32px;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tile{
+    background:var(--card);border-radius:16px;padding:12px 12px 11px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);
+    position:relative;overflow:hidden;
+  }
+  .tile-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;
+    border-radius:16px 0 0 16px;}
+  .t-head{display:flex;align-items:center;gap:6px;margin-bottom:9px;}
+  .t-ic{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;
+    justify-content:center;font-size:12px;flex-shrink:0;}
+  .t-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .t-days{flex-shrink:0;font-size:9px;color:var(--t3);background:var(--fill);
+    padding:2px 5px;border-radius:7px;line-height:1.3;white-space:nowrap;}
+  .t-main{display:flex;align-items:baseline;}
+  .t-cost{font-size:20px;font-weight:700;letter-spacing:-.5px;line-height:1;}
+  .t-per{font-size:10.5px;font-weight:500;color:var(--t3);margin-left:1px;}
+  .t-divider{height:1px;background:var(--divider);margin:9px 0 8px;}
+
+  .t-foot{display:flex;align-items:flex-start;}
+  .t-group{flex:1;min-width:0;}
+  .t-sep{flex-shrink:0;color:var(--t4);font-size:11px;line-height:1.1;
+    padding:0 3px;margin-top:1px;}
+  .t-v{font-size:11.5px;font-weight:600;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;line-height:1.25;}
+  .t-k{font-size:9.5px;color:var(--t3);margin-top:2px;line-height:1.2;}
+
+  /* B：无 ·，第二组左对齐（默认 flex:1 均分） */
+  /* C：无 ·，第二组右对齐 */
+  .v-right .t-group:last-child{text-align:right;}
+
+  /* 放大 */
+  .zoom{position:relative;width:100%;height:200px;}
+  .zoom-in{position:absolute;left:0;top:0;width:154.5px;
+    transform:scale(1.62);transform-origin:top left;}
+
+  .note{font-size:11px;color:#5A6272;line-height:1.85;margin-top:10px;
+    padding:10px 12px;background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .note code{background:#F2F3F5;padding:0 4px;border-radius:3px;font-size:10.5px;}
+  .pro{color:#1E7F3C;} .con{color:#B4471A;}
+  .warnbox{background:#FFF4E5 !important;color:#8A5300;}
+  .warnbox b{color:#7A4A00;}
+
+  .ruler{
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;
+    color:#8A93A6;line-height:1.7;background:#fff;border-radius:8px;
+    padding:8px 10px;margin-top:8px;white-space:pre;overflow-x:auto;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ A 现状：有 · ============ -->
+<div class="col">
+  <h2>① 有 ·<span class="badge cur">当前</span></h2>
+  <div class="sub-desc">两组各得约 59px，中间点占 12px。</div>
+
+  <div class="grid">
+    <div class="tile">
+      <span class="tile-stripe" style="background:var(--c1)"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:#EEF3FE">🚙</span>
+        <span class="t-name">CRV</span>
+        <span class="t-days">服役1,240天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:var(--c1)">￥0.61</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v">￥28,450</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <span class="t-sep">·</span>
+        <div class="t-group">
+          <div class="t-v">46,500 km</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tile">
+      <span class="tile-stripe" style="background:var(--c2)"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:#E8F7EE">🚗</span>
+        <span class="t-name">汉DM-i</span>
+        <span class="t-days">服役920天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:var(--c2)">￥0.48</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v">￥16,340</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <span class="t-sep">·</span>
+        <div class="t-group">
+          <div class="t-v">33,800 km</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ruler">内容宽 130.5px
+  ├── 组1 59px ──┤·├── 组2 59px ──┤
+  ￥28,450 ≈46px  余 13px
+  46,500 km ≈54px 余  5px  ← 紧</div>
+
+  <div class="note">
+    <span class="pro">好</span>：两组界限明确，不会误读成一段文字。<br>
+    <span class="con">差</span>：占掉 12px，右边那组只剩 5px 余量，
+    里程到 6 位数（123,500 km）会被截断。
+  </div>
+</div>
+
+<!-- ============ B 无 · 左对齐 ============ -->
+<div class="col">
+  <h2>② 去掉 ·（两组都左对齐）<span class="badge best">推荐</span></h2>
+  <div class="sub-desc">两组各得约 65px，各自多出 6px 余量。</div>
+
+  <div class="grid">
+    <div class="tile">
+      <span class="tile-stripe" style="background:var(--c1)"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:#EEF3FE">🚙</span>
+        <span class="t-name">CRV</span>
+        <span class="t-days">服役1,240天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:var(--c1)">￥0.61</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v">￥28,450</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <div class="t-group">
+          <div class="t-v">46,500 km</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tile">
+      <span class="tile-stripe" style="background:var(--c2)"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:#E8F7EE">🚗</span>
+        <span class="t-name">汉DM-i</span>
+        <span class="t-days">服役920天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:var(--c2)">￥0.48</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v">￥16,340</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <div class="t-group">
+          <div class="t-v">33,800 km</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ruler">内容宽 130.5px
+  ├──── 组1 65px ────┼──── 组2 65px ────┤
+  ￥28,450 ≈46px  余 19px
+  46,500 km ≈54px 余 11px  ← 宽松了</div>
+
+  <div class="note">
+    <span class="pro">好</span>：两组都多 6px，「总里程」不再贴边；
+    去掉一个纯装饰字符，更干净。<br>
+    <span class="con">差</span>：边界靠空白区分，两组之间的间隔其实只有
+    <b>约 19px</b>（组1 文字结束到组2 开始），仍能分清——
+    因为两组的<b>标签</b>（总花费/总里程）也各自对齐，形成了纵向的两列。
+  </div>
+</div>
+
+<!-- ============ C 无 · 第二组右对齐 ============ -->
+<div class="col">
+  <h2>③ 去掉 ·，第二组右对齐<span class="badge alt">最对称</span></h2>
+  <div class="sub-desc">两组分别贴住左右边缘，中间留白最大。</div>
+
+  <div class="grid">
+    <div class="tile v-right">
+      <span class="tile-stripe" style="background:var(--c1)"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:#EEF3FE">🚙</span>
+        <span class="t-name">CRV</span>
+        <span class="t-days">服役1,240天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:var(--c1)">￥0.61</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v">￥28,450</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <div class="t-group">
+          <div class="t-v">46,500 km</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tile v-right">
+      <span class="tile-stripe" style="background:var(--c2)"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:#E8F7EE">🚗</span>
+        <span class="t-name">汉DM-i</span>
+        <span class="t-days">服役920天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:var(--c2)">￥0.48</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v">￥16,340</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <div class="t-group">
+          <div class="t-v">33,800 km</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ruler">内容宽 130.5px
+  ├──── 组1 65px ────┼──── 组2 65px ────┤
+  ￥28,450 靠左    46,500 km 靠右
+  两组间距 = 65 − 46 + 65 − 54 ≈ 30px</div>
+
+  <div class="note">
+    <span class="pro">好</span>：间距最大（约 30px），两组绝不含糊；
+    左右对称，像表格的两列。<br>
+    <span class="con">差</span>：<b>「总里程」标签也右对齐</b>，
+    和左边「总花费」不同对齐方式，仔细看会有点不齐；
+    若只让数值右对齐、标签左对齐，又会出现错位。
+  </div>
+</div>
+
+<!-- ============ 放大细看 ============ -->
+<div class="col">
+  <h2>放大细看（②与③）</h2>
+  <div class="sub-desc">看两组之间是否容易混淆。</div>
+
+  <div style="font-size:11px;font-weight:600;margin-bottom:6px;">② 无 · 左对齐</div>
+  <div class="zoom">
+    <div class="zoom-in">
+      <div class="tile">
+        <span class="tile-stripe" style="background:var(--c1)"></span>
+        <div class="t-head">
+          <span class="t-ic" style="background:#EEF3FE">🚙</span>
+          <span class="t-name">CRV</span>
+          <span class="t-days">服役1,240天</span>
+        </div>
+        <div class="t-main">
+          <span class="t-cost" style="color:var(--c1)">￥0.61</span>
+          <span class="t-per">/km</span>
+        </div>
+        <div class="t-divider"></div>
+        <div class="t-foot">
+          <div class="t-group">
+            <div class="t-v">￥28,450</div>
+            <div class="t-k">总花费</div>
+          </div>
+          <div class="t-group">
+            <div class="t-v">46,500 km</div>
+            <div class="t-k">总里程</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-weight:600;margin:14px 0 6px;">③ 无 · 第二组右对齐</div>
+  <div class="zoom">
+    <div class="zoom-in">
+      <div class="tile v-right">
+        <span class="tile-stripe" style="background:var(--c1)"></span>
+        <div class="t-head">
+          <span class="t-ic" style="background:#EEF3FE">🚙</span>
+          <span class="t-name">CRV</span>
+          <span class="t-days">服役1,240天</span>
+        </div>
+        <div class="t-main">
+          <span class="t-cost" style="color:var(--c1)">￥0.61</span>
+          <span class="t-per">/km</span>
+        </div>
+        <div class="t-divider"></div>
+        <div class="t-foot">
+          <div class="t-group">
+            <div class="t-v">￥28,450</div>
+            <div class="t-k">总花费</div>
+          </div>
+          <div class="t-group">
+            <div class="t-v">46,500 km</div>
+            <div class="t-k">总里程</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note warnbox" style="margin-top:14px;">
+    <b>我的建议：去掉 ·，用 ②</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      理由：<br>
+      · 图块很窄（154px），<b>每个像素都紧张</b>，一个纯装饰的点占 12px 不划算<br>
+      · 两组各有自己的<b>标签行</b>（总花费/总里程），本身已构成两列，
+        不需要额外符号切分<br>
+      · 去掉后里程多 11px 余量，6 位数也不容易截断<br><br>
+
+      ③ 虽然对称好看，但「总里程」右对齐、左边左对齐，
+      <b>两套对齐规则混用</b>，在多车并排时反而显得乱。不推荐。<br><br>
+
+      如果去掉 · 后你还是觉得「两组粘连」，我可以加一条
+      <b>极淡的竖线</b>（1px，#F0F1F4，高约 22px）代替点 —— 
+      同样能分隔，但更细、更省空间。要的话说一声。
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

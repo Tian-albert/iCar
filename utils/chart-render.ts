@@ -158,6 +158,13 @@ export interface DonutRenderOptions {
   showLabels?: boolean;
   /** 中心下方的小字，默认「总支出」 */
   centerLabel?: string;
+  /**
+   * 外标签文字的自定义格式化。
+   *
+   * 默认是「名称 55.30%」。概览页环图只有 100 多像素高，
+   * 两位小数太长，改传「名称 55%」能少占宽度、也更好读。
+   */
+  labelFormatter?: (seg: DonutSegment, index: number) => string;
 }
 
 /** 绘制环形图（与 donut-chart 组件完全同一算法） */
@@ -242,7 +249,9 @@ export function renderDonut(opts: DonutRenderOptions): void {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    const label = `${seg.name} ${seg.percent.toFixed(2)}%`;
+    const label = opts.labelFormatter
+      ? opts.labelFormatter(seg, i)
+      : `${seg.name} ${seg.percent.toFixed(2)}%`;
     ctx.fillStyle = CHART_THEME.label;
     ctx.textAlign = lay.side === 'right' ? 'left' : 'right';
     ctx.fillText(label, lay.x, lay.y);

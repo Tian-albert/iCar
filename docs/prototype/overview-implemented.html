@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概览页 v4 · 按实现渲染（规则同代码）</title>
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --divider:#F0F1F4; --fill:#F2F3F5;
+    --primary:#3B6FF6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:24px 16px 48px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:26px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:375px;flex-shrink:0;}
+  .col.side{width:380px;}
+  h2{font-size:13.5px;font-weight:600;margin-bottom:5px;}
+  .sub{font-size:11px;color:#5A6272;line-height:1.65;margin-bottom:9px;}
+
+  .phone{
+    width:375px;height:730px;background:var(--bg);border-radius:32px;
+    overflow:hidden;position:relative;
+    box-shadow:0 14px 44px rgba(15,23,42,.2);border:1px solid rgba(0,0,0,.06);
+  }
+  .navbar{height:44px;display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:600;}
+  .screen{position:absolute;inset:44px 0 0 0;overflow-y:auto;scrollbar-width:none;}
+  .screen::-webkit-scrollbar{display:none;}
+  .page{padding:0 12px 90px;}
+
+  .sec-title{margin:16px 4px 8px;font-size:12px;color:var(--t3);}
+  .sec-title.first{margin-top:2px;}
+  .card{background:var(--card);border-radius:16px;padding:12px 16px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);}
+
+  /* 指标 */
+  .metrics{display:flex;padding:14px 4px;background:var(--card);
+    border-radius:16px;box-shadow:0 1px 6px rgba(15,23,42,.05);}
+  .m-cell{flex:1;position:relative;text-align:center;}
+  .m-cell + .m-cell::before{content:'';position:absolute;left:0;top:4px;
+    bottom:4px;width:1px;background:var(--divider);}
+  .m-val{font-size:18px;font-weight:600;letter-spacing:-.2px;}
+  .m-val-sm{font-size:17px;}
+  .m-lbl{margin-top:5px;font-size:11px;color:var(--t3);}
+
+  .stale{display:flex;align-items:center;gap:5px;padding:8px 4px 0;
+    font-size:11px;color:var(--t3);}
+
+  .mnt-row{display:flex;align-items:center;gap:8px;padding:11px 0;
+    border-bottom:1px solid var(--divider);}
+  .mnt-row:last-of-type{border-bottom:none;}
+  .mnt-car{width:56px;flex-shrink:0;font-size:12px;color:var(--t3);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mnt-name{flex:1;min-width:0;font-size:14px;font-weight:500;}
+  .mnt-remain{flex-shrink:0;font-size:12px;}
+  .bad{color:#F5474F;font-weight:500;} .warn{color:#E8912A;}
+  .go{flex-shrink:0;font-size:16px;line-height:1;color:var(--t3);}
+  .mnt-all{display:block;padding-top:10px;text-align:center;font-size:12px;
+    color:var(--primary);}
+
+  /* 环图 */
+  .donut-svg{display:block;width:100%;height:auto;overflow:visible;}
+  .donut-svg .seg{cursor:pointer;transition:opacity .15s;}
+  .donut-svg .seg.dim{opacity:.28;}
+  .donut-svg .ldr{fill:none;stroke-width:1;transition:opacity .15s;}
+  .donut-svg .ldr.dim{opacity:.25;}
+  .donut-svg text{cursor:pointer;font-family:inherit;}
+  .donut-svg .lb{font-size:10px;fill:#5A6272;transition:fill .15s;}
+  .donut-svg .lb.on{fill:#1F2430;font-weight:700;}
+  .donut-svg .ctr{font-size:14px;font-weight:700;fill:#1F2430;text-anchor:middle;}
+  .donut-svg .ctr-s{font-size:9px;fill:#6B7486;text-anchor:middle;}
+  .donut-hint{text-align:center;font-size:11px;color:var(--t3);padding:2px 0 6px;}
+
+  /* 图例 */
+  .lg-row{display:flex;align-items:center;gap:6px;padding:5px 2px;
+    border-radius:5px;cursor:pointer;}
+  .lg-row.on{background:var(--fill);}
+  .lg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+  .lg-name{width:62px;flex-shrink:0;font-size:12px;color:var(--t2);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lg-track{flex:1;min-width:0;height:6px;border-radius:3px;background:var(--fill);
+    overflow:hidden;}
+  .lg-bar{height:100%;border-radius:3px;min-width:3px;}
+  .lg-val{width:65px;flex-shrink:0;font-size:13px;font-weight:600;text-align:right;}
+
+  /* 记录 */
+  .rec-row{display:flex;align-items:center;gap:8px;padding:11px 0;
+    border-bottom:1px solid var(--divider);}
+  .rec-row:last-of-type{border-bottom:none;}
+  .rec-date{width:42px;flex-shrink:0;font-size:11px;color:var(--t3);}
+  .rec-car{width:54px;flex-shrink:0;font-size:11px;color:var(--t3);}
+  .rec-type{flex:1;min-width:0;font-size:14px;}
+  .rec-amt{flex-shrink:0;font-size:14px;font-weight:600;}
+
+  /* 出行成本 */
+  .cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tile{position:relative;overflow:hidden;background:var(--card);
+    border-radius:16px;padding:12px 12px 11px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);}
+  .tile-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;
+    border-radius:16px 0 0 16px;}
+  .t-head{display:flex;align-items:center;gap:6px;margin-bottom:9px;}
+  .t-ic{width:20px;height:20px;border-radius:6px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:11px;}
+  .t-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .t-days{flex-shrink:0;font-size:9px;color:var(--t3);background:var(--fill);
+    border-radius:7px;padding:2px 5px;line-height:1.3;white-space:nowrap;}
+  .t-main{display:flex;align-items:baseline;}
+  .t-cost{font-size:20px;font-weight:700;letter-spacing:-.5px;line-height:1;}
+  .t-per{font-size:10.5px;font-weight:500;color:var(--t3);margin-left:1px;}
+  .t-divider{height:1px;background:var(--divider);margin:9px 0 8px;}
+  .t-foot{display:flex;align-items:flex-start;}
+  .t-group{flex:1;min-width:0;}
+  .t-v{font-weight:600;color:var(--t1);line-height:1.25;letter-spacing:-.1px;
+    white-space:nowrap;overflow:hidden;}
+  .t-k{margin-top:2px;font-size:9.5px;color:var(--t3);line-height:1.2;}
+  .t-vline{width:1px;height:22px;background:var(--divider);flex-shrink:0;
+    align-self:center;margin:0 6px;}
+
+  .tabbar{position:absolute;left:14px;right:14px;bottom:12px;height:54px;
+    display:flex;align-items:center;padding:0 4px;background:rgba(250,251,253,.97);
+    border:1px solid rgba(226,231,240,.9);border-radius:999px;
+    box-shadow:0 5px 15px rgba(15,23,42,.12);z-index:10;}
+  .ind{position:absolute;top:4px;left:4px;width:calc((100% - 8px)/3);
+    height:46px;border-radius:23px;background:rgba(59,111,246,.12);}
+  .ti{flex:1;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:2px;height:46px;position:relative;z-index:1;}
+  .ti svg{width:20px;height:20px;}
+  .ti .l{font-size:9.5px;color:var(--t3);}
+  .ti.on .l{color:var(--primary);font-weight:600;}
+
+  .note{font-size:11px;color:#5A6272;line-height:1.85;margin-top:10px;
+    padding:10px 12px;background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .note code{background:#F2F3F5;padding:0 4px;border-radius:3px;font-size:10.5px;}
+  .ok{color:#1E7F3C;} .warnc{color:#B4471A;}
+</style>
+</head>
+<body>
+
+<div class="col">
+  <h2>概览页 v4（按最终规则渲染）</h2>
+  <div class="sub">
+    环图标签可点、图例可点；出行成本图块用 万/亿 压缩 + 统一字号。
+    第 4 辆「老捷达」故意给了 6 位数花费，用来看压缩效果。
+  </div>
+
+  <div class="phone">
+    <div class="navbar">概览</div>
+    <div class="screen">
+      <div class="page">
+        <div class="sec-title first">数据总览</div>
+        <div class="metrics" id="metrics"></div>
+        <div class="stale"><span style="opacity:.7">🕒</span><span>CRV 已 32 天没记账了</span></div>
+
+        <div class="sec-title" id="mntTitle">保养提醒</div>
+        <div class="card">
+          <div class="mnt-row">
+            <span class="mnt-car">汉DM-i</span><span class="mnt-name">刹车油</span>
+            <span class="mnt-remain bad">已超期 45 天</span><span class="go">›</span>
+          </div>
+          <div class="mnt-row">
+            <span class="mnt-car">CRV</span><span class="mnt-name">机油机滤</span>
+            <span class="mnt-remain warn">剩 1,200 km</span><span class="go">›</span>
+          </div>
+          <span class="mnt-all">管理保养项 ›</span>
+        </div>
+
+        <div class="sec-title">今年花费 · 按车</div>
+        <div class="card">
+          <svg class="donut-svg" id="donut" viewBox="0 0 319 186"></svg>
+          <div class="donut-hint">点扇区或标签可查看该车详情</div>
+          <div id="legend"></div>
+        </div>
+
+        <div class="sec-title">最近记录</div>
+        <div class="card">
+          <div class="rec-row"><span class="rec-date">今天</span><span class="rec-car">CRV</span>
+            <span class="rec-type">加油</span><span class="rec-amt">¥300.00</span><span class="go">›</span></div>
+          <div class="rec-row"><span class="rec-date">昨天</span><span class="rec-car">Model Y</span>
+            <span class="rec-type">充电</span><span class="rec-amt">¥28.50</span><span class="go">›</span></div>
+          <div class="rec-row"><span class="rec-date">11-13</span><span class="rec-car">汉DM-i</span>
+            <span class="rec-type">停车</span><span class="rec-amt">¥15.00</span><span class="go">›</span></div>
+        </div>
+
+        <div class="sec-title">出行成本</div>
+        <div class="cost-grid" id="tiles"></div>
+      </div>
+    </div>
+
+    <div class="tabbar">
+      <div class="ind"></div>
+      <div class="ti on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3B6FF6" stroke-width="1.7">
+          <rect x="4" y="4" width="7.5" height="9" rx="2"/><rect x="13" y="4" width="7" height="5.5" rx="2"/>
+          <rect x="13" y="11.5" width="7" height="8.5" rx="2"/><rect x="4" y="15" width="7.5" height="5" rx="2"/>
+        </svg><span class="l">概览</span>
+      </div>
+      <div class="ti">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7">
+          <path d="M4 16.5v2a1 1 0 0 0 1 1h1.6a1 1 0 0 0 1-1v-1M19.4 17.5v2a1 1 0 0 1-1 1h-1.6a1 1 0 0 1-1-1v-1M3.5 16.5h17a1 1 0 0 0 1-1v-3.2a1.5 1.5 0 0 0-1.2-1.47l-1.7-.3-1.5-3.5A2 2 0 0 0 15.2 5.6H8.8a2 2 0 0 0-1.9 1.43l-1.5 3.5-1.7.3A1.5 1.5 0 0 0 2.5 12.3v3.2a1 1 0 0 0 1 1Z"/>
+          <circle cx="7" cy="14" r="1.3"/><circle cx="17" cy="14" r="1.3"/>
+        </svg><span class="l">车辆</span>
+      </div>
+      <div class="ti">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7">
+          <circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.7 7.7 0 0 1 15 0"/>
+        </svg><span class="l">我的</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="col side">
+  <h2>本次实现的规则要点</h2>
+
+  <div class="note">
+    <b>① 数据总览</b>：区块标题取代原来的「3 辆车 · 总里程」。<br>
+    <b>② 三格</b>：车辆数 / 本年总支出 / 总里程（建档后里程合计）。<br>
+    <b>④ 保养标题</b>：有欠项时追加「· N 项待保养」。<br>
+    <b>⑨ 图例</b>：色点-车名-比例条-金额，可点击联动环图。<br>
+    <b>⑬ 出行成本</b>：两列图块，竖线分栏。
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>数值规则（与代码同一套）</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      金额/里程 &lt; 10 万 → 完整千分位<br>
+      10 万 ~ 1 亿 → 万，小数位 <code>2/1/0</code> 按量级递减<br>
+      ≥ 1 亿 → 亿<br>
+      去尾 0（<code>12.80万 → 12.8万</code>）<br>
+      字号 <code>11.5→8.5</code> 逐档回退，<b>两列取较小值统一</b><br>
+      绝不省略号，单位 <code>km</code> 永不丢弃
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>看第 4 块「老捷达」</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      花费 1,284,500 → <code>￥128.5万</code><br>
+      里程 1,234,500 → <code>123.5万 km</code><br>
+      两列字号会自动取较小值，并排仍整齐、无省略号。
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>每公里成本的边界</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      里程为 0（刚建档）→ <code>￥--</code>，不会出现 <code>Infinity</code><br>
+      &lt; 0.01 → 保留 3 位（<code>￥0.008</code>）<br>
+      ≥ 10 → 1 位小数，并封顶 <code>￥99.9</code>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========= 与 utils/num-format.ts 完全相同的规则 ========= */
+const CELL_WIDTH = 58.75;
+const FONT_STEPS = [11.5, 11, 10.5, 10, 9.5, 9, 8.5];
+const PREFERRED_MIN_FONT = 10;
+const COMPACT_THRESHOLD = 100000;
+const YI = 1e8, WAN = 1e4;
+
+function textWidthEm(s){
+  let w = 0;
+  for (const ch of s){
+    if (/[0-9]/.test(ch)) w += 0.56;
+    else if (ch === '.' || ch === ',') w += 0.28;
+    else if (ch === '￥') w += 0.95;
+    else if (ch === ' ') w += 0.28;
+    else if (ch === 'k') w += 0.52;
+    else if (ch === 'm') w += 0.86;
+    else w += 1;
+  }
+  return w;
+}
+function fitFontSize(t){
+  const em = textWidthEm(t);
+  for (const s of FONT_STEPS) if (em * s <= CELL_WIDTH) return s;
+  return FONT_STEPS[FONT_STEPS.length - 1];
+}
+const trimZero = s => s.indexOf('.') < 0 ? s : s.replace(/\.?0+$/, '');
+const roundTo = (v, d) => { const f = Math.pow(10, d); return Math.round(v * f + 1e-9) / f; };
+const thousands = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+function decimalsFor(v){ return v < 100 ? 2 : v < 1000 ? 1 : 0; }
+function compactVariants(v, unit, prefix){
+  const out = [];
+  for (let d = decimalsFor(v); d >= 0; d--){
+    const t = prefix + trimZero(roundTo(v, d).toFixed(d)) + unit;
+    if (out.indexOf(t) < 0) out.push(t);
+  }
+  return out;
+}
+function moneyVariants(n){
+  if (!isFinite(n) || n < 0) return ['￥--'];
+  const v = Math.round(n);
+  if (v < COMPACT_THRESHOLD) return ['￥' + thousands(v)];
+  if (v < YI) return compactVariants(v / WAN, '万', '￥');
+  return compactVariants(v / YI, '亿', '￥');
+}
+function kmVariants(n){
+  if (!isFinite(n) || n < 0) return ['-- km'];
+  const v = Math.round(n);
+  if (v < COMPACT_THRESHOLD) return [thousands(v) + ' km'];
+  if (v < YI) return compactVariants(v / WAN, '万', '').map(s => s + ' km');
+  return compactVariants(v / YI, '亿', '').map(s => s + ' km');
+}
+function chooseFitted(vs){
+  for (const t of vs){ const f = fitFontSize(t); if (f >= PREFERRED_MIN_FONT) return { text: t, font: f }; }
+  const last = vs[vs.length - 1];
+  return { text: last, font: fitFontSize(last) };
+}
+function pairOf(spend, driven){
+  const m = chooseFitted(moneyVariants(spend));
+  const k = chooseFitted(kmVariants(driven));
+  return { moneyText: m.text, kmText: k.text, font: Math.min(m.font, k.font) };
+}
+function formatPerKm(spend, driven){
+  if (!isFinite(spend) || spend < 0) return '￥--';
+  if (!isFinite(driven) || driven <= 0) return '￥--';
+  const v = spend / driven;
+  if (!isFinite(v)) return '￥--';
+  if (v < 0.01) return '￥' + v.toFixed(3);
+  if (v >= 10) return '￥' + Math.min(v, 99.9).toFixed(1);
+  return '￥' + v.toFixed(2);
+}
+function formatCompact(n){
+  if (!isFinite(n) || n < 0) return '--';
+  const v = Math.round(n);
+  if (v < COMPACT_THRESHOLD) return thousands(v);
+  const uv = v < YI ? v / WAN : v / YI;
+  const unit = v < YI ? '万' : '亿';
+  const d = decimalsFor(uv);
+  return trimZero(roundTo(uv, d).toFixed(d)) + unit;
+}
+function toIntegerPercents(vals){
+  const out = vals.map(v => Math.round(isFinite(v) ? v : 0));
+  const diff = 100 - out.reduce((a, b) => a + b, 0);
+  if (diff !== 0){
+    let mi = 0;
+    for (let i = 1; i < out.length; i++) if (out[i] > out[mi]) mi = i;
+    out[mi] += diff;
+  }
+  return out;
+}
+
+/* ========= 数据 ========= */
+const CARS = [
+  { name:'CRV',     icon:'🚙', color:'#3B82F6', year:4820, spend:28450,   current:58500,  init:12000, days:1240 },
+  { name:'汉DM-i',  icon:'🚗', color:'#22C55E', year:2340, spend:16340,   current:41800,  init:8000,  days:920  },
+  { name:'Model Y', icon:'⚡', color:'#F59E0B', year:1560, spend:6820,    current:25460,  init:460,   days:680  },
+  { name:'老捷达',  icon:'🚚', color:'#EF4444', year:0,    spend:1284500, current:1244500,init:10000, days:6200 }
+];
+CARS.forEach(c => { c.driven = Math.max(0, c.current - c.init); });
+
+const yearTotal = CARS.reduce((s, c) => s + c.year, 0);
+const drivenTotal = CARS.reduce((s, c) => s + c.driven, 0);
+
+/* 指标 */
+document.getElementById('metrics').innerHTML = `
+  <div class="m-cell"><div class="m-val">${CARS.length}</div><div class="m-lbl">车辆数</div></div>
+  <div class="m-cell"><div class="m-val m-val-sm">${formatCompact(yearTotal)}</div><div class="m-lbl">本年总支出</div></div>
+  <div class="m-cell"><div class="m-val m-val-sm">${formatCompact(drivenTotal)}</div><div class="m-lbl">总里程 (km)</div></div>
+`;
+
+/* 保养标题 */
+const PENDING = 2;
+document.getElementById('mntTitle').textContent =
+  PENDING > 0 ? `保养提醒 · ${PENDING} 项待保养` : '保养提醒';
+
+/* ========= 环图 ========= */
+const W = 319, H = 186, CX = W / 2, CY = 92;
+const yearCars = CARS.filter(c => c.year > 0);
+
+/* 百分比（保留 1 位，用于扇区角度） */
+const rawPercents = yearCars.map(c => Math.round((c.year / yearTotal) * 1000) / 10);
+const intPercents = toIntegerPercents(rawPercents);
+
+let acc = 0;
+const segs = [];
+yearCars.forEach((c, i) => {
+  const share = c.year / yearTotal;
+  segs.push({ i, car: c, a0: acc * 360, a1: (acc + share) * 360, mid: (acc + share / 2) * 360, pct: intPercents[i] });
+  acc += share;
+});
+
+/* 与 computeDonutLayout(w,h,1,true) 一致 */
+const labelSpace = Math.max(70, W * 0.26);
+const padY = 14;
+const R_OUT = Math.min(W / 2 - labelSpace - 0, H / 2 - padY);
+const R_IN = R_OUT * 0.55;
+const OFF_R = 10;
+
+/* 与 layoutDonutLabels 一致：左右分侧 + 纵向防重叠 */
+const rise = (r, deg) => { const a = (deg - 90) * Math.PI / 180; return [CX + r * Math.cos(a), CY + r * Math.sin(a)]; };
+const lineH = 14, minGap = lineH, elbowGap = 13, tailGap = 4;
+segs.forEach(s => {
+  const cos = Math.cos((s.mid - 90) * Math.PI / 180);
+  s.side = cos >= 0 ? 'right' : 'left';
+  const [, y] = rise(R_OUT + elbowGap, s.mid);
+  s.y = Math.min(H - lineH / 2 - 2, Math.max(lineH / 2 + 2, y));
+});
+['left','right'].forEach(side => {
+  const g = segs.filter(s => s.side === side).sort((a,b) => a.y - b.y);
+  for (let i = 1; i < g.length; i++) if (g[i].y < g[i-1].y + minGap) g[i].y = g[i-1].y + minGap;
+  const overflow = g.length ? g[g.length-1].y - (H - lineH/2 - 2) : 0;
+  if (overflow > 0){
+    g[g.length-1].y = H - lineH/2 - 2;
+    for (let i = g.length-2; i >= 0; i--) g[i].y = Math.min(g[i].y, g[i+1].y - minGap);
+  }
+});
+
+function segPath(a0, a1){
+  const large = (a1 - a0) > 180 ? 1 : 0;
+  const [x0,y0] = rise(R_OUT, a0), [x1,y1] = rise(R_OUT, a1);
+  const [x2,y2] = rise(R_IN, a1), [x3,y3] = rise(R_IN, a0);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${R_OUT} ${R_OUT} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${x2.toFixed(2)} ${y2.toFixed(2)} A${R_IN} ${R_IN} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z`;
+}
+
+let active = -1;
+
+function renderDonut(){
+  let html = '';
+  segs.forEach(s => {
+    const dim = active >= 0 && active !== s.i ? ' dim' : '';
+    const ox = active === s.i ? Math.cos((s.mid - 90) * Math.PI/180) * OFF_R : 0;
+    const oy = active === s.i ? Math.sin((s.mid - 90) * Math.PI/180) * OFF_R : 0;
+    html += `<path class="seg${dim}" data-i="${s.i}" d="${segPath(s.a0, s.a1)}"
+      fill="${s.car.color}" transform="translate(${ox.toFixed(2)},${oy.toFixed(2)})"/>`;
+  });
+
+  segs.forEach(s => {
+    const dim = active >= 0 && active !== s.i ? ' dim' : '';
+    const [ax, ay] = rise(R_OUT, s.mid);
+    const [ex, ey] = rise(R_OUT + elbowGap, s.mid);
+    const on = active === s.i ? ' on' : '';
+    html += `<polyline class="ldr${dim}" points="${ax.toFixed(2)},${ay.toFixed(2)} ${ex.toFixed(2)},${ey.toFixed(2)} ${ex.toFixed(2)},${s.y.toFixed(2)}" stroke="${s.car.color}" stroke-opacity=".55"/>`;
+    html += `<circle cx="${ax.toFixed(2)}" cy="${ay.toFixed(2)}" r="1.6" fill="${s.car.color}"/>`;
+    const tx = s.side === 'right' ? ex + tailGap : ex - tailGap;
+    const anchor = s.side === 'right' ? 'start' : 'end';
+    html += `<text class="lb${on}" x="${tx.toFixed(2)}" y="${(s.y + 3.5).toFixed(2)}" text-anchor="${anchor}" data-i="${s.i}">${s.car.name} ${s.pct}%</text>`;
+  });
+
+  if (active < 0){
+    html += `<circle cx="${CX}" cy="${CY}" r="${R_IN}" fill="#fff"/>`;
+    html += `<text class="ctr" x="${CX}" y="${CY - 1}">¥${formatCompact(yearTotal)}</text>`;
+    html += `<text class="ctr-s" x="${CX}" y="${CY + 13}">今年合计</text>`;
+  } else {
+    const s = segs.filter(x => x.i === active)[0];
+    html += `<circle cx="${CX}" cy="${CY}" r="${R_IN}" fill="#fff"/>`;
+    html += `<text class="ctr" x="${CX}" y="${CY - 1}" style="font-size:12px;fill:${s.car.color}">¥${formatCompact(s.car.year)}</text>`;
+    html += `<text class="ctr-s" x="${CX}" y="${CY + 12}">${s.pct}%</text>`;
+  }
+
+  const svg = document.getElementById('donut');
+  svg.innerHTML = html;
+  svg.querySelectorAll('[data-i]').forEach(el => {
+    el.addEventListener('click', () => {
+      const i = Number(el.dataset.i);
+      select(active === i ? -1 : i);
+    });
+  });
+}
+
+function renderLegend(){
+  const box = document.getElementById('legend');
+  box.innerHTML = segs.map(s => {
+    const on = active === s.i ? ' on' : '';
+    return `<div class="lg-row${on}" data-i="${s.i}">
+      <span class="lg-dot" style="background:${s.car.color}"></span>
+      <span class="lg-name">${s.car.name}</span>
+      <span class="lg-track"><span class="lg-bar" style="width:${rawPercents[s.i]}%;background:${s.car.color}"></span></span>
+      <span class="lg-val">¥${formatCompact(s.car.year)}</span>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-i]').forEach(el => {
+    el.addEventListener('click', () => {
+      const i = Number(el.dataset.i);
+      select(active === i ? -1 : i);
+    });
+  });
+}
+
+function select(i){ active = i; renderDonut(); renderLegend(); }
+
+/* ========= 出行成本 ========= */
+const sorted = [...CARS].sort((a,b) => (b.spend / (b.driven||1)) - (a.spend / (a.driven||1)));
+document.getElementById('tiles').innerHTML = sorted.map(c => {
+  const p = pairOf(c.spend, c.driven);
+  return `<div class="tile">
+    <span class="tile-stripe" style="background:${c.color}"></span>
+    <div class="t-head">
+      <span class="t-ic" style="background:${c.color}1F">${c.icon}</span>
+      <span class="t-name">${c.name}</span>
+      <span class="t-days">服役${thousands(c.days)}天</span>
+    </div>
+    <div class="t-main">
+      <span class="t-cost" style="color:${c.color}">${formatPerKm(c.spend, c.driven)}</span>
+      <span class="t-per">/km</span>
+    </div>
+    <div class="t-divider"></div>
+    <div class="t-foot">
+      <div class="t-group">
+        <div class="t-v" style="font-size:${p.font}px">${p.moneyText}</div>
+        <div class="t-k">总花费</div>
+      </div>
+      <div class="t-vline"></div>
+      <div class="t-group">
+        <div class="t-v" style="font-size:${p.font}px">${p.kmText}</div>
+        <div class="t-k">总里程</div>
+      </div>
+    </div>
+  </div>`;
+}).join('');
+
+select(-1);
+</script>
+</body>
+</html>

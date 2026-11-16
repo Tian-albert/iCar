@@ -136,16 +136,18 @@
 }
 
 /* ---------- C 今年花费 · 按车 ---------- */
-.cost-wrap {
-  display: flex;
-  align-items: center;
-  gap: 40rpx;
+/* 环图带引出标签，宽度占满卡片，图例移到下方通栏 */
+.cost-box {
+  display: block;
 }
-/* 逻辑尺寸 104px；实际绘制由 canvas.width/height 按 dpr 决定 */
+/*
+ * 环图逻辑高度 186px（= 372rpx）；实际绘制按 dpr 重设 canvas.width/height。
+ * 宽度取 100%：标签要占左右两侧，必须按卡片实际宽度布局。
+ */
 .donut-canvas {
-  width: 208rpx;
-  height: 208rpx;
-  flex-shrink: 0;
+  display: block;
+  width: 100%;
+  height: 372rpx;
 }
 /* 无支出时收起画布（节点保留以便后续绘制），把空间让给空态文案 */
 .donut-canvas.donut-idle {
@@ -154,24 +156,32 @@
   opacity: 0;
 }
 .cost-empty {
-  flex: 1;
   padding: 48rpx 0;
   text-align: center;
   font-size: 26rpx;
   color: var(--color-text-3);
   line-height: 1.6;
 }
+.donut-hint {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+  padding: 4rpx 0 12rpx;
+}
 .legend {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
 }
 .lg-row {
   display: flex;
   align-items: center;
   gap: 12rpx;
+  padding: 10rpx 4rpx;
+  border-radius: 10rpx;
+}
+/* 选中态：与环图扇区高亮呼应 */
+.lg-row.lg-on {
+  background: var(--color-fill);
 }
 .lg-dot {
   width: 16rpx;
@@ -179,27 +189,37 @@
   border-radius: 4rpx;
   flex-shrink: 0;
 }
+/* 车名定宽，各行比例条起点才对齐、长度才可比 */
 .lg-name {
-  flex: 1;
-  min-width: 0;
+  width: 124rpx;
+  flex-shrink: 0;
   font-size: 24rpx;
   color: var(--color-text-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.lg-track {
+  flex: 1;
+  min-width: 0;
+  height: 12rpx;
+  border-radius: 6rpx;
+  background: var(--color-fill);
+  overflow: hidden;
+}
+.lg-bar {
+  height: 100%;
+  border-radius: 6rpx;
+  /* 占比极小时保底可见，否则 1% 的项看起来像没有数据 */
+  min-width: 4rpx;
+}
+/* 金额定宽右对齐：位数不同也不会让比例条长度抖动 */
 .lg-val {
+  width: 130rpx;
   flex-shrink: 0;
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: 600;
   color: var(--color-text-1);
-  text-align: right;
-}
-.lg-pct {
-  width: 60rpx;
-  flex-shrink: 0;
-  font-size: 22rpx;
-  color: var(--color-text-3);
   text-align: right;
 }
 
@@ -240,4 +260,132 @@
   font-size: 28rpx;
   font-weight: 600;
   color: var(--color-text-1);
+}
+
+/* ---------- F 出行成本（两列图块） ---------- */
+/* 首个区块标题贴着顶部，别留 32rpx 的上边距 */
+.page > .sec-title:first-child {
+  margin-top: 4rpx;
+}
+.cost-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+.tile {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  padding: 24rpx 24rpx 22rpx;
+  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
+}
+/* 左侧彩色竖条：颜色即该车在环图里的配色 */
+.tile-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6rpx;
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
+}
+.t-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 18rpx;
+}
+.t-ic {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.t-ic-img {
+  width: 26rpx;
+  height: 26rpx;
+}
+.t-ic-emoji {
+  font-size: 22rpx;
+  line-height: 1;
+}
+.t-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 25rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 服役天数胶囊：右上角、浅灰、比正文小一档 */
+.t-days {
+  flex-shrink: 0;
+  font-size: 18rpx;
+  color: var(--color-text-3);
+  background: var(--color-fill);
+  border-radius: 14rpx;
+  padding: 4rpx 10rpx;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.t-main {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 2rpx;
+}
+/* 字号由 JS 按两列中的较小值统一注入，这里只定基础值 */
+.t-cost {
+  font-size: 40rpx;
+  font-weight: 700;
+  letter-spacing: -1rpx;
+  line-height: 1;
+}
+.t-per {
+  font-size: 21rpx;
+  font-weight: 500;
+  color: var(--color-text-3);
+  margin-left: 2rpx;
+}
+/* 上区（每公里成本）与下区（累计数据）之间的分割线 */
+.t-divider {
+  height: 1px;
+  background: var(--color-divider);
+  margin: 18rpx 0 16rpx;
+}
+.t-foot {
+  display: flex;
+  align-items: flex-start;
+}
+.t-group {
+  flex: 1;
+  min-width: 0;
+}
+.t-v {
+  font-weight: 600;
+  color: var(--color-text-1);
+  line-height: 1.25;
+  letter-spacing: -0.2rpx;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.t-k {
+  margin-top: 4rpx;
+  font-size: 19rpx;
+  color: var(--color-text-3);
+  line-height: 1.2;
+}
+/* 下区中间的极淡竖线：起分栏作用，比圆点更静、更省宽度 */
+.t-vline {
+  width: 1px;
+  height: 44rpx;
+  background: var(--color-divider);
+  flex-shrink: 0;
+  align-self: center;
+  margin: 0 12rpx;
 }

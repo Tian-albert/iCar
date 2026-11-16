@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>概览页 v3 · 改造方案</title>
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --divider:#F0F1F4; --fill:#F2F3F5;
+    --primary:#3B6FF6; --primary-light:#EEF3FE;
+    --danger:#F5474F; --warning:#E8912A; --success:#2BA84A;
+    --c1:#3B82F6; --c2:#22C55E; --c3:#F59E0B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:24px 16px 48px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:26px;align-items:flex-start;color:var(--t1);
+  }
+  .col{width:375px;flex-shrink:0;}
+  h2{font-size:13.5px;font-weight:600;margin-bottom:6px;}
+  .sub-desc{font-size:11px;color:var(--t2);line-height:1.65;margin-bottom:9px;min-height:30px;}
+
+  .phone{
+    width:375px;height:720px;background:var(--bg);border-radius:32px;
+    overflow:hidden;position:relative;
+    box-shadow:0 14px 44px rgba(15,23,42,.2);border:1px solid rgba(0,0,0,.06);
+  }
+  .navbar{height:44px;display:flex;align-items:center;justify-content:center;
+    font-size:16px;font-weight:600;}
+  .screen{position:absolute;inset:44px 0 0 0;overflow-y:auto;scrollbar-width:none;}
+  .screen::-webkit-scrollbar{display:none;}
+  .page{padding:12px 12px 92px;}
+
+  /* 区块标题（1 号改造后 + 4/7/10） */
+  .sec-title{margin:16px 4px 8px;font-size:12px;color:var(--t3);}
+  .sec-title:first-child{margin-top:2px;}
+
+  .card{background:var(--card);border-radius:16px;padding:12px 16px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);}
+
+  /* ===== 2 三格指标 ===== */
+  .metrics{display:flex;padding:14px 4px;background:var(--card);
+    border-radius:16px;box-shadow:0 1px 6px rgba(15,23,42,.05);}
+  .m-cell{flex:1;position:relative;text-align:center;}
+  .m-cell + .m-cell::before{content:'';position:absolute;left:0;top:4px;
+    bottom:4px;width:1px;background:var(--divider);}
+  .m-val{font-size:18px;font-weight:600;letter-spacing:-.2px;}
+  .m-val-sm{font-size:17px;}
+  .m-lbl{margin-top:5px;font-size:11px;color:var(--t3);}
+
+  /* ===== 3 漏记提醒 ===== */
+  .stale{display:flex;align-items:center;gap:5px;padding:8px 4px 0;
+    font-size:11px;color:var(--t3);}
+
+  /* ===== 5 保养行 ===== */
+  .mnt-row{display:flex;align-items:center;gap:8px;padding:11px 0;
+    border-bottom:1px solid var(--divider);}
+  .mnt-row:last-of-type{border-bottom:none;}
+  .mnt-car{width:56px;flex-shrink:0;font-size:12px;color:var(--t3);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mnt-name{flex:1;min-width:0;font-size:14px;font-weight:500;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mnt-remain{flex-shrink:0;font-size:12px;white-space:nowrap;}
+  .mnt-remain.bad{color:var(--danger);font-weight:500;}
+  .mnt-remain.warn{color:var(--warning);}
+  .go{flex-shrink:0;font-size:16px;line-height:1;color:var(--t3);}
+  .mnt-all{display:block;padding-top:10px;text-align:center;
+    font-size:12px;color:var(--primary);}
+
+  /* ===== 8 环图（居中，图例移到下方） ===== */
+  .donut-box{display:flex;justify-content:center;padding:6px 0 14px;}
+  .donut{width:120px;height:120px;border-radius:50%;position:relative;
+    background:conic-gradient(
+      var(--c1) 0 55.3%,
+      var(--c2) 55.3% 78.9%,
+      var(--c3) 78.9% 100%
+    );}
+  .donut-hole{position:absolute;inset:19px;border-radius:50%;background:var(--card);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .donut-hole b{font-size:13px;font-weight:600;letter-spacing:-.3px;}
+  .donut-hole span{font-size:9px;color:var(--t3);margin-top:2px;}
+
+  /* ===== 9 图例（色点-车名-比例条-金额，同统计页） ===== */
+  .lg-row{display:flex;align-items:center;gap:8px;padding:6px 0;}
+  .lg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+  .lg-name{width:62px;flex-shrink:0;font-size:12px;color:var(--t2);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lg-track{flex:1;height:6px;border-radius:3px;background:var(--fill);
+    overflow:hidden;min-width:0;}
+  .lg-bar{height:100%;border-radius:3px;min-width:3px;}
+  .lg-val{width:58px;flex-shrink:0;font-size:13px;font-weight:600;text-align:right;}
+
+  /* ===== 11 记录行 ===== */
+  .rec-row{display:flex;align-items:center;gap:8px;padding:11px 0;
+    border-bottom:1px solid var(--divider);}
+  .rec-row:last-of-type{border-bottom:none;}
+  .rec-date{width:42px;flex-shrink:0;font-size:11px;color:var(--t3);}
+  .rec-car{width:54px;flex-shrink:0;font-size:11px;color:var(--t3);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rec-type{flex:1;min-width:0;font-size:14px;}
+  .rec-amt{flex-shrink:0;font-size:14px;font-weight:600;}
+
+  /* ===== 13 出行成本：两列图块 ===== */
+  .cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  /* --- 版式 A：主数字型（突出每公里成本） --- */
+  .tileA{background:var(--card);border-radius:16px;padding:13px 13px 12px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);position:relative;overflow:hidden;}
+  .tileA::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+    border-radius:16px 0 0 16px;}
+  .tA-head{display:flex;align-items:center;gap:7px;margin-bottom:10px;}
+  .tA-ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;
+    justify-content:center;font-size:14px;flex-shrink:0;}
+  .tA-name{font-size:13px;font-weight:600;flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tA-main{display:flex;align-items:baseline;gap:3px;margin-bottom:2px;}
+  .tA-num{font-size:22px;font-weight:700;letter-spacing:-.6px;line-height:1;}
+  .tA-unit{font-size:10px;color:var(--t3);}
+  .tA-cap{font-size:9.5px;color:var(--t3);margin-bottom:9px;}
+  .tA-foot{display:flex;gap:0;border-top:1px solid var(--divider);padding-top:8px;}
+  .tA-f{flex:1;min-width:0;}
+  .tA-f + .tA-f{padding-left:7px;border-left:1px solid var(--divider);}
+  .tA-fv{font-size:11.5px;font-weight:600;line-height:1.2;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tA-fl{font-size:9px;color:var(--t3);margin-top:2px;}
+
+  /* --- 版式 B：清单型（4 行标签值） --- */
+  .tileB{background:var(--card);border-radius:16px;padding:13px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);}
+  .tB-head{display:flex;align-items:center;gap:7px;margin-bottom:9px;
+    padding-bottom:9px;border-bottom:1px solid var(--divider);}
+  .tB-ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;
+    justify-content:center;font-size:14px;flex-shrink:0;}
+  .tB-name{font-size:13px;font-weight:600;flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tB-row{display:flex;align-items:baseline;justify-content:space-between;
+    gap:6px;padding:2.5px 0;}
+  .tB-k{font-size:10.5px;color:var(--t3);flex-shrink:0;}
+  .tB-v{font-size:11.5px;font-weight:600;text-align:right;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tB-v.hl{color:var(--primary);font-size:12.5px;}
+
+  /* --- 版式 C：图标头像 + 2×2 网格 --- */
+  .tileC{background:var(--card);border-radius:16px;padding:13px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);}
+  .tC-head{display:flex;flex-direction:column;align-items:center;gap:6px;
+    margin-bottom:10px;}
+  .tC-ic{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;
+    justify-content:center;font-size:17px;}
+  .tC-name{font-size:12.5px;font-weight:600;max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tC-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 6px;}
+  .tC-cell{text-align:center;}
+  .tC-v{font-size:12px;font-weight:600;line-height:1.2;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tC-l{font-size:8.5px;color:var(--t3);margin-top:2px;}
+
+  /* ===== 底栏 ===== */
+  .tabbar{position:absolute;left:14px;right:14px;bottom:12px;height:54px;
+    display:flex;align-items:center;padding:0 4px;
+    background:rgba(250,251,253,.97);
+    border:1px solid rgba(226,231,240,.9);border-radius:999px;
+    box-shadow:0 5px 15px rgba(15,23,42,.12);z-index:10;}
+  .ind{position:absolute;top:4px;left:4px;width:calc((100% - 8px)/3);
+    height:46px;border-radius:23px;background:rgba(59,111,246,.12);}
+  .ti{flex:1;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:2px;height:46px;position:relative;z-index:1;}
+  .ti svg{width:20px;height:20px;}
+  .ti .l{font-size:9.5px;color:var(--t3);}
+  .ti.on .l{color:var(--primary);font-weight:600;}
+
+  .note{font-size:11px;color:#5A6272;line-height:1.8;margin-top:10px;
+    padding:10px 12px;background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .pro{color:#1E7F3C;} .con{color:#B4471A;}
+  .tag{display:inline-block;font-size:9px;padding:1.5px 6px;border-radius:5px;
+    background:#E4F6EA;color:#1E7F3C;font-weight:600;margin-left:5px;vertical-align:middle;}
+  .tag.alt{background:#E3EAF8;color:#3B6FF6;}
+  .tag.gray{background:#EFF1F5;color:#5A6272;}
+</style>
+</head>
+<body>
+
+<!-- ============ 主页面（含出行成本 A 版） ============ -->
+<div class="col">
+  <h2>概览页 v3（改造后）<span class="tag">出行成本用 A 版</span></h2>
+  <div class="sub-desc">按你的 5 项要求改完的效果。可滚动查看新增的「出行成本」区。</div>
+
+  <div class="phone">
+    <div class="navbar">概览</div>
+    <div class="screen">
+      <div class="page">
+
+        <!-- 1 → 数据总览 -->
+        <div class="sec-title">数据总览</div>
+
+        <!-- 2a 车辆数 / 2b 本年总支出 / 2c 总里程 -->
+        <div class="metrics">
+          <div class="m-cell">
+            <div class="m-val">3</div>
+            <div class="m-lbl">车辆数</div>
+          </div>
+          <div class="m-cell">
+            <div class="m-val m-val-sm">¥8,720</div>
+            <div class="m-lbl">本年总支出</div>
+          </div>
+          <div class="m-cell">
+            <div class="m-val m-val-sm">16,710</div>
+            <div class="m-lbl">总里程 (km)</div>
+          </div>
+        </div>
+
+        <!-- 3 漏记提醒 -->
+        <div class="stale"><span style="opacity:.7">🕒</span><span>CRV 已 32 天没记账了</span></div>
+
+        <!-- 4 → 带待保养项数 -->
+        <div class="sec-title">保养提醒 · 2 项待保养</div>
+        <div class="card">
+          <div class="mnt-row">
+            <span class="mnt-car">汉DM-i</span>
+            <span class="mnt-name">刹车油</span>
+            <span class="mnt-remain bad">已超期 45 天</span>
+            <span class="go">›</span>
+          </div>
+          <div class="mnt-row">
+            <span class="mnt-car">CRV</span>
+            <span class="mnt-name">机油机滤</span>
+            <span class="mnt-remain warn">剩 1,200 km</span>
+            <span class="go">›</span>
+          </div>
+          <span class="mnt-all">管理保养项 ›</span>
+        </div>
+
+        <!-- 7 今年花费 -->
+        <div class="sec-title">今年花费 · 按车</div>
+        <div class="card">
+          <div class="donut-box">
+            <div class="donut">
+              <div class="donut-hole">
+                <b>¥8,720</b>
+                <span>今年合计</span>
+              </div>
+            </div>
+          </div>
+          <!-- 9 → 色点-车名-比例条-金额 -->
+          <div class="lg-row">
+            <span class="lg-dot" style="background:var(--c1)"></span>
+            <span class="lg-name">CRV</span>
+            <span class="lg-track"><span class="lg-bar" style="width:55.3%;background:var(--c1)"></span></span>
+            <span class="lg-val">¥4,820</span>
+          </div>
+          <div class="lg-row">
+            <span class="lg-dot" style="background:var(--c2)"></span>
+            <span class="lg-name">汉DM-i</span>
+            <span class="lg-track"><span class="lg-bar" style="width:23.6%;background:var(--c2)"></span></span>
+            <span class="lg-val">¥2,340</span>
+          </div>
+          <div class="lg-row">
+            <span class="lg-dot" style="background:var(--c3)"></span>
+            <span class="lg-name">Model Y</span>
+            <span class="lg-track"><span class="lg-bar" style="width:21.1%;background:var(--c3)"></span></span>
+            <span class="lg-val">¥1,560</span>
+          </div>
+        </div>
+
+        <!-- 10 最近记录 -->
+        <div class="sec-title">最近记录</div>
+        <div class="card">
+          <div class="rec-row">
+            <span class="rec-date">今天</span>
+            <span class="rec-car">CRV</span>
+            <span class="rec-type">加油</span>
+            <span class="rec-amt">¥300.00</span>
+            <span class="go">›</span>
+          </div>
+          <div class="rec-row">
+            <span class="rec-date">昨天</span>
+            <span class="rec-car">Model Y</span>
+            <span class="rec-type">充电</span>
+            <span class="rec-amt">¥28.50</span>
+            <span class="go">›</span>
+          </div>
+          <div class="rec-row">
+            <span class="rec-date">11-13</span>
+            <span class="rec-car">汉DM-i</span>
+            <span class="rec-type">停车</span>
+            <span class="rec-amt">¥15.00</span>
+            <span class="go">›</span>
+          </div>
+        </div>
+
+        <!-- 13 出行成本（A 版） -->
+        <div class="sec-title">出行成本</div>
+        <div class="cost-grid">
+          <div class="tileA">
+            <span style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c1)"></span>
+            <div class="tA-head">
+              <span class="tA-ic" style="background:#EEF3FE">🚙</span>
+              <span class="tA-name">CRV</span>
+            </div>
+            <div class="tA-main">
+              <span class="tA-num" style="color:var(--c1)">0.49</span>
+              <span class="tA-unit">元/km</span>
+            </div>
+            <div class="tA-cap">每公里出行成本</div>
+            <div class="tA-foot">
+              <div class="tA-f">
+                <div class="tA-fv">28,450</div>
+                <div class="tA-fl">总花费(元)</div>
+              </div>
+              <div class="tA-f">
+                <div class="tA-fv">58,500</div>
+                <div class="tA-fl">总里程(km)</div>
+              </div>
+              <div class="tA-f">
+                <div class="tA-fv">1,240</div>
+                <div class="tA-fl">服役(天)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tileA">
+            <span style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c2)"></span>
+            <div class="tA-head">
+              <span class="tA-ic" style="background:#E8F7EE">🚗</span>
+              <span class="tA-name">汉DM-i</span>
+            </div>
+            <div class="tA-main">
+              <span class="tA-num" style="color:var(--c2)">0.39</span>
+              <span class="tA-unit">元/km</span>
+            </div>
+            <div class="tA-cap">每公里出行成本</div>
+            <div class="tA-foot">
+              <div class="tA-f">
+                <div class="tA-fv">16,340</div>
+                <div class="tA-fl">总花费(元)</div>
+              </div>
+              <div class="tA-f">
+                <div class="tA-fv">41,800</div>
+                <div class="tA-fl">总里程(km)</div>
+              </div>
+              <div class="tA-f">
+                <div class="tA-fv">920</div>
+                <div class="tA-fl">服役(天)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tileA">
+            <span style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c3)"></span>
+            <div class="tA-head">
+              <span class="tA-ic" style="background:#FFF3E0">⚡</span>
+              <span class="tA-name">Model Y</span>
+            </div>
+            <div class="tA-main">
+              <span class="tA-num" style="color:var(--c3)">0.27</span>
+              <span class="tA-unit">元/km</span>
+            </div>
+            <div class="tA-cap">每公里出行成本</div>
+            <div class="tA-foot">
+              <div class="tA-f">
+                <div class="tA-fv">6,820</div>
+                <div class="tA-fl">总花费(元)</div>
+              </div>
+              <div class="tA-f">
+                <div class="tA-fv">25,460</div>
+                <div class="tA-fl">总里程(km)</div>
+              </div>
+              <div class="tA-f">
+                <div class="tA-fv">680</div>
+                <div class="tA-fl">服役(天)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="tabbar">
+      <div class="ind"></div>
+      <div class="ti on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3B6FF6" stroke-width="1.7">
+          <rect x="4" y="4" width="7.5" height="9" rx="2"/><rect x="13" y="4" width="7" height="5.5" rx="2"/>
+          <rect x="13" y="11.5" width="7" height="8.5" rx="2"/><rect x="4" y="15" width="7.5" height="5" rx="2"/>
+        </svg>
+        <span class="l">概览</span>
+      </div>
+      <div class="ti">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7">
+          <path d="M4 16.5v2a1 1 0 0 0 1 1h1.6a1 1 0 0 0 1-1v-1M19.4 17.5v2a1 1 0 0 1-1 1h-1.6a1 1 0 0 1-1-1v-1M3.5 16.5h17a1 1 0 0 0 1-1v-3.2a1.5 1.5 0 0 0-1.2-1.47l-1.7-.3-1.5-3.5A2 2 0 0 0 15.2 5.6H8.8a2 2 0 0 0-1.9 1.43l-1.5 3.5-1.7.3A1.5 1.5 0 0 0 2.5 12.3v3.2a1 1 0 0 0 1 1Z"/>
+          <circle cx="7" cy="14" r="1.3"/><circle cx="17" cy="14" r="1.3"/>
+        </svg>
+        <span class="l">车辆</span>
+      </div>
+      <div class="ti">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7">
+          <circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.7 7.7 0 0 1 15 0"/>
+        </svg>
+        <span class="l">我的</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 出行成本三种版式对比 ============ -->
+<div class="col">
+  <h2>「出行成本」图块 · 三种版式</h2>
+  <div class="sub-desc">两列布局，每块含：图标、车名、服役天数、总里程、总花费、每公里成本。</div>
+
+  <div class="phone" style="height:auto;padding:14px 12px 20px;">
+    <!-- A -->
+    <div style="font-size:11.5px;font-weight:600;margin-bottom:7px;">
+      版式 A · 主数字型 <span class="tag">推荐</span>
+    </div>
+    <div class="cost-grid" style="margin-bottom:18px;">
+      <div class="tileA">
+        <span style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c1)"></span>
+        <div class="tA-head">
+          <span class="tA-ic" style="background:#EEF3FE">🚙</span>
+          <span class="tA-name">CRV</span>
+        </div>
+        <div class="tA-main">
+          <span class="tA-num" style="color:var(--c1)">0.49</span>
+          <span class="tA-unit">元/km</span>
+        </div>
+        <div class="tA-cap">每公里出行成本</div>
+        <div class="tA-foot">
+          <div class="tA-f"><div class="tA-fv">28,450</div><div class="tA-fl">总花费(元)</div></div>
+          <div class="tA-f"><div class="tA-fv">58,500</div><div class="tA-fl">总里程(km)</div></div>
+          <div class="tA-f"><div class="tA-fv">1,240</div><div class="tA-fl">服役(天)</div></div>
+        </div>
+      </div>
+      <div class="tileA">
+        <span style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c2)"></span>
+        <div class="tA-head">
+          <span class="tA-ic" style="background:#E8F7EE">🚗</span>
+          <span class="tA-name">汉DM-i</span>
+        </div>
+        <div class="tA-main">
+          <span class="tA-num" style="color:var(--c2)">0.39</span>
+          <span class="tA-unit">元/km</span>
+        </div>
+        <div class="tA-cap">每公里出行成本</div>
+        <div class="tA-foot">
+          <div class="tA-f"><div class="tA-fv">16,340</div><div class="tA-fl">总花费(元)</div></div>
+          <div class="tA-f"><div class="tA-fv">41,800</div><div class="tA-fl">总里程(km)</div></div>
+          <div class="tA-f"><div class="tA-fv">920</div><div class="tA-fl">服役(天)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div style="font-size:11.5px;font-weight:600;margin-bottom:7px;">
+      版式 B · 清单型 <span class="tag alt">最省空间</span>
+    </div>
+    <div class="cost-grid" style="margin-bottom:18px;">
+      <div class="tileB">
+        <div class="tB-head">
+          <span class="tB-ic" style="background:#EEF3FE">🚙</span>
+          <span class="tB-name">CRV</span>
+        </div>
+        <div class="tB-row"><span class="tB-k">服役</span><span class="tB-v">1,240 天</span></div>
+        <div class="tB-row"><span class="tB-k">总里程</span><span class="tB-v">58,500 km</span></div>
+        <div class="tB-row"><span class="tB-k">总花费</span><span class="tB-v">¥28,450</span></div>
+        <div class="tB-row"><span class="tB-k">每公里</span><span class="tB-v hl">¥0.49</span></div>
+      </div>
+      <div class="tileB">
+        <div class="tB-head">
+          <span class="tB-ic" style="background:#E8F7EE">🚗</span>
+          <span class="tB-name">汉DM-i</span>
+        </div>
+        <div class="tB-row"><span class="tB-k">服役</span><span class="tB-v">920 天</span></div>
+        <div class="tB-row"><span class="tB-k">总里程</span><span class="tB-v">41,800 km</span></div>
+        <div class="tB-row"><span class="tB-k">总花费</span><span class="tB-v">¥16,340</span></div>
+        <div class="tB-row"><span class="tB-k">每公里</span><span class="tB-v hl">¥0.39</span></div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div style="font-size:11.5px;font-weight:600;margin-bottom:7px;">
+      版式 C · 头像 + 2×2 网格 <span class="tag gray">最对称</span>
+    </div>
+    <div class="cost-grid">
+      <div class="tileC">
+        <div class="tC-head">
+          <span class="tC-ic" style="background:#EEF3FE">🚙</span>
+          <span class="tC-name">CRV</span>
+        </div>
+        <div class="tC-grid">
+          <div class="tC-cell"><div class="tC-v">1,240</div><div class="tC-l">服役(天)</div></div>
+          <div class="tC-cell"><div class="tC-v">58,500</div><div class="tC-l">里程(km)</div></div>
+          <div class="tC-cell"><div class="tC-v">28,450</div><div class="tC-l">花费(元)</div></div>
+          <div class="tC-cell"><div class="tC-v" style="color:var(--primary)">0.49</div><div class="tC-l">元/km</div></div>
+        </div>
+      </div>
+      <div class="tileC">
+        <div class="tC-head">
+          <span class="tC-ic" style="background:#E8F7EE">🚗</span>
+          <span class="tC-name">汉DM-i</span>
+        </div>
+        <div class="tC-grid">
+          <div class="tC-cell"><div class="tC-v">920</div><div class="tC-l">服役(天)</div></div>
+          <div class="tC-cell"><div class="tC-v">41,800</div><div class="tC-l">里程(km)</div></div>
+          <div class="tC-cell"><div class="tC-v">16,340</div><div class="tC-l">花费(元)</div></div>
+          <div class="tC-cell"><div class="tC-v" style="color:var(--primary)">0.39</div><div class="tC-l">元/km</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:16px;">
+      <b>A 主数字型</b>：每公里成本放大到 22px 并染色，是这张卡的「结论」；
+      下面三等分放明细。<br>
+      <span class="pro">优点</span>：一眼看到最想看的数字，三块并排时易于横向比较。
+      <span class="con">代价</span>：三等分在窄屏下明细字号只能到 11.5px。<br><br>
+
+      <b>B 清单型</b>：标签+值四行，规整。<br>
+      <span class="pro">优点</span>：最省高度，数值不易挤压。
+      <span class="con">代价</span>：没有「重点」，每公里成本只是第四行。<br><br>
+
+      <b>C 头像网格</b>：图标居中放大，2×2 对称。<br>
+      <span class="pro">优点</span>：视觉最整齐，图标辨识度高。
+      <span class="con">代价</span>：标签只能缩到 8.5px，10 万位数字容易挤。
+    </div>
+  </div>
+</div>
+
+<!-- ============ 说明列 ============ -->
+<div class="col" style="width:360px;">
+  <h2>改动清单与待确认项</h2>
+
+  <div class="note">
+    <b>已按要求改的 5 项</b>
+    <div style="margin-top:8px;line-height:2;">
+      <b>①</b> → 变成区块标题「数据总览」<br>
+      <b>②a</b> → 车辆数　<b>②b</b> → 本年总支出　<b>②c</b> → 总里程<br>
+      <b>④</b> → 「保养提醒 · 2 项待保养」<br>
+      <b>⑨</b> → 色点 - 车名 - 比例条 - 金额（同统计页）<br>
+      <b>⑬</b> → 新增「出行成本」两列图块
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;background:#FFF4E5;color:#8A5300;">
+    <b style="color:#7A4A00;">三个需要你确认的点</b>
+    <div style="margin-top:8px;line-height:1.9;">
+      <b>1. ⑨ 布局变了</b><br>
+      原来环图在左、图例在右。加了比例条后右侧只剩约 195px，
+      条会被压到 60px 以内，几乎看不出差异。<br>
+      所以我把<b>环图改为居中、图例移到下方通栏</b>，条能有约 150px。
+      如果你想保留左右布局，条会比较短。<br><br>
+
+      <b>2. 「总里程」用哪个口径</b><br>
+      是<b>当前总里程</b>（如 58,500 km，含买车前已跑的），
+      还是<b>建档后行驶里程</b>（58,500 − 购车时 12,000 = 46,500）？<br>
+      这直接影响「每公里成本」的分母 —— 用前者会把成本摊薄。<br>
+      我原型里用的是<b>当前总里程</b>。<br><br>
+
+      <b>3. 「总花费」含哪些</b><br>
+      是否包含<b>加油/充电</b>？包含则才是真实出行成本；
+      只算停车/保养/维修会偏低。我原型按<b>全部支出</b>算。
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>另外提醒</b>：<br>
+    · ③ 漏记提醒、⑥ 管理保养项 的显示条件不变<br>
+    · ⑪ 最近记录仍只显示 3 条<br>
+    · 出行成本图块<b>多于 2 辆车时自动换行</b>（两列，3 辆 → 2+1）
+  </div>
+</div>
+
+</body>
+</html>

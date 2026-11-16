@@ -25,11 +25,40 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface OverviewMetric {
   carCount: number;
+  /** 当前总里程合计（含购车前的里程） */
   totalMileage: number;
+  /**
+   * 建档后行驶里程合计 = Σ(当前里程 − 购车时里程)。
+   *
+   * 概览页顶部显示的是这个，而不是 current 总里程：它才是「本 App 记录到的行驶量」，
+   * 也是出行成本每公里分母的口径，两者必须一致。
+   */
+  totalDrivenMileage: number;
   monthCost: number;
   pendingCount: number;
   /** 距最近一次记账的天数；完全没有记录时为 null */
   lastRecordDays: number | null;
+}
+
+/**
+ * 单车的出行成本（全时段，非本年）。
+ *
+ * 与 `OverviewCarCost`（本年花费、用于环图占比）不同：
+ * 这里是「这辆车从建档到现在总共花了多少、跑了多少、每公里多少钱」。
+ */
+export interface OverviewDrivingCost {
+  carSourceId: string;
+  carName: string;
+  /** 车辆图标（emoji 或 icon-*.png） */
+  icon: string;
+  /** 服役天数：建档至今 */
+  days: number;
+  /** 建档后行驶里程（当前 − 购车时），可能为 0 */
+  drivenKm: number;
+  /** 全部支出合计（含加油/充电） */
+  totalSpend: number;
+  /** 每公里成本 = totalSpend / drivenKm；drivenKm 为 0 时为 0 */
+  perKm: number;
 }
 
 export interface OverviewMaintainItem {
@@ -78,6 +107,8 @@ export interface OverviewSnapshot {
   yearTotal: number;
   recent: OverviewRecentItem[];
   stale: OverviewStale | null;
+  /** 每车出行成本（按建档后里程算每公里成本） */
+  drivingCosts: OverviewDrivingCost[];
 }
 
 function startOfMonth(now: number): number {
@@ -153,6 +184,7 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
   const yearStart = startOfYear(now);
 
   let totalMileage = 0;
+  let totalDrivenMileage = 0;
   let monthCost = 0;
   let pendingCount = 0;
   let yearTotal = 0;
@@ -160,21 +192,28 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
 
   const maintain: OverviewMaintainItem[] = [];
   const carCosts: OverviewCarCost[] = [];
+  const drivingCosts: OverviewDrivingCost[] = [];
   const allRecent: OverviewRecentItem[] = [];
   const perCarActivity: Array<{ car: Car; last: number; hasRecord: boolean }> = [];
 
   for (const car of cars) {
     totalMileage += car.mileages || 0;
 
+    // 建档后行驶里程：当前里程 − 购车时里程。可能为负（用户改小了里程），夹到 0
+    const drivenKm = Math.max(0, (car.mileages || 0) - (car.initMileages || 0));
+    totalDrivenMileage += drivenKm;
+
     const costs = listCosts(storage, car.sourceId);
     const refuels = listRefuels(storage, car.sourceId);
 
-    // ---- 本月支出 / 今年支出（只从 Cost 汇总，避免与加油重复）----
+    // ---- 本月支出 / 今年支出 / 全时段支出（只从 Cost 汇总，避免与加油重复）----
     let carYear = 0;
+    let carTotal = 0;
     for (const c of costs) {
       const d = c.costDate || 0;
       if (d >= monthStart && d <= now) monthCost += c.amount;
       if (d >= yearStart && d <= now) carYear += c.amount;
+      carTotal += c.amount;
       if (d > latestRecord) latestRecord = d;
     }
     yearTotal += carYear;
@@ -184,6 +223,20 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
       amount: carYear,
       percent: 0,
       color: ''
+    });
+
+    // ---- 出行成本（全时段）----
+    const initDate = car.initDate || car.createdAt || now;
+    const days = Math.max(0, Math.floor((now - initDate) / DAY_MS));
+    drivingCosts.push({
+      carSourceId: car.sourceId,
+      carName: car.name,
+      icon: car.icon || '',
+      days,
+      drivenKm,
+      totalSpend: Math.round(carTotal * 100) / 100,
+      // 里程为 0 时不做除法，避免 Infinity 传出去
+      perKm: drivenKm > 0 ? carTotal / drivenKm : 0
     });
 
     // ---- 最近记录候选（Cost 即流水；类型用类别名）----
@@ -262,10 +315,14 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
   const metric: OverviewMetric = {
     carCount: cars.length,
     totalMileage,
+    totalDrivenMileage,
     monthCost: Math.round(monthCost * 100) / 100,
     pendingCount,
     lastRecordDays: hasAnyRecord ? Math.floor((now - latestRecord) / DAY_MS) : null
   };
+
+  // 出行成本：按每公里成本降序，便于横向比较「哪辆更费」
+  drivingCosts.sort((a, b) => b.perKm - a.perKm);
 
   return {
     mainCarId: mainCar ? mainCar.sourceId : '',
@@ -275,6 +332,7 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
     carCosts,
     yearTotal: Math.round(yearTotal * 100) / 100,
     recent,
-    stale
+    stale,
+    drivingCosts
   };
 }

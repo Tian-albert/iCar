@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>出行成本图块 · 布局调整版</title>
+<style>
+  :root{
+    --bg:#F5F6F8; --card:#FFFFFF;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486; --t4:#8A93A6;
+    --divider:#F0F1F4; --fill:#F2F3F5;
+    --primary:#3B6FF6;
+    --c1:#3B82F6; --c2:#22C55E; --c3:#F59E0B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:24px 16px 48px;display:flex;flex-wrap:wrap;
+    justify-content:center;gap:24px;align-items:flex-start;color:var(--t1);
+  }
+  .col{flex-shrink:0;}
+  .col.normal{width:340px;}
+  .col.zoom{width:400px;}
+  .col.spec{width:390px;}
+  h2{font-size:13.5px;font-weight:600;margin-bottom:5px;}
+  .sub-desc{font-size:11px;color:var(--t2);line-height:1.65;margin-bottom:10px;}
+
+  /* ============ 图块 ============ */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .tile{
+    background:var(--card);border-radius:16px;padding:12px 12px 11px;
+    box-shadow:0 1px 6px rgba(15,23,42,.05);
+    position:relative;overflow:hidden;
+  }
+  .tile-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;
+    border-radius:16px 0 0 16px;}
+
+  .t-head{display:flex;align-items:center;gap:6px;margin-bottom:9px;}
+  .t-ic{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;
+    justify-content:center;font-size:12px;flex-shrink:0;}
+  .t-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .t-days{flex-shrink:0;font-size:9px;color:var(--t3);background:var(--fill);
+    padding:2px 5px;border-radius:7px;line-height:1.3;white-space:nowrap;}
+
+  .t-main{display:flex;align-items:baseline;}
+  .t-cost{font-size:20px;font-weight:700;letter-spacing:-.5px;line-height:1;}
+  .t-per{font-size:10.5px;font-weight:500;color:var(--t3);margin-left:1px;}
+
+  /* 新增：上下区域之间的横分割线 */
+  .t-divider{height:1px;background:var(--divider);margin:9px 0 8px;}
+
+  /* 下区：两组左右并排，值在上、标签在下，中间一个 · */
+  .t-foot{display:flex;align-items:flex-start;}
+  .t-group{flex:1;min-width:0;}
+  .t-sep{flex-shrink:0;color:var(--t4);font-size:11px;line-height:1.1;
+    padding:0 3px;margin-top:1px;}
+  .t-v{font-size:11.5px;font-weight:600;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;line-height:1.25;}
+  .t-k{font-size:9.5px;color:var(--t3);margin-top:2px;line-height:1.2;}
+
+  /* 变体：第二组右对齐 */
+  .t-right .t-group:last-child{text-align:right;}
+  .t-right .t-group:last-child .t-v{text-align:right;}
+
+  /* ============ 标号 ============ */
+  .mk{
+    position:absolute;z-index:30;min-width:16px;height:16px;padding:0 4px;
+    border-radius:8px;background:#E5484D;color:#fff;font-size:10px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;line-height:1;
+    box-shadow:0 1px 4px rgba(0,0,0,.28);border:1px solid #fff;
+  }
+  .mk.blue{background:#3B6FF6;}
+  .mk.green{background:#2BA84A;}
+  .mk.orange{background:#E8912A;}
+  .mk.purple{background:#8E5CD9;}
+  .mk.teal{background:#14B8A6;}
+
+  .zoom-wrap{position:relative;width:100%;height:230px;}
+  .zoom-inner{
+    position:absolute;left:0;top:0;width:154.5px;
+    transform:scale(1.58);transform-origin:top left;
+  }
+
+  /* ============ 结构图 ============ */
+  .struct{background:#fff;border-radius:14px;padding:14px;font-size:11px;
+    line-height:1.6;color:var(--t2);}
+  .struct pre{
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;
+    line-height:1.85;color:var(--t1);white-space:pre;overflow-x:auto;
+  }
+
+  .spec-box{background:#fff;border-radius:14px;padding:6px 14px;
+    box-shadow:0 1px 3px rgba(15,23,42,.06);}
+  .sp{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #F0F1F4;}
+  .sp:last-child{border-bottom:none;}
+  .sp-n{min-width:20px;height:20px;padding:0 5px;border-radius:10px;color:#fff;
+    font-size:11px;font-weight:700;display:flex;align-items:center;
+    justify-content:center;flex-shrink:0;margin-top:1px;}
+  .sp-b{flex:1;min-width:0;}
+  .sp-t{font-size:12.5px;font-weight:600;}
+  .sp-d{font-size:11px;color:#5A6272;line-height:1.7;margin-top:3px;}
+  .sp-d code{background:#F2F3F5;padding:0 4px;border-radius:3px;font-size:10.5px;
+    color:#3B4252;}
+  .sp-d b{color:#1F2430;}
+  .sp-d .new{color:#1E7F3C;font-weight:600;}
+
+  .note{font-size:11px;color:#5A6272;line-height:1.85;margin-top:10px;
+    padding:10px 12px;background:#fff;border-radius:10px;}
+  .note b{color:#1F2430;}
+  .warnbox{background:#FFF4E5 !important;color:#8A5300;}
+  .warnbox b{color:#7A4A00;}
+  .newtag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;
+    background:#E4F6EA;color:#1E7F3C;font-weight:600;margin-left:4px;}
+</style>
+</head>
+<body>
+
+<!-- ============ 实际尺寸 ============ -->
+<div class="col normal">
+  <h2>实际尺寸（375px 屏 · 两列）</h2>
+  <div class="sub-desc">
+    主数字下方加横分割线；下区为「值在上、标签在下」的两组，左右并排，中间一个 ·。
+  </div>
+
+  <div class="grid" style="margin-bottom:14px;">
+    <div class="tile">
+      <span class="tile-stripe" style="background:var(--c1)"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:#EEF3FE">🚙</span>
+        <span class="t-name">CRV</span>
+        <span class="t-days">服役1,240天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:var(--c1)">￥0.61</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v">￥28,450</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <span class="t-sep">·</span>
+        <div class="t-group">
+          <div class="t-v">46,500 km</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tile">
+      <span class="tile-stripe" style="background:var(--c2)"></span>
+      <div class="t-head">
+        <span class="t-ic" style="background:#E8F7EE">🚗</span>
+        <span class="t-name">汉DM-i</span>
+        <span class="t-days">服役920天</span>
+      </div>
+      <div class="t-main">
+        <span class="t-cost" style="color:var(--c2)">￥0.48</span>
+        <span class="t-per">/km</span>
+      </div>
+      <div class="t-divider"></div>
+      <div class="t-foot">
+        <div class="t-group">
+          <div class="t-v">￥16,340</div>
+          <div class="t-k">总花费</div>
+        </div>
+        <span class="t-sep">·</span>
+        <div class="t-group">
+          <div class="t-v">33,800 km</div>
+          <div class="t-k">总里程</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>结构</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      上区：图标 + 车名 + 服役胶囊 / ￥x.xx/km<br>
+      <span style="color:#1E7F3C;font-weight:600;">━━ 横线 ━━</span><br>
+      下区：<b>￥28,450</b>　·　<b>46,500 km</b><br>
+      　　　<span style="color:#6B7486">总花费</span>　　　<span style="color:#6B7486">总里程</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 放大标注 ============ -->
+<div class="col zoom">
+  <h2>放大标注（1.58×）</h2>
+  <div class="sub-desc">编号沿用上次，新增 <b>11</b>（横分割线）、<b>12</b>（中间分隔点）。</div>
+
+  <div class="zoom-wrap">
+    <div class="zoom-inner">
+      <div class="tile">
+        <span class="tile-stripe" style="background:var(--c1)"></span>
+
+        <span class="mk" style="left:0;top:2px;">1</span>
+
+        <div class="t-head">
+          <span class="mk blue" style="left:-4px;top:11px;">2</span>
+          <span class="t-ic" style="background:#EEF3FE;margin-left:6px;">🚙</span>
+          <span class="mk orange" style="left:30px;top:11px;">3</span>
+          <span class="t-name">CRV</span>
+          <span class="mk purple" style="right:-3px;top:8px;">4</span>
+          <span class="t-days">服役1,240天</span>
+        </div>
+
+        <div class="t-main">
+          <span class="mk" style="left:-3px;top:-6px;">5</span>
+          <span class="t-cost" style="color:var(--c1)">￥0.61</span>
+          <span class="mk green" style="left:52px;top:4px;">6</span>
+          <span class="t-per">/km</span>
+        </div>
+
+        <div class="t-divider" style="position:relative;">
+          <span class="mk teal" style="right:-4px;top:-8px;">11</span>
+        </div>
+
+        <div class="t-foot" style="position:relative;">
+          <span class="mk" style="left:-3px;top:-8px;">7</span>
+          <span class="mk blue" style="left:-3px;top:10px;">8</span>
+          <div class="t-group">
+            <div class="t-v" style="margin-left:2px;">￥28,450</div>
+            <div class="t-k" style="margin-left:2px;">总花费</div>
+          </div>
+
+          <span class="mk teal" style="left:50%;top:-8px;transform:translateX(-50%);">12</span>
+          <span class="t-sep">·</span>
+
+          <span class="mk" style="right:-3px;top:-8px;">9</span>
+          <span class="mk blue" style="right:-3px;top:10px;">10</span>
+          <div class="t-group">
+            <div class="t-v">46,500 km</div>
+            <div class="t-k">总里程</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="struct" style="margin-top:14px;">
+    <div style="font-weight:600;color:#1F2430;margin-bottom:8px;">结构示意</div>
+<pre>.t-main      5 数字 + 6 单位        （上区）
+─────────────────────────  11 横线
+.t-foot  ┌──────────┬───┬──────────┐
+         │ 7 值     │12 │ 9 值     │
+         │ 8 标签   │ · │ 10 标签  │
+         └──────────┴───┴──────────┘
+           flex:1   固定   flex:1</pre>
+  </div>
+
+  <div class="note" style="margin-top:10px;">
+    <b>标号</b>：<b>1</b> 竖条　<b>2</b> 图标　<b>3</b> 车名　<b>4</b> 服役胶囊　
+    <b>5</b> 成本数字　<b>6</b> /km　<b>7</b> 总花费值　<b>8</b> 总花费标签　
+    <b>9</b> 总里程值　<b>10</b> 总里程标签　<b>11</b> 横分割线　<b>12</b> 中间分隔点
+  </div>
+</div>
+
+<!-- ============ 规格 ============ -->
+<div class="col spec">
+  <h2>新增 / 变更的部分</h2>
+
+  <div class="spec-box">
+    <div class="sp">
+      <span class="sp-n" style="background:#14B8A6">11</span>
+      <div class="sp-b">
+        <div class="sp-t">横分割线 <span class="newtag">新增</span></div>
+        <div class="sp-d">
+          高 <code>1px</code>，颜色 <code>#F0F1F4</code>（divider），通栏宽度<br>
+          上边距 <code>9px</code>、下边距 <code>8px</code><br>
+          用来分开「每公里成本」与「累计数据」两个区域
+        </div>
+      </div>
+    </div>
+
+    <div class="sp">
+      <span class="sp-n" style="background:#14B8A6">12</span>
+      <div class="sp-b">
+        <div class="sp-t">中间分隔点 · <span class="newtag">新增</span></div>
+        <div class="sp-d">
+          字符 <code>·</code>，<code>11px</code>，颜色 <code>#8A93A6</code>（text-4）<br>
+          左右各 <code>3px</code> 内边距，<code>flex-shrink: 0</code> 不参与压缩
+        </div>
+      </div>
+    </div>
+
+    <div class="sp">
+      <span class="sp-n" style="background:#E5484D">7</span>
+      <div class="sp-b">
+        <div class="sp-t">总花费 · 值 <span class="newtag">改为</span></div>
+        <div class="sp-d">
+          <code>11.5px / 600</code>，颜色 text-1，行高 <code>1.25</code><br>
+          <span class="new">从「与标签同行」改为<b>标签在其下方</b></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sp">
+      <span class="sp-n" style="background:#3B6FF6">8</span>
+      <div class="sp-b">
+        <div class="sp-t">总花费 · 标签 <span class="newtag">改为</span></div>
+        <div class="sp-d">
+          <code>9.5px</code>，颜色 text-3，<b>在值下方</b>，上间距 <code>2px</code><br>
+          <span class="new">不再与值基线对齐，改为块级换行</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sp">
+      <span class="sp-n" style="background:#E5484D">9</span>
+      <div class="sp-b">
+        <div class="sp-t">总里程 · 值 <span class="newtag">改为</span></div>
+        <div class="sp-d">同 7。格式仍为 <code>46,500 km</code></div>
+      </div>
+    </div>
+
+    <div class="sp">
+      <span class="sp-n" style="background:#3B6FF6">10</span>
+      <div class="sp-b">
+        <div class="sp-t">总里程 · 标签 <span class="newtag">改为</span></div>
+        <div class="sp-d">同 8，在值下方</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:12px;">
+    <b>宽度核算（重要）</b>
+    <div style="margin-top:6px;line-height:1.9;">
+      卡片内容宽 <b>130.5px</b>，减去中间点约 <b>12px</b>，
+      两组各得 <b>约 59px</b>。<br>
+      <code>￥28,450</code> 实测约 46px、<code>46,500 km</code> 约 54px
+      —— <b>刚好放得下，但没有余量</b>。<br><br>
+      所以金额到 <b>6 位数</b>（如 ￥128,450）或里程到 <b>6 位数</b>
+      （如 123,500 km）时，会被省略号截断。<br>
+      如果这在你的实际数据里可能出现，我可以：
+      <div style="margin-top:5px;padding-left:10px;line-height:1.9;">
+        · 值字号降到 11px（能多容纳约 2 个字符）<br>
+        · 或去掉 · ，两组各得 65px<br>
+        · 或金额/里程改用「万」为单位（￥2.85万）
+      </div>
+    </div>
+  </div>
+
+  <div class="note warnbox" style="margin-top:10px;">
+    <b>一个可选项：第二组是否右对齐</b><br>
+    现在是两组都<b>左对齐</b>，读起来是
+    <code>￥28,450 · 46,500 km</code>，像一句连续的话。<br><br>
+    也可以让<b>第二组右对齐</b>，两组分别贴住左右边缘，中间的 · 更居中，
+    视觉更对称 —— 但标签「总里程」会贴右边。<br>
+    要试试的话告诉我，我加一版对比。
+  </div>
+</div>
+
+</body>
+</html>

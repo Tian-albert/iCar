@@ -76,8 +76,9 @@ describe('概览页环图', () => {
   const wxss = read('pages/reminder/index.wxss');
 
   it('无数据时也会重设画布尺寸（否则残留上一次的环图）', () => {
-    // canvas.width 赋值必须在「无 segments 就 return」之前
-    const widthIdx = ts.indexOf('canvas.width = DONUT_SIZE * dpr');
+    // canvas.width 赋值必须在「无 segments 就 return」之前。
+    // 环图改成带外标签后宽度改为实测值，这里只校验顺序、不绑定变量名。
+    const widthIdx = ts.indexOf('canvas.width =');
     const emptyIdx = ts.indexOf('if (!segments.length)');
     expect(widthIdx).toBeGreaterThan(0);
     expect(emptyIdx).toBeGreaterThan(0);
