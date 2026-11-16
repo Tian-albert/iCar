@@ -179,8 +179,8 @@ describe('导出页不再有图标开关', () => {
     expect(wxml).not.toContain('包含自定义图标');
   });
 
-  it('导出调用不再传选项', () => {
+  it('导出调用不再传选项（只保留文件导出一个入口）', () => {
     expect(ts).not.toContain('includeIcons');
-    expect((ts.match(/exportBundle\(getStorage\(\)\)/g) || []).length).toBe(2);
+    expect((ts.match(/exportBundle\(getStorage\(\)\)/g) || []).length).toBe(1);
   });
 });

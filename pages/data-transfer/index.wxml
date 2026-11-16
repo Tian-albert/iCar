@@ -1,18 +1,22 @@
 <view class="page">
   <view class="card">
-    <view class="section-title">导出数据</view>
-    <view class="tip">可复制 JSON 文本，或直接生成 .json 文件分享到聊天（建议发给「文件传输助手」保存）。</view>
-    <view class="tip">自定义图标不会被导出，恢复备份时会换成对应的预设图标。</view>
-    <button class="btn-primary" bindtap="onExport">导出并复制</button>
-    <button class="btn-primary file-btn" bindtap="onExportFile">导出为 JSON 文件</button>
+    <view class="section-title">导出备份</view>
+    <view class="tip">生成一个备份文件并发送到聊天（建议发给「文件传输助手」长期保存）。</view>
+    <view class="tip">自定义图标不会被导出，恢复时会换成对应的预设图标。</view>
+    <button class="btn-primary" bindtap="onExportFile">导出备份文件</button>
+    <button wx:if="{{lastFilePath}}" class="btn-secondary file-btn" bindtap="onSaveToPhone">保存到手机</button>
   </view>
 
   <view class="card">
-    <view class="section-title">导入数据</view>
-    <view class="tip">可粘贴导出的 JSON 文本，或直接从聊天记录中选择 .json 文件导入。</view>
-    <view class="tip">导入时可选「合并」或「覆盖」：合并保留本机现有数据，覆盖会先清空本机再写入备份。</view>
-    <textarea class="json-input" placeholder="在此粘贴导出的 JSON 数据" value="{{jsonText}}" bindinput="onInput" />
-    <button class="btn-secondary" bindtap="onImport">粘贴导入</button>
-    <button class="btn-secondary file-btn" bindtap="onChooseFile">选择文件导入</button>
+    <view class="section-title">从文件恢复</view>
+    <view class="tip">从聊天记录中选择之前导出的备份文件。</view>
+    <view class="tip">恢复时可选「合并」或「覆盖」：合并保留本机现有数据，覆盖会先清空本机再写入备份。</view>
+    <button class="btn-primary" bindtap="onChooseFile">选择备份文件</button>
+  </view>
+
+  <view class="card">
+    <view class="section-title">说明</view>
+    <view class="tip">备份包含车辆、加油/充电、保养、维修、支出等全部记录，不含自定义图标图片。</view>
+    <view class="tip">导出与恢复需在手机微信中进行，微信开发者工具不支持文件分享。</view>
   </view>
 </view>
