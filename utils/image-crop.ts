@@ -165,6 +165,50 @@ export function zoomAroundCenter(
   );
 }
 
+/**
+ * 视口尺寸变化时，把取景迁移到新的视口。
+ *
+ * 用途：转屏、分屏、折叠屏展开、键盘弹出都会改变裁剪视口的像素边长。
+ * 若沿用旧 state 直接配新视口，取景会整体偏移——用户看到的和裁出来的不一致。
+ *
+ * 做法：先按**新视口**把位移夹回合法区间。缩放保持不变，
+ * 偏移量按视口中心等比调整，画面不会跳动，只是把同一块内容框进新尺寸。
+ */
+export function resizeViewport(
+  state: CropState,
+  src: CropSource,
+  prevViewportSize: number,
+  nextViewportSize: number
+): CropState {
+  if (!isValidSource(src) || !(nextViewportSize > 0)) {
+    return { zoom: MIN_ZOOM, offsetX: 0, offsetY: 0 };
+  }
+  const zoom = clampZoom(state.zoom);
+  const prev = prevViewportSize > 0 ? prevViewportSize : nextViewportSize;
+
+  // 取景中心在「图片坐标系」中的位置（相对旧视口）
+  const prevDisp = computeDisplay(src, prev, zoom);
+  const nextDisp = computeDisplay(src, nextViewportSize, zoom);
+  if (!(prevDisp.displayW > 0) || !(nextDisp.displayW > 0)) {
+    return clampOffset({ zoom, offsetX: 0, offsetY: 0 }, src, nextViewportSize);
+  }
+
+  // 旧视口中心对应的图片内坐标（从图片左上角算起的像素）
+  const centerInImageX = (prev / 2 - state.offsetX) / prevDisp.displayW;
+  const centerInImageY = (prev / 2 - state.offsetY) / prevDisp.displayH;
+
+  // 让新视口中心仍然对准同一处图片内容
+  return clampOffset(
+    {
+      zoom,
+      offsetX: nextViewportSize / 2 - centerInImageX * nextDisp.displayW,
+      offsetY: nextViewportSize / 2 - centerInImageY * nextDisp.displayH
+    },
+    src,
+    nextViewportSize
+  );
+}
+
 /** 是否可用（用于页面在拿到图片尺寸后判断要不要显示裁剪界面） */
 export function isCroppable(src: CropSource): boolean {
   return isValidSource(src);

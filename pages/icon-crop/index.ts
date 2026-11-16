@@ -15,6 +15,7 @@ import {
   computeDisplay,
   computeSourceRect,
   isCroppable,
+  resizeViewport,
   zoomAroundCenter
 } from '../../utils/image-crop';
 
@@ -82,8 +83,59 @@ Page({
           zoomPercent: 0,
           loading: false
         });
+        this.watchResize();
       })
       .exec();
+  },
+
+  /**
+   * 监听视口尺寸变化（转屏 / 分屏 / 折叠屏展开 / 键盘弹出）。
+   *
+   * 原来只在图片加载后量一次视口，之后一直用这个值换算裁剪区域。
+   * 视口一变，viewportSize 就与实际不符，computeSourceRect 算出的取样矩形
+   * 会整体偏移——用户看到的取景与裁出来的图不一致，且**肉眼很难察觉**。
+   */
+  watchResize() {
+    if (typeof wx === 'undefined' || !wx.onWindowResize) return;
+    (this as any)._onResize = (res: any) => this.handleResize(res);
+    wx.onWindowResize((this as any)._onResize);
+  },
+
+  handleResize(res: any) {
+    const natural = (this as any)._natural;
+    if (!isCroppable(natural) || this.data.loading || this.data.failed) return;
+
+    // 先按窗口宽度推算视口边长，再以实际测量为准（异步，避免连续 resize 抖动）
+    this.createSelectorQuery()
+      .select('#cropView')
+      .boundingClientRect((rect: any) => {
+        const vp = rect && rect.width;
+        const prev = this.data.viewportSize;
+        if (!(vp > 0) || Math.abs(vp - prev) < 0.5) return;
+
+        const next = resizeViewport(this.currentState(), natural, prev, vp);
+        const disp = computeDisplay(natural, vp, next.zoom);
+        this.setData({
+          viewportSize: vp,
+          displayW: disp.displayW,
+          displayH: disp.displayH,
+          offsetX: next.offsetX,
+          offsetY: next.offsetY,
+          zoom: next.zoom,
+          zoomPercent: Math.round(((next.zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100)
+        });
+        // res 仅用于触发时机，尺寸以实测为准
+        void res;
+      })
+      .exec();
+  },
+
+  onUnload() {
+    const handler = (this as any)._onResize;
+    if (handler && typeof wx !== 'undefined' && wx.offWindowResize) {
+      wx.offWindowResize(handler);
+    }
+    (this as any)._onResize = null;
   },
 
   /** 统一的落状态入口：先夹回合法区间再 setData，保证永远不出现白边 */
