@@ -87,14 +87,24 @@ function groupByMonth<T>(
 ): Array<{ label: string; value: number }> {
   const years = new Set(list.map(x => new Date(dateOf(x)).getFullYear()));
   const crossYear = years.size > 1;
-  const map = new Map<string, number>();
+  // 记下每个月份标签对应的最早时间戳，最后按它排序。
+  // 不能依赖「首次出现顺序」——入参可能是降序（listCosts 就是按 costDate 降序），
+  // 那样柱状图会变成最新→最旧，与「月度行程」的升序方向相反。
+  const map = new Map<string, { value: number; firstTs: number }>();
   for (const x of list) {
     const ts = dateOf(x);
     const label = crossYear ? monthLabelWithYear(ts) : monthLabel(ts);
-    map.set(label, (map.get(label) ?? 0) + valueOf(x));
+    const hit = map.get(label);
+    if (hit) {
+      hit.value += valueOf(x);
+      if (ts < hit.firstTs) hit.firstTs = ts;
+    } else {
+      map.set(label, { value: valueOf(x), firstTs: ts });
+    }
   }
-  // 按时间升序（以 label 出现顺序不保证有序，这里按首次出现顺序即可满足月度序列）
-  return [...map.entries()].map(([label, value]) => ({ label, value: round2(value) }));
+  return [...map.entries()]
+    .sort((a, b) => a[1].firstTs - b[1].firstTs)
+    .map(([label, agg]) => ({ label, value: round2(agg.value) }));
 }
 
 /**

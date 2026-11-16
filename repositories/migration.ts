@@ -103,7 +103,11 @@ const MIGRATIONS: Array<(adapter: StorageAdapter) => void> = [
 /** 启动时执行全部待迁移版本；返回迁移到的目标版本号 */
 export function runMigrations(adapter: StorageAdapter): number {
   const meta = adapter.getMeta<{ schemaVersion?: number }>();
-  let current = meta.schemaVersion ?? 1; // 旧数据默认按 v1
+  const raw = meta.schemaVersion;
+  // 旧数据没有这个字段时按 v1；但 0 / 负数 / 非整数会让下面的索引变成 -1 或小数，
+  // MIGRATIONS 取到 undefined 后调用会抛 TypeError，直接卡住启动。
+  let current =
+    typeof raw === 'number' && Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
   for (let i = current - 1; i < MIGRATIONS.length; i++) {
     MIGRATIONS[i](adapter);
     current = i + 2; // 版本号从 1 起，迁移函数索引 0 对应 v1->v1.1

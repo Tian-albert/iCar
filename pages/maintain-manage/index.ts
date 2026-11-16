@@ -8,6 +8,7 @@ import {
 } from '../../services/maintain-record.service';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
 import { getCar } from '../../services/car.service';
+import { safeBack } from '../../utils/safe-back';
 
 interface MaintainView {
   sourceId: string;
@@ -31,7 +32,7 @@ Page({
     // 无效参数不得继续 seed，否则会生成 carSourceId='' 的幽灵保养项
     if (!carId || !getCar(getStorage(), carId)) {
       wx.showToast({ title: '车辆不存在', icon: 'none' });
-      setTimeout(() => wx.navigateBack(), 600);
+      safeBack(this);
       return;
     }
     this.setData({ carId });

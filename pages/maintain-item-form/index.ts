@@ -1,8 +1,11 @@
 // 新建 / 编辑保养项（名称 + 周期里程 + 时间周期[数值 | 单位 两滚轮]）
 import { getStorage } from '../../store/index';
 import { getMaintain, addMaintain, updateMaintainCycle, MaintainCycleForm } from '../../services/maintain-record.service';
+import { getCar } from '../../services/car.service';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
 import { COMPONENT_ACTIVE_COLOR } from '../../utils/tokens';
+import { safeBack } from '../../utils/safe-back';
+import { guardSave } from '../../utils/save-guard';
 
 const MONTH_VALUES = Array.from({ length: 18 }, (_, i) => i + 1); // 月：1~18
 const YEAR_VALUES = Array.from({ length: 10 }, (_, i) => i + 1); // 年：1~10
@@ -31,7 +34,15 @@ Page({
   },
   onLoad(options: Record<string, string>) {
     const storage = getStorage();
-    this.setData({ carId: options.carId || '' });
+    const carId = options.carId || '';
+    // 新增时必须带合法 carId，否则会写入 carSourceId='' 的幽灵保养项
+    // （其余 5 个表单都有这道兜底，本页之前漏了）
+    if (!options.id && (!carId || !getCar(storage, carId))) {
+      wx.showToast({ title: '车辆不存在', icon: 'none' });
+      safeBack(this);
+      return;
+    }
+    this.setData({ carId });
     if (options.id) {
       const m = getMaintain(storage, options.id);
       if (m) {
@@ -123,12 +134,25 @@ Page({
 
     const form: MaintainCycleForm = { name: this.data.name, cycleMileages, timeUnit, timeValue, icon: this.data.icon };
     const storage = getStorage();
-    if (this.data.id) {
-      updateMaintainCycle(storage, this.data.id, form);
-    } else {
-      addMaintain(storage, this.data.carId, form);
+
+    // 进入页面时已校验过 carId；这里再兜一道，避免极端情况下写入空车
+    if (!this.data.id && !this.data.carId) {
+      wx.showToast({ title: '车辆不存在', icon: 'none' });
+      return;
     }
+
+    // 防重复提交：连点两次只写一条（其余 5 个表单都走这个，本页之前漏了）
+    const ok = guardSave(() => {
+      if (this.data.id) {
+        updateMaintainCycle(storage, this.data.id, form);
+      } else {
+        addMaintain(storage, this.data.carId, form);
+      }
+    });
+    // 被节流或保存抛错时不提示成功、也不返回
+    if (!ok) return;
+
     wx.showToast({ title: '已保存', icon: 'success' });
-    setTimeout(() => wx.navigateBack(), 600);
+    safeBack(this);
   }
 });

@@ -6,6 +6,7 @@ import { getCar } from '../../services/car.service';
 import { formatDate } from '../../utils/date';
 import { round2 } from '../../utils/number';
 import { RepairRecord } from '../../types/models';
+import { safeBack } from '../../utils/safe-back';
 
 Page({
   data: {
@@ -23,7 +24,7 @@ Page({
     const car = getCar(storage, options.carId);
     if (!car) {
       wx.showToast({ title: '车辆不存在', icon: 'none' });
-      setTimeout(() => wx.navigateBack(), 600);
+      safeBack(this);
       return;
     }
     const patch: Record<string, any> = { carId: car.sourceId, mileages: String(car.mileages) };
@@ -96,6 +97,6 @@ Page({
     if (!ok) return;
 
     wx.showToast({ title: '已保存', icon: 'success' });
-    setTimeout(() => wx.navigateBack(), 600);
+    safeBack(this);
   }
 });

@@ -2,6 +2,7 @@
 import { getStorage } from '../../store/index';
 import { getMaintainThresholds, setMaintainThresholds } from '../../services/maintain-record.service';
 import { getCar } from '../../services/car.service';
+import { safeBack } from '../../utils/safe-back';
 
 Page({
   data: {
@@ -13,7 +14,7 @@ Page({
     const carId = options.id;
     if (!carId || !getCar(getStorage(), carId)) {
       wx.showToast({ title: '车辆不存在', icon: 'none' });
-      setTimeout(() => wx.navigateBack(), 600);
+      safeBack(this);
       return;
     }
     this.setData({ carId });
@@ -46,6 +47,6 @@ Page({
     }
     setMaintainThresholds(getStorage(), this.data.carId, mileage, days);
     wx.showToast({ title: '已保存', icon: 'success' });
-    setTimeout(() => wx.navigateBack(), 600);
+    safeBack(this);
   }
 });

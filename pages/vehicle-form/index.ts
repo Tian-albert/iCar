@@ -6,6 +6,7 @@ import { formatDate } from '../../utils/date';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
 import { Car, EnergyType } from '../../types/models';
 import { deleteCarCascade } from '../../services/recycle.service';
+import { safeBack } from '../../utils/safe-back';
 
 const ENERGY_OPTIONS: Array<{ label: string; value: EnergyType }> = [
   { label: '燃油', value: 'fuel' },
@@ -134,7 +135,7 @@ Page({
     });
     if (!ok) return;
     wx.showToast({ title: isEdit ? '已保存' : '已添加', icon: 'success' });
-    setTimeout(() => wx.navigateBack(), 600);
+    safeBack(this);
   },
   /** 删除车辆：连带名下全部记录，30 天内可在回收站整批撤销 */
   onDeleteCar() {
@@ -149,7 +150,7 @@ Page({
           return;
         }
         wx.showToast({ title: '已删除', icon: 'none' });
-        setTimeout(() => wx.navigateBack(), 600);
+        safeBack(this);
       }
     });
   }

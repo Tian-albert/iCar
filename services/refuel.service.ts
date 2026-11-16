@@ -160,6 +160,10 @@ export function updateRefuel(storage: StorageAdapter, sourceId: string, form: Re
       cost.amount = actualPay;
       cost.costDate = form.fuelDate;
       cost.remark = form.remark ?? '';
+      // 能量类型可能被改（加油 ↔ 充电），关联支出的类别必须跟着换，
+      // 否则分类统计与环图会长期把这笔钱算在旧类别里（静默错账）。
+      const energyCategory = getEnergyCategory(storage, log.energyType);
+      if (energyCategory) cost.categorySourceId = energyCategory.sourceId;
       cost.updatedAt = Date.now();
       storage.update<Cost>('costs', cost);
     }

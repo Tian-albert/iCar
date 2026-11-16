@@ -90,7 +90,8 @@ function maintainSummary(
 
 Page({
   data: {
-    cars: [] as CarView[],
+    // 注意：这里曾有一份 cars 全量列表，但 WXML 从来没引用过，
+    // 只是白白多传一次跨线程数据（others 已经够用），已删除。
     hero: null as HeroView | null,
     others: [] as CarView[],
     carCount: 0,
@@ -203,7 +204,6 @@ Page({
     }
 
     this.setData({
-      cars: views,
       hero,
       others: views.filter(v => v.sourceId !== (hero ? hero.carId : '')),
       carCount: cars.length,

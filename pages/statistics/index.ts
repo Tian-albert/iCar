@@ -20,6 +20,7 @@ import {
 } from '../../utils/share-card-draw';
 import { formatDate } from '../../utils/date';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
+import { safeBack } from '../../utils/safe-back';
 
 interface CatView {
   name: string;
@@ -119,7 +120,7 @@ Page({
     const car = getCar(storage, this.data.carId);
     if (!car) {
       wx.showToast({ title: '车辆不存在', icon: 'none' });
-      setTimeout(() => wx.navigateBack(), 600);
+      safeBack(this);
       return;
     }
 

@@ -90,7 +90,7 @@
     <block wx:else>
       <donut-chart segments="{{categories}}" total="{{expenseTotal}}" class="donut-chart" />
       <view class="cat-list">
-        <view wx:for="{{categories}}" wx:key="name" class="cat-row">
+        <view wx:for="{{categories}}" wx:key="categorySourceId" class="cat-row">
           <view class="cat-dot" style="background: {{item.color}};"></view>
           <view class="cat-name">{{item.name}}</view>
           <!-- 占比条：宽度即该分类占总支出的百分比 -->

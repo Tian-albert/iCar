@@ -181,10 +181,20 @@ export function renderDonut(opts: DonutRenderOptions): void {
   if (!layout.valid) return;
   const { cx, cy, outerR, innerR, offR } = layout;
 
+  /**
+   * 角度按「实际合计」归一，而不是按固定的 100。
+   *
+   * 数据源的百分比可能合计 99.9 或 100.1（概览页只保留 1 位小数、不做补差），
+   * 用 `percent / 100` 画会在首尾留下一道可见缝隙；
+   * 而触摸命中判定（chart-math 的 hitDonutSegment）本来就是按合计归一的，
+   * 两边口径不一致还会导致「点得到的位置」和「画出来的位置」错位。
+   */
+  const pctTotal = segments.reduce((sum, seg) => sum + Math.max(0, seg.percent), 0) || 1;
+
   // 扇区
   let start = -Math.PI / 2;
   segments.forEach((seg, i) => {
-    const angle = (seg.percent / 100) * Math.PI * 2;
+    const angle = (seg.percent / pctTotal) * Math.PI * 2;
     const mid = start + angle / 2;
     const isActive = i === active;
     const ox = isActive ? Math.cos(mid) * offR : 0;
@@ -221,7 +231,7 @@ export function renderDonut(opts: DonutRenderOptions): void {
   start = -Math.PI / 2;
   const mids: number[] = [];
   segments.forEach(seg => {
-    const angle = (seg.percent / 100) * Math.PI * 2;
+    const angle = (seg.percent / pctTotal) * Math.PI * 2;
     mids.push(start + angle / 2);
     start += angle;
   });
@@ -262,8 +272,8 @@ export function renderDonut(opts: DonutRenderOptions): void {
   if (active >= 0 && active < segments.length) {
     const seg = segments[active];
     let s = -Math.PI / 2;
-    for (let i = 0; i < active; i++) s += (segments[i].percent / 100) * Math.PI * 2;
-    const a = (seg.percent / 100) * Math.PI * 2;
+    for (let i = 0; i < active; i++) s += (segments[i].percent / pctTotal) * Math.PI * 2;
+    const a = (seg.percent / pctTotal) * Math.PI * 2;
     const mid = s + a / 2;
     const ox = Math.cos(mid) * offR;
     const oy = Math.sin(mid) * offR;

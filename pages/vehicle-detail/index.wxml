@@ -79,7 +79,7 @@
     </view>
   </view>
   <view class="card" wx:if="{{maintainProgress.length > 0}}">
-    <view wx:for="{{maintainProgress}}" wx:key="name" class="mnt-row">
+    <view wx:for="{{maintainProgress}}" wx:key="key" class="mnt-row">
       <view class="mnt-name">{{item.name}}</view>
       <view class="mnt-remain {{item.urgent ? 'mnt-urgent' : ''}}">{{item.remainText}}</view>
       <view class="mnt-bar">

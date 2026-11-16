@@ -79,6 +79,17 @@ export function ensureMaintainTemplates(storage: StorageAdapter, carSourceId: st
     backfillMaintainIcons(storage, existing);
     return;
   }
+
+  // 这里必须用「含已删除」的全量判断。
+  // 若只看未删项，用户把某车的保养项全部删光后，下次进入任一入口
+  // （entry / maintain-form / maintain-manage / vehicle-detail）都会被
+  // 当成「首次」重新种回 6 个默认项 —— 删不掉，且回收站恢复后出现同名重复。
+  // 与预设类别用 categoriesSeeded 守卫「删掉的不重建」是同一个思路。
+  const everSeeded = storage
+    .list<Maintain>('maintains')
+    .some(m => m.carSourceId === carSourceId);
+  if (everSeeded) return;
+
   const now = Date.now();
   for (const tpl of DEFAULT_TEMPLATES) {
     const maintain: Maintain = {

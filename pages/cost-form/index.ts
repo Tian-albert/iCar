@@ -14,6 +14,7 @@ import { displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDate } from '../../utils/date';
 import { round2 } from '../../utils/number';
 import { Cost } from '../../types/models';
+import { safeBack } from '../../utils/safe-back';
 
 interface CategoryView {
   sourceId: string;
@@ -40,7 +41,7 @@ Page({
     const car = getCar(storage, options.carId);
     if (!car) {
       wx.showToast({ title: '车辆不存在', icon: 'none' });
-      setTimeout(() => wx.navigateBack(), 600);
+      safeBack(this);
       return;
     }
 
@@ -157,6 +158,6 @@ Page({
     });
     if (!ok) return;
     wx.showToast({ title: '已保存', icon: 'success' });
-    setTimeout(() => wx.navigateBack(), 600);
+    safeBack(this);
   }
 });

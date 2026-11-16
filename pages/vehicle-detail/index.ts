@@ -8,6 +8,7 @@ import { buildStats } from '../../domain/stats.service';
 import { displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDateTime, formatDate } from '../../utils/date';
 import { FuelConsumption, RefuelLog } from '../../types/models';
+import { safeBack } from '../../utils/safe-back';
 
 /** 详情页最多展示的加油/充电记录条数（其余进「查看全部」） */
 const RECENT_RECORD_LIMIT = 3;
@@ -42,6 +43,8 @@ interface CostView {
 }
 
 interface MaintainProgressView {
+  /** 列表 key：用保养项 sourceId，避免同名项（用户可建重复名称）导致复用错乱 */
+  key: string;
   name: string;
   remainText: string;
   progressPercent: number;
@@ -116,7 +119,7 @@ Page({
     const car = getCar(storage, this.data.carId);
     if (!car) {
       wx.showToast({ title: '车辆不存在', icon: 'none' });
-      setTimeout(() => wx.navigateBack(), 600);
+      safeBack(this);
       return;
     }
 
@@ -142,6 +145,7 @@ Page({
     // 只展示"快要保养"（剩余里程/天数 ≤ 阈值）的项目，其余进"更多"
     const soonProgress = allProgress.filter(p => p.urgent);
     const maintainProgress = soonProgress.map(p => ({
+      key: p.maintain.sourceId,
       name: p.maintain.name,
       remainText:
         p.remainDays !== null

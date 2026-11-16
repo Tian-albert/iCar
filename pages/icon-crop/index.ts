@@ -283,6 +283,19 @@ Page({
    * 图标用途 256px 已足够，乘 dpr 只会让文件变大。
    */
   exportCropped(): Promise<string> {
+    const natural = (this as any)._natural;
+    // 图片尚未解码完成时，computeSourceRect 会算出 0 尺寸的取样矩形，
+    // drawImage 画 0 尺寸不会报错 —— 结果是一张空白图，还会被 persistIcon
+    // 落盘并登记进图标库（登记后孤儿清理也收不回来）。这里直接拒绝。
+    if (
+      !natural ||
+      !(natural.width > 0) ||
+      !(natural.height > 0) ||
+      !(this.data.viewportSize > 0)
+    ) {
+      return Promise.reject(new Error('image not ready'));
+    }
+
     return new Promise((resolve, reject) => {
       // 超时兜底：exec / img.onload / canvasToTempFilePath 任一环节不回调时，
       // Promise 永不 settle，loading 遮罩（mask:true）会把整页锁死且无退出入口。
@@ -318,6 +331,11 @@ Page({
                   (this as any)._natural,
                   this.data.viewportSize
                 );
+                // 第二道防线：即使前置校验通过，取样矩形仍可能退化为 0
+                if (!(rect.sw > 0) || !(rect.sh > 0)) {
+                  finish(reject, new Error('invalid crop rect'));
+                  return;
+                }
                 ctx.clearRect(0, 0, CROP_OUTPUT_SIZE, CROP_OUTPUT_SIZE);
                 ctx.drawImage(
                   img,
