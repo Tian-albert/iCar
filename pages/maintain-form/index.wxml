@@ -9,7 +9,7 @@
     <scroll-view
       wx:if="{{maintains.length > 0}}"
       class="cat-scroll {{maintains.length > 3 ? 'cat-scroll-fixed' : ''}}"
-      scroll-y
+      scroll-y="{{maintains.length > 3}}"
       show-scrollbar="{{false}}">
       <view class="cat-grid">
         <view

@@ -11,7 +11,7 @@
   <view class="card">
     <view class="row">
       <view class="row-label">保养到期提醒</view>
-      <switch checked="{{remindEnabled}}" color="#3B6FF6" bindchange="onRemindChange" />
+      <switch checked="{{remindEnabled}}" color="{{activeColor}}" bindchange="onRemindChange" />
     </view>
     <view hover-class="hover-dim" class="row" bindtap="onOpenCategory">
       <view class="row-label">支出类别管理</view>

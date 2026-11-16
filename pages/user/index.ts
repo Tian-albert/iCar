@@ -1,11 +1,13 @@
 // 用户中心
 import { getStorage } from '../../store/index';
+import { COMPONENT_ACTIVE_COLOR } from '../../utils/tokens';
 import { getUser, setRemindEnabled } from '../../services/user.service';
 import { FEEDBACK_EMAIL } from '../../utils/app-config';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 
 Page({
   data: {
+    activeColor: COMPONENT_ACTIVE_COLOR,
     nickname: '微信用户',
     remindEnabled: true,
     feedbackEmail: FEEDBACK_EMAIL

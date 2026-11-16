@@ -17,7 +17,7 @@
     </view>
     <view class="form-row">
       <view class="form-label">按时间周期保养</view>
-      <switch checked="{{timeEnabled}}" color="#3B6FF6" bindchange="onTimeEnabledChange" />
+      <switch checked="{{timeEnabled}}" color="{{activeColor}}" bindchange="onTimeEnabledChange" />
     </view>
     <view class="form-row" wx:if="{{timeEnabled}}">
       <view class="form-label">时间周期</view>

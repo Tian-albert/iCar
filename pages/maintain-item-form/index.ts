@@ -2,6 +2,7 @@
 import { getStorage } from '../../store/index';
 import { getMaintain, addMaintain, updateMaintainCycle, MaintainCycleForm } from '../../services/maintain-record.service';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
+import { COMPONENT_ACTIVE_COLOR } from '../../utils/tokens';
 
 const MONTH_VALUES = Array.from({ length: 18 }, (_, i) => i + 1); // 月：1~18
 const YEAR_VALUES = Array.from({ length: 10 }, (_, i) => i + 1); // 年：1~10
@@ -9,6 +10,7 @@ const UNIT_OPTIONS = ['月', '年'] as string[];
 
 Page({
   data: {
+    activeColor: COMPONENT_ACTIVE_COLOR,
     carId: '',
     id: '',
     name: '',

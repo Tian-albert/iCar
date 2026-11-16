@@ -12,6 +12,7 @@ import {
   getCategory
 } from '../../services/cost.service';
 import { isSystemPreset } from '../../repositories/seed';
+import { COMPONENT_ACTIVE_COLOR } from '../../utils/tokens';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
 
 /** 单行高度（rpx），与 .row 的 min-height 保持一致 */
@@ -31,6 +32,8 @@ interface CatView {
 
 Page({
   data: {
+    // switch 的 color 是 WXML 属性，读不到 CSS 变量，只能取令牌常量
+    activeColor: COMPONENT_ACTIVE_COLOR,
     categories: [] as CatView[],
     pickerShow: false,
     pickingId: '',

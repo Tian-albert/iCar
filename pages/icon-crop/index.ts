@@ -18,9 +18,11 @@ import {
   resizeViewport,
   zoomAroundCenter
 } from '../../utils/image-crop';
+import { COMPONENT_ACTIVE_COLOR } from '../../utils/tokens';
 
 Page({
   data: {
+    activeColor: COMPONENT_ACTIVE_COLOR,
     src: '',
     /** 裁剪视口的实际像素边长，由 boundingClientRect 测得 */
     viewportSize: 0,

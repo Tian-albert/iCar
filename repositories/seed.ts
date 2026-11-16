@@ -54,6 +54,19 @@ function aliveCategories(adapter: StorageAdapter): Category[] {
 }
 
 /**
+ * 某个规范名是否已被用户改名占用。
+ *
+ * 预设的 sourceId 恒为 `mp:category:<原名>`，而用户改名只改 `name`。
+ * 因此「sourceId 指向原名、但 name 已不同」就是「用户主动改过名」的可靠信号。
+ * 一旦如此，就不该再把原名（或它的曾用名）归一化出来——否则导入旧备份后
+ * 会凭空多出一个原类别，用户的改名等于白改。
+ */
+function renamedAway(adapter: StorageAdapter, canonical: string): boolean {
+  const id = `mp:category:${canonical}`;
+  return aliveCategories(adapter).some(c => c.sourceId === id && c.name !== canonical);
+}
+
+/**
  * 同名预设去重：历史数据可能残留多条同名预设
  * （早期 seed 用随机 sourceId，或导入备份时按 sourceId 新增）。
  * 保留优先项（sourceId = mp:category:<name>），其余软删并把支出记录迁移过去。
@@ -75,10 +88,12 @@ export function dedupePresetCategories(adapter: StorageAdapter): void {
 
     for (const dup of list) {
       if (dup.sourceId === keep.sourceId) continue;
-      // 支出记录改指向保留项，避免统计与列表出现"其他"
+      // 支出记录改指向保留项，避免统计与列表出现"其他"。
+      // 不按 deleted 过滤：回收站里的支出恢复后也要归到正确类别，
+      // 否则会指向一个已删除的类别、显示成「其他」。
       const costs = adapter
         .list<Cost>('costs')
-        .filter(x => x.categorySourceId === dup.sourceId && !x.deleted);
+        .filter(x => x.categorySourceId === dup.sourceId);
       for (const cost of costs) {
         cost.categorySourceId = keep.sourceId;
         cost.updatedAt = now;
@@ -89,12 +104,17 @@ export function dedupePresetCategories(adapter: StorageAdapter): void {
   }
 }
 
-/** 把 from 的支出记录全部改指向 to，然后软删 from */
+/**
+ * 把 from 的支出记录全部改指向 to，然后软删 from。
+ *
+ * **包含回收站里的支出**：软删只是「暂时不要」，恢复后仍应属于原类别。
+ * 若只迁移未删除的，那些记录会指向一个已删除的类别，恢复后显示「其他」。
+ */
 function mergeCategoryInto(adapter: StorageAdapter, from: Category, to: Category): void {
   const now = Date.now();
   const costs = adapter
     .list<Cost>('costs')
-    .filter(x => x.categorySourceId === from.sourceId && !x.deleted);
+    .filter(x => x.categorySourceId === from.sourceId);
   for (const cost of costs) {
     cost.categorySourceId = to.sourceId;
     cost.updatedAt = now;
@@ -117,6 +137,9 @@ function normalizePresetName(
   canonical: string,
   aliases: string[]
 ): void {
+  // 用户已把该预设改名 → 不再把曾用名归一化回原名，否则会凭空多出一个类别
+  if (renamedAway(adapter, canonical)) return;
+
   const all = aliveCategories(adapter);
   const olds = all.filter(c => aliases.indexOf(c.name) >= 0);
   if (!olds.length) return;

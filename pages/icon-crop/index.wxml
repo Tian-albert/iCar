@@ -37,7 +37,7 @@
       max="100"
       value="{{zoomPercent}}"
       block-size="20"
-      activeColor="#3B6FF6"
+      activeColor="{{activeColor}}"
       backgroundColor="rgba(255,255,255,0.18)"
       bindchanging="onZoomSlide"
       bindchange="onZoomSlide" />

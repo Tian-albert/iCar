@@ -14,7 +14,7 @@
       <view class="row-name">{{item.name}}</view>
       <text hover-class="hover-dim" class="act edit" data-id="{{item.sourceId}}" data-name="{{item.name}}" bindtap="onEdit">编辑</text>
       <text hover-class="hover-dim" class="act delete" data-id="{{item.sourceId}}" data-name="{{item.name}}" bindtap="onDelete">删除</text>
-      <switch checked="{{item.visible}}" color="#3B6FF6" data-id="{{item.sourceId}}" bindchange="onToggleVisible" />
+      <switch checked="{{item.visible}}" color="{{activeColor}}" data-id="{{item.sourceId}}" bindchange="onToggleVisible" />
       <view
         class="drag-handle {{dragging && dragId === item.sourceId ? 'drag-handle-active' : ''}}"
         data-id="{{item.sourceId}}"
