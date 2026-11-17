@@ -124,7 +124,12 @@ export function updateRepair(storage: StorageAdapter, sourceId: string, form: Re
   return record;
 }
 
-/** 删除维修记录：软删记录 + 关联支出 */
+/**
+ * 删除维修记录（软删，连带关联支出，进回收站）。
+ *
+ * **幂等**：记录不存在或已删也照常返回，不抛错 ——
+ * 「已经没了」与「刚被我删掉」对用户是同一个结果。
+ */
 export function removeRepair(storage: StorageAdapter, sourceId: string): void {
   const record = storage.get<RepairRecord>('repairRecords', sourceId);
   if (!record || record.deleted) return;

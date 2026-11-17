@@ -47,7 +47,13 @@ export function updateCost(storage: StorageAdapter, sourceId: string, form: Cost
   return cost;
 }
 
-/** 删除手动记的支出（软删） */
+/**
+ * 删除手动记的支出（软删，进回收站）。
+ *
+ * **幂等**：记录不存在或已删也照常返回，不抛错 ——
+ * 「已经没了」与「刚被我删掉」对用户是同一个结果。
+ * 这与 `updateCost` 的抛错行为不同，判据见 `service-error.ts`。
+ */
 export function removeCost(storage: StorageAdapter, sourceId: string): void {
   storage.softDelete('costs', sourceId);
 }
@@ -80,13 +86,6 @@ export function listSpendCategories(storage: StorageAdapter): Category[] {
   return listCategories(storage).filter(c => c.visible !== false && !c.presetType);
 }
 
-/**
- * 编辑支出时定位类别（页面与单测共用）：
- * - 编辑态按原 categorySourceId 精确定位，命中即选中
- * - 找不到原类别（已软删/数据异常）时锁定，selectedIndex = -1，
- *   由调用方保留原 categorySourceId，绝不回退到第一项而串改类别
- * - 新建态默认选第一项
- */
 /** 是否已有同名类别（大小写不敏感；excludeId 用于编辑时排除自身） */
 export function hasCategoryName(
   storage: StorageAdapter,
@@ -99,6 +98,13 @@ export function hasCategoryName(
   );
 }
 
+/**
+ * 编辑支出时定位类别（页面与单测共用）：
+ * - 编辑态按原 categorySourceId 精确定位，命中即选中
+ * - 找不到原类别（已软删/数据异常）时锁定，selectedIndex = -1，
+ *   由调用方保留原 categorySourceId，绝不回退到第一项而串改类别
+ * - 新建态默认选第一项
+ */
 export function resolveCategorySelection(
   cats: Array<{ sourceId: string }>,
   originalId: string,
@@ -141,8 +147,13 @@ export function addCategory(storage: StorageAdapter, name: string, icon: string)
 }
 
 /**
- * 类别排序：在同组（预设 / 自定义）内上移或下移一位。
+ * 上下移动一个类别（供按钮式排序）。
+ *
  * 交换后按新顺序重写整组 sortOrder，保证连续且唯一。
+ *
+ * 返回 `false` 的三种情况都**不是错误**：类别不存在、是系统预设、
+ * 已经在最前/最后。调用方（拖动排序）需要用它区分「移动了」与「没移动」
+ * 来决定是否重绘，所以这里不抛错 —— 判据见 `service-error.ts`。
  */
 export function moveCategory(storage: StorageAdapter, sourceId: string, direction: 'up' | 'down'): boolean {
   const cat = getCategory(storage, sourceId);
@@ -175,6 +186,9 @@ export function moveCategory(storage: StorageAdapter, sourceId: string, directio
 /**
  * 一次拖动跨越 N 行的批量换位（R-12）：整组 sortOrder 只重写一次，
  * 避免手指快速滑动时连续 N 次写库 + N 次列表重排导致触摸序列中断。
+ *
+ * 返回值语义同 `moveCategory`：`false` 表示「没有发生位移」（含目标不存在、
+ * 系统预设、已到边界），不是错误。
  */
 export function moveCategoryBy(
   storage: StorageAdapter,
@@ -208,6 +222,12 @@ export function moveCategoryBy(
   return true;
 }
 
+/**
+ * 修改类别名称与图标。
+ *
+ * 类别不存在、或是系统预设（加油/充电/保养/维修）时**静默返回**：
+ * 系统预设由专用表单按 presetType 自动归类，改名会让用户误以为能改归属。
+ */
 export function updateCategory(storage: StorageAdapter, sourceId: string, name: string, icon: string): void {
   const cat = getCategory(storage, sourceId);
   // 预设与自定义现在同等对待，只有系统预设（加油/充电/保养/维修）不可改名：
@@ -219,7 +239,7 @@ export function updateCategory(storage: StorageAdapter, sourceId: string, name: 
   storage.update('categories', cat);
 }
 
-/** 更换类别图标（预设与自定义均可） */
+/** 设置类别图标（预设与自定义均可）；类别不存在时静默返回，属附带动作，不值得打断用户 */
 export function setCategoryIcon(storage: StorageAdapter, sourceId: string, icon: string): void {
   const cat = getCategory(storage, sourceId);
   if (!cat) return;
@@ -228,7 +248,7 @@ export function setCategoryIcon(storage: StorageAdapter, sourceId: string, icon:
   storage.update('categories', cat);
 }
 
-/** 设置类别是否在"记支出"中显示（预设与自定义均可开关） */
+/** 设置类别是否在「记支出」中显示（预设与自定义均可开关）；类别不存在时静默返回 */
 export function setCategoryVisible(storage: StorageAdapter, sourceId: string, visible: boolean): void {
   const cat = getCategory(storage, sourceId);
   if (!cat) return;

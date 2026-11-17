@@ -29,11 +29,40 @@
  *    - 返回 `{ ok, message?, ... }`。因为「部分成功」无法用异常表达，
  *      而调用方需要拿到进度数字（added / cleared / removed）。
  *
+ * ## 判据：同一个「目标不存在」，为什么有时抛错有时静默
+ *
+ * 服务层里确实存在两种处理，看似矛盾，但依据是同一条：
+ *
+ * > **用户是否「刚刚提交了一个明确的操作、且必须知道结果」。**
+ *
+ * 是 → 抛 `ServiceError`；否 → 静默返回。
+ *
+ * | 函数 | 目标不存在时 | 依据 |
+ * | --- | --- | --- |
+ * | `updateCost` / `updateRepair` / `updateRefuel` / `updateMaintainHandle` | **抛错** | 用户点了「保存」，正在等结果。记录在别处被删了，必须告诉他，否则他以为存上了 |
+ * | `setCarIcon` / `setCategoryIcon` / `setCategoryVisible` / `updateCategory` | **静默返回** | 用户正在选择器里操作，目标突然消失属于罕见竞态。此时弹「记录不存在」既突兀又无动作可做 |
+ * | `removeCost` / `removeRepair` / `removeRefuel` / `removeMaintain` / `removeMaintainHandle` | **静默返回** | 删除是**幂等**的：「已经没了」与「刚被我删掉」对用户是同一个结果 |
+ * | `moveCategory` | **返回 `false`** | 「已经在最前/最后，移不动」是正常边界，不是错误；且调用方（拖动排序）需要区分「移动了」与「没移动」来决定是否重绘 |
+ *
+ * 也就是说：**`updateXxx` 抛错是因为它承诺了「改完你能看到变化」，而
+ * `setXxxIcon` 只是附带动作、`removeXxx` 目标已达成、`moveCategory` 需要布尔结果。**
+ *
+ * 写新函数时按这条判据选，不要凭手感。
+ *
  * ## 为什么不用 `throw new Error` 直接抛
  *
  * 因为**无法区分**「这条错误该不该给用户看」。
  * `guardSave` 需要知道：是显示具体原因，还是显示通用兜底文案。
  * 用独立的类做标记，运行时用 `instanceof` 判断，不依赖 message 文本匹配。
+ *
+ * ## 反例：什么不该出现在这里
+ *
+ * - `throw new Error('car not found')` —— message 是给开发者的，
+ *   用户看不懂，而且 `guardSave` 不会显示它（会走通用兜底），
+ *   等于这条信息白写了
+ * - `throw serviceError('sourceId 为空')` —— 泄露了字段名
+ * - 查询类函数抛 `ServiceError` —— 查不到不是错误，
+ *   调用方（页面）会因此走进异常分支而不是空态分支
  */
 
 /**

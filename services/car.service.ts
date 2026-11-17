@@ -67,7 +67,14 @@ export function getCar(storage: StorageAdapter, sourceId: string): Car | null {
   return car && !car.deleted ? car : null;
 }
 
-/** 更换车辆图标 */
+/**
+ * 设置车辆图标。
+ *
+ * 车辆不存在时**静默返回**（对比 `updateCost` 会抛错）：
+ * 用户正在图标选择器里操作，目标突然消失属于罕见竞态，
+ * 此时弹「车辆不存在」既突兀、也没有可执行的动作。
+ * 判据见 `service-error.ts` 的「目标不存在为什么有时抛有时静默」。
+ */
 export function setCarIcon(storage: StorageAdapter, sourceId: string, icon: string): void {
   const car = getCar(storage, sourceId);
   if (!car) return;

@@ -43,14 +43,19 @@ function resolveActualPay(raw: number | null | undefined, shouldPay: number): nu
   return round2(raw);
 }
 
+/** 取「加油」预设类别；预设被删时返回 `null`（查询类不抛错） */
 export function getFuelCategory(storage: StorageAdapter): Category | null {
   return getEnergyCategory(storage, 'fuel');
 }
 
 /**
- * R-07：按能量类型取关联支出类别。
+ * R-07：按能量类型取关联支出类别（充电 / 加油）。
+ *
  * 充电记录用「充电」预设（presetType=ev），老库没有该预设时回退「加油」类别，
  * 保证历史备份导入后仍可正常落库。
+ *
+ * 查不到返回 `null`。**注意**：写入类调用方（`saveRefuel`）拿到 `null` 后
+ * 必须自己抛 `ServiceError`，因为「缺类别」会让这笔记录无法归类。
  */
 export function getEnergyCategory(storage: StorageAdapter, energyType: EnergyType): Category | null {
   const all = storage.list<Category>('categories').filter(c => !c.deleted);
@@ -183,7 +188,11 @@ export function updateRefuel(storage: StorageAdapter, sourceId: string, form: Re
   return log;
 }
 
-/** 删除加油记录：软删记录 + 关联支出，重算区间与里程 */
+/**
+ * 删除加油/充电记录（软删，连带关联支出，进回收站）。
+ *
+ * **幂等**：记录不存在或已删也照常返回，不抛错。
+ */
 export function removeRefuel(storage: StorageAdapter, sourceId: string): void {
   const log = storage.get<RefuelLog>('fuelRecords', sourceId);
   if (!log || log.deleted) return;

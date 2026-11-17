@@ -6,7 +6,6 @@ import { genId } from '../utils/id';
 import { syncMileages } from './car.service';
 import { serviceError } from './service-error';
 
-/** 默认保养项模板（设计报告 4.2.3 CRV 模板） */
 /**
  * 默认保养项模板。
  *
@@ -296,7 +295,11 @@ export function updateMaintainHandle(storage: StorageAdapter, sourceId: string, 
   return handle;
 }
 
-/** 删除保养执行：软删 handle + logs + 关联支出 */
+/**
+ * 删除一次保养执行（软删，连带明细与关联支出，进回收站）。
+ *
+ * **幂等**：记录不存在或已删也照常返回，不抛错。
+ */
 export function removeMaintainHandle(storage: StorageAdapter, sourceId: string): void {
   const handle = storage.get<MaintainHandle>('maintainHandles', sourceId);
   if (!handle || handle.deleted) return;
@@ -310,7 +313,12 @@ export function removeMaintainHandle(storage: StorageAdapter, sourceId: string):
   syncMileages(storage, handle.carSourceId, true);
 }
 
-/** 删除保养项模板：连带软删其历史日志，30 天内可在回收站撤销（R-02） */
+/**
+ * 删除一个保养项（软删，连带其历史明细，进回收站）。
+ *
+ * **幂等**：记录不存在或已删也照常返回，不抛错。
+ * 注意：删光全部保养项后不会被自动重建，见 `ensureMaintainTemplates`。
+ */
 export function removeMaintain(storage: StorageAdapter, sourceId: string): void {
   const m = storage.get<Maintain>('maintains', sourceId);
   if (!m || m.deleted) return;

@@ -2,6 +2,7 @@
 import { StorageAdapter } from '../repositories/storage.adapter';
 import { User } from '../types/models';
 
+/** 取本机用户偏好；从未初始化时返回 `null`（查询类不抛错，调用方给默认值） */
 export function getUser(storage: StorageAdapter): User | null {
   return storage.getUser();
 }

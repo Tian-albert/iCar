@@ -88,7 +88,12 @@ export function listRecycleBatches(storage: StorageAdapter): RecycleBatch[] {
   return [...map.values()].sort((a, b) => b.deletedAt - a.deletedAt);
 }
 
-/** 整批恢复；恢复后重建受影响车辆的区间与里程 */
+/**
+ * 恢复一个删除批次。
+ *
+ * 返回 `false` 表示该批次已不存在（可能已被手动清理或超过保留期）。
+ * 这不是错误 —— 页面据此提示「记录已不存在」即可。
+ */
 export function restoreBatch(storage: StorageAdapter, batch: string): boolean {
   const target = listRecycleBatches(storage).find(b => b.batch === batch);
   if (!target) return false;
@@ -140,7 +145,11 @@ export function newDeleteBatch(): string {
   return genId('del');
 }
 
-/** 车辆级联删除：车辆 + 名下全部记录共用批次，30 天内可整批恢复 */
+/**
+ * 级联删除车辆及其名下全部记录（同一删除批次，30 天内可整批恢复）。
+ *
+ * 返回 `false` 表示车辆不存在或已删，不是错误。
+ */
 export function deleteCarCascade(storage: StorageAdapter, carId: string): boolean {
   const car = storage.get<any>('cars', carId);
   if (!car || car.deleted) return false;
