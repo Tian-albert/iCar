@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>统计页分享图 · 重新设计原型（详细版 + 简略版）</title>
+<style>
+  :root{
+    --primary:#3B6FF6; --primary-dark:#1D4ED8;
+    --t1:#1F2430; --t2:#5A6272; --t3:#6B7486;
+    --bg:#F5F6F8; --card:#fff; --fill:#F2F3F5; --divider:#F0F1F4;
+    --c1:#3B82F6; --c2:#22C55E; --c3:#F59E0B; --c4:#EF4444;
+    --c5:#A855F7; --c6:#14B8A6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#E9ECF2;padding:26px 14px 50px;color:var(--t1);
+  }
+  .wrap{max-width:820px;margin:0 auto;}
+  h1{font-size:18px;font-weight:700;margin-bottom:4px;}
+  h2{font-size:15px;font-weight:700;margin:34px 0 4px;}
+  h2 .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:middle;}
+  .tag.full{background:#E3EAF8;color:#3B6FF6;}
+  .tag.brief{background:#E4F6EA;color:#1E7F3C;}
+  .intro{font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:18px;}
+  .intro b{color:var(--t1);}
+  .intro .fix{color:#1E7F3C;font-weight:600;}
+
+  /* 分享卡片画布：750 宽，缩放 0.72 展示 */
+  .canvas{
+    width:750px;transform-origin:top left;transform:scale(0.72);
+    background:var(--bg);border-radius:20px;overflow:hidden;
+    box-shadow:0 18px 50px rgba(15,23,42,.25);
+    font-size:0;
+  }
+  .canvas-spacer{height:545px;} /* scale 0.72 后占位，避免重叠 */
+  .pad{padding:0 24px;}
+
+  /* ===== 头部 ===== */
+  .header{
+    background:linear-gradient(160deg,#1E2536 0%, #26324E 55%, #2F3D60 100%);
+    color:#fff;padding:30px 28px 34px;position:relative;overflow:hidden;
+  }
+  .header::before{
+    content:"";position:absolute;right:-70px;top:-70px;width:240px;height:240px;
+    background:radial-gradient(circle, rgba(59,111,246,.35), transparent 70%);
+  }
+  .header::after{
+    content:"";position:absolute;right:30px;bottom:-90px;width:200px;height:200px;
+    background:radial-gradient(circle, rgba(255,255,255,.06), transparent 70%);
+  }
+  .brand-row{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
+  .brand{display:flex;align-items:center;gap:11px;}
+  .logo{
+    width:44px;height:44px;border-radius:11px;flex-shrink:0;
+    box-shadow:0 4px 12px rgba(59,111,246,.45);
+    object-fit:cover;display:block;
+  }
+  .brand-name{font-size:20px;font-weight:700;letter-spacing:.5px;}
+  .brand-sub{font-size:12px;opacity:.62;margin-top:2px;}
+  .range-pill{
+    font-size:13px;padding:5px 12px;border-radius:999px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);
+    letter-spacing:.5px;
+  }
+  .car-name{font-size:40px;font-weight:700;margin-top:26px;position:relative;z-index:1;}
+  .car-meta{font-size:15px;opacity:.72;margin-top:8px;position:relative;z-index:1;letter-spacing:.3px;}
+  .hero-stat{
+    margin-top:24px;display:flex;align-items:flex-end;justify-content:space-between;
+    position:relative;z-index:1;
+  }
+  .hero-stat .num{font-size:54px;font-weight:700;letter-spacing:-1px;line-height:1;}
+  .hero-stat .num small{font-size:26px;font-weight:600;opacity:.85;margin-right:2px;}
+  .hero-stat .lbl{font-size:13px;opacity:.62;text-align:right;line-height:1.5;}
+  .hero-stat .lbl b{display:block;font-size:15px;opacity:.9;font-weight:600;}
+
+  /* ===== 指标卡 ===== */
+  .section{margin-top:22px;}
+  .section-title{font-size:15px;font-weight:600;margin:0 4px 10px;}
+  .metric-card{
+    background:var(--card);border-radius:16px;padding:20px 8px;margin-bottom:14px;
+    display:flex;box-shadow:0 2px 10px rgba(15,23,42,.05);
+  }
+  .metric-col{flex:1;text-align:center;}
+  .metric-col + .metric-col{border-left:1px solid var(--divider);}
+  .metric-value{font-size:30px;font-weight:700;letter-spacing:-.5px;}
+  .metric-label{font-size:12px;color:var(--t3);margin-top:6px;line-height:1.4;padding:0 6px;}
+
+  /* ===== 分类支出 ===== */
+  .cat-head{display:flex;align-items:baseline;justify-content:space-between;margin:0 4px 10px;}
+  .cat-head .l{font-size:15px;font-weight:600;}
+  .cat-head .r{font-size:13px;color:var(--t3);}
+  .cat-head .r b{font-size:16px;color:var(--primary);font-weight:600;}
+  .cat-card{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 2px 10px rgba(15,23,42,.05);}
+  .donut-wrap{display:flex;align-items:center;justify-content:center;padding:10px 0 22px;}
+  .donut{
+    width:200px;height:200px;border-radius:50%;position:relative;
+    background:conic-gradient(
+      #3B82F6 0deg 164.2deg,
+      #22C55E 164.2deg 217.1deg,
+      #F59E0B 217.1deg 262.8deg,
+      #EF4444 262.8deg 299.2deg,
+      #A855F7 299.2deg 315.4deg,
+      #14B8A6 315.4deg 360deg
+    );
+  }
+  .donut::after{
+    content:"";position:absolute;inset:44px;border-radius:50%;background:var(--card);
+  }
+  .donut-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:1;
+  }
+  .donut-center .v{font-size:24px;font-weight:700;}
+  .donut-center .k{font-size:11px;color:var(--t3);margin-top:3px;}
+
+  .cat-list{padding-top:4px;}
+  .cat-row{display:flex;align-items:center;padding:9px 0;}
+  .cat-row + .cat-row{border-top:1px solid var(--divider);}
+  .cat-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-right:12px;}
+  .cat-name{width:110px;font-size:15px;flex-shrink:0;font-weight:500;}
+  .cat-bar-track{flex:1;height:10px;margin:0 16px;border-radius:5px;background:var(--fill);overflow:hidden;}
+  .cat-bar{height:100%;border-radius:5px;min-width:3px;}
+  .cat-amount{width:118px;text-align:right;font-size:15px;font-weight:600;flex-shrink:0;}
+  .cat-pct{width:56px;text-align:right;font-size:12px;color:var(--t3);flex-shrink:0;}
+
+  /* ===== 图表卡 ===== */
+  .chart-card{background:var(--card);border-radius:16px;padding:22px 20px;margin-bottom:14px;box-shadow:0 2px 10px rgba(15,23,42,.05);}
+  .chart-card .tt{font-size:14px;font-weight:600;margin-bottom:16px;}
+  .mini-line{width:100%;height:180px;}
+  .mini-bars{display:flex;align-items:flex-end;gap:10px;height:170px;padding:0 6px;}
+  .bar-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .bar-item .bar{width:70%;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,#5B8CFF,#3B6FF6);}
+  .bar-item .val{font-size:12px;color:var(--t2);margin-bottom:6px;font-weight:600;}
+  .bar-item .lbl{font-size:11px;color:var(--t3);margin-top:8px;}
+
+  /* ===== 页脚 ===== */
+  .footer{
+    margin-top:26px;background:linear-gradient(135deg,#3B6FF6,#1D4ED8);
+    color:#fff;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .footer .slogan{font-size:17px;font-weight:700;letter-spacing:.5px;}
+  .footer .sub{font-size:12px;opacity:.8;margin-top:4px;}
+  .qr{
+    width:64px;height:64px;background:#fff;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:9px;
+    flex-direction:column;gap:2px;text-align:center;line-height:1.2;
+  }
+  .qr::before{content:"▦";font-size:30px;color:var(--t1);}
+
+  /* 说明块 */
+  .notes{margin-top:24px;background:#fff;border-radius:14px;padding:18px 20px;font-size:13px;line-height:1.8;color:var(--t2);}
+  .notes b{color:var(--t1);}
+  .notes .good{color:#1E7F3C;font-weight:600;}
+  .notes .warn{color:#B4471A;font-weight:600;}
+  .notes li{margin-left:18px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>统计页分享图 · 重新设计原型</h1>
+  <div class="intro">
+    数据口径与上一版一致：<span class="fix">分类明细补上比例条</span>（修复缺失 bug）、环形图外标签已去掉、页脚二维码为占位图。
+    品牌 Logo 使用 <b>assets/logo.png</b>（与小程序头像同源）。
+  </div>
+
+  <!-- ============ 详细版（full） ============ -->
+  <h2>详细版<span class="tag full">full · 1:1 复刻统计页</span></h2>
+  <div class="intro">头部 + 四组指标卡 + 分类支出（环形图 + 比例条）+ 能耗趋势 + 行程 + 费用 + 页脚。</div>
+
+  <div class="canvas">
+    <div class="header">
+      <div class="brand-row">
+        <div class="brand">
+          <img class="logo" src="../../assets/logo.png" alt="logo">
+          <div>
+            <div class="brand-name">车记本</div>
+            <div class="brand-sub">iCar · 记录每一公里</div>
+          </div>
+        </div>
+        <div class="range-pill">2026 年</div>
+      </div>
+      <div class="car-name">我的 CRV</div>
+      <div class="car-meta">燃油车 · 本年度统计</div>
+      <div class="hero-stat">
+        <div class="num"><small>¥</small>8,200.00</div>
+        <div class="lbl">总支出<b>每公里 ¥1.40</b></div>
+      </div>
+    </div>
+
+    <div class="pad section">
+      <div class="section-title">里程</div>
+      <div class="metric-card">
+        <div class="metric-col"><div class="metric-value">5,850</div><div class="metric-label">最新总里程 (km)</div></div>
+        <div class="metric-col"><div class="metric-value">5,850</div><div class="metric-label">增加总里程 (km)</div></div>
+        <div class="metric-col"><div class="metric-value">5,850</div><div class="metric-label">加油里程 (km)</div></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-col"><div class="metric-value">3,900</div><div class="metric-label">总油费 (元)</div></div>
+        <div class="metric-col"><div class="metric-value">8.46</div><div class="metric-label">平均油耗 (L/100km)</div></div>
+        <div class="metric-col"><div class="metric-value">0.667</div><div class="metric-label">平均油耗 (元/km)</div></div>
+      </div>
+    </div>
+
+    <div class="pad section">
+      <div class="cat-head"><span class="l">分类支出</span><span class="r">总支出 <b>¥1,325.63</b></span></div>
+      <div class="cat-card">
+        <div class="donut-wrap">
+          <div class="donut">
+            <div class="donut-center"><div class="v">¥1,325.63</div><div class="k">总支出</div></div>
+          </div>
+        </div>
+        <div class="cat-list">
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c1)"></span><span class="cat-name">加油</span><span class="cat-bar-track"><span class="cat-bar" style="width:45.6%;background:var(--c1)"></span></span><span class="cat-amount">¥ 605.00</span><span class="cat-pct">45.6%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c2)"></span><span class="cat-name">保养</span><span class="cat-bar-track"><span class="cat-bar" style="width:14.7%;background:var(--c2)"></span></span><span class="cat-amount">¥ 194.71</span><span class="cat-pct">14.7%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c3)"></span><span class="cat-name">停车</span><span class="cat-bar-track"><span class="cat-bar" style="width:12.7%;background:var(--c3)"></span></span><span class="cat-amount">¥ 168.00</span><span class="cat-pct">12.7%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c4)"></span><span class="cat-name">高速</span><span class="cat-bar-track"><span class="cat-bar" style="width:10.1%;background:var(--c4)"></span></span><span class="cat-amount">¥ 133.76</span><span class="cat-pct">10.1%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c5)"></span><span class="cat-name">洗车</span><span class="cat-bar-track"><span class="cat-bar" style="width:4.5%;background:var(--c5)"></span></span><span class="cat-amount">¥ 59.30</span><span class="cat-pct">4.5%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c6)"></span><span class="cat-name">其他</span><span class="cat-bar-track"><span class="cat-bar" style="width:3%;background:var(--c6)"></span></span><span class="cat-amount">¥ 19.90</span><span class="cat-pct">1.5%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pad section">
+      <div class="section-title">能耗趋势 (L/100km)</div>
+      <div class="chart-card">
+        <div class="tt">最近记录</div>
+        <svg class="mini-line" viewBox="0 0 700 180" preserveAspectRatio="none">
+          <line x1="0" y1="40" x2="700" y2="40" stroke="#EEF0F3" stroke-width="1"/>
+          <line x1="0" y1="110" x2="700" y2="110" stroke="#EEF0F3" stroke-width="1"/>
+          <line x1="0" y1="180" x2="700" y2="180" stroke="#EEF0F3" stroke-width="1"/>
+          <polyline points="40,100 160,88 280,120 400,70 520,84 660,60"
+            fill="none" stroke="#3B6FF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="40" cy="100" r="5" fill="#3B6FF6"/>
+          <circle cx="160" cy="88" r="5" fill="#3B6FF6"/>
+          <circle cx="280" cy="120" r="5" fill="#3B6FF6"/>
+          <circle cx="400" cy="70" r="5" fill="#3B6FF6"/>
+          <circle cx="520" cy="84" r="5" fill="#3B6FF6"/>
+          <circle cx="660" cy="60" r="5" fill="#3B6FF6"/>
+          <text x="400" y="50" font-size="15" fill="#3B6FF6" text-anchor="middle">8.46</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="pad section">
+      <div class="section-title">行程 (km)</div>
+      <div class="chart-card">
+        <div class="mini-bars">
+          <div class="bar-item"><span class="val">650</span><div class="bar" style="height:46%"></div><span class="lbl">1月</span></div>
+          <div class="bar-item"><span class="val">480</span><div class="bar" style="height:34%"></div><span class="lbl">2月</span></div>
+          <div class="bar-item"><span class="val">720</span><div class="bar" style="height:51%"></div><span class="lbl">3月</span></div>
+          <div class="bar-item"><span class="val">890</span><div class="bar" style="height:63%"></div><span class="lbl">4月</span></div>
+          <div class="bar-item"><span class="val">1400</span><div class="bar" style="height:100%"></div><span class="lbl">5月</span></div>
+          <div class="bar-item"><span class="val">620</span><div class="bar" style="height:44%"></div><span class="lbl">6月</span></div>
+        </div>
+      </div>
+      <div class="section-title">费用 (元)</div>
+      <div class="chart-card">
+        <div class="mini-bars">
+          <div class="bar-item"><span class="val">380</span><div class="bar" style="height:38%"></div><span class="lbl">1月</span></div>
+          <div class="bar-item"><span class="val">520</span><div class="bar" style="height:52%"></div><span class="lbl">2月</span></div>
+          <div class="bar-item"><span class="val">410</span><div class="bar" style="height:41%"></div><span class="lbl">3月</span></div>
+          <div class="bar-item"><span class="val">760</span><div class="bar" style="height:76%"></div><span class="lbl">4月</span></div>
+          <div class="bar-item"><span class="val">1000</span><div class="bar" style="height:100%"></div><span class="lbl">5月</span></div>
+          <div class="bar-item"><span class="val">580</span><div class="bar" style="height:58%"></div><span class="lbl">6月</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <div class="slogan">记录每一公里</div>
+        <div class="sub">车记本 · 无广告 · 无会员 · 纯本地</div>
+      </div>
+      <div class="qr">扫码体验</div>
+    </div>
+  </div>
+  <div class="canvas-spacer"></div>
+
+  <!-- ============ 简略版（brief） ============ -->
+  <h2>简略版<span class="tag brief">brief · 朋友圈快速浏览</span></h2>
+  <div class="intro">
+    一屏能看完的短图：头部核心数字 + <b>只保留里程、支出两组最关键指标</b>（省去油耗三列与三张图表）+ 分类环形图与比例条 + 页脚。
+    定位是「别人 3 秒看懂这张车花了多少钱」，适合直接转发好友/朋友圈。
+  </div>
+
+  <div class="canvas">
+    <div class="header">
+      <div class="brand-row">
+        <div class="brand">
+          <img class="logo" src="../../assets/logo.png" alt="logo">
+          <div>
+            <div class="brand-name">车记本</div>
+            <div class="brand-sub">iCar · 记录每一公里</div>
+          </div>
+        </div>
+        <div class="range-pill">2026 年</div>
+      </div>
+      <div class="car-name">我的 CRV</div>
+      <div class="car-meta">燃油车 · 本年度统计</div>
+      <div class="hero-stat">
+        <div class="num"><small>¥</small>8,200.00</div>
+        <div class="lbl">总支出<b>每公里 ¥1.40</b></div>
+      </div>
+    </div>
+
+    <div class="pad section">
+      <div class="metric-card">
+        <div class="metric-col"><div class="metric-value">5,850</div><div class="metric-label">增加总里程 (km)</div></div>
+        <div class="metric-col"><div class="metric-value">8.46</div><div class="metric-label">平均油耗 (L/100km)</div></div>
+        <div class="metric-col"><div class="metric-value">¥1.40</div><div class="metric-label">每公里支出 (元/km)</div></div>
+      </div>
+    </div>
+
+    <div class="pad section">
+      <div class="cat-head"><span class="l">分类支出</span><span class="r">总支出 <b>¥1,325.63</b></span></div>
+      <div class="cat-card">
+        <div class="donut-wrap">
+          <div class="donut">
+            <div class="donut-center"><div class="v">¥1,325.63</div><div class="k">总支出</div></div>
+          </div>
+        </div>
+        <div class="cat-list">
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c1)"></span><span class="cat-name">加油</span><span class="cat-bar-track"><span class="cat-bar" style="width:45.6%;background:var(--c1)"></span></span><span class="cat-amount">¥ 605.00</span><span class="cat-pct">45.6%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c2)"></span><span class="cat-name">保养</span><span class="cat-bar-track"><span class="cat-bar" style="width:14.7%;background:var(--c2)"></span></span><span class="cat-amount">¥ 194.71</span><span class="cat-pct">14.7%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c3)"></span><span class="cat-name">停车</span><span class="cat-bar-track"><span class="cat-bar" style="width:12.7%;background:var(--c3)"></span></span><span class="cat-amount">¥ 168.00</span><span class="cat-pct">12.7%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c4)"></span><span class="cat-name">高速</span><span class="cat-bar-track"><span class="cat-bar" style="width:10.1%;background:var(--c4)"></span></span><span class="cat-amount">¥ 133.76</span><span class="cat-pct">10.1%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c5)"></span><span class="cat-name">洗车</span><span class="cat-bar-track"><span class="cat-bar" style="width:4.5%;background:var(--c5)"></span></span><span class="cat-amount">¥ 59.30</span><span class="cat-pct">4.5%</span></div>
+          <div class="cat-row"><span class="cat-dot" style="background:var(--c6)"></span><span class="cat-name">其他</span><span class="cat-bar-track"><span class="cat-bar" style="width:3%;background:var(--c6)"></span></span><span class="cat-amount">¥ 19.90</span><span class="cat-pct">1.5%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <div class="slogan">记录每一公里</div>
+        <div class="sub">车记本 · 无广告 · 无会员 · 纯本地</div>
+      </div>
+      <div class="qr">扫码体验</div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <b>两版定位差异：</b>
+    <ul>
+      <li><b>详细版（full）</b>：给「想认真看数据的人」，自用存档、发车友群都行；长图，信息全。</li>
+      <li><b>简略版（brief）</b>：给「朋友圈 3 秒扫一眼的人」，只留「花了多少钱、跑了多少公里、钱花在哪」；短图，冲击力强。</li>
+    </ul>
+    <b>简略版取舍说明：</b>
+    <ul>
+      <li>指标从「里程 3 列 + 油耗 3 列 + 支出 3 列」压缩为<b>一行三格</b>：增加总里程 / 平均油耗 / 每公里支出——与头部「总支出」互补，不重复。</li>
+      <li>省去能耗趋势 / 行程 / 费用三张图表（它们信息密度低，3 秒场景看不完）。</li>
+      <li>分类比例条保留——「钱花在哪」是简略版的核心信息，不能省。</li>
+    </ul>
+    <span class="warn">落地提醒</span>：简略版的「一行三格指标」与现有 brief 模式（全部指标卡组）不同，落地时需要给 brief 模式单独的指标子集；纯电车的「平均油耗」会替换为「平均电耗」，与页面口径一致。
+  </div>
+</div>
+</body>
+</html>

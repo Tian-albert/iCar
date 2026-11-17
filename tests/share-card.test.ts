@@ -77,6 +77,20 @@ describe('指标卡组：与统计页结构一一对应', () => {
   });
 });
 
+describe('头部核心数字', () => {
+  it('取总支出与每公里支出', () => {
+    const m = buildShareCardModel(input());
+    expect(m.heroTotal).toBe('8200.00');
+    expect(m.heroPerKm).toBe('1.40');
+  });
+
+  it('无数据时为核心数字占位符', () => {
+    const m = buildShareCardModel(input({ hasData: false }));
+    expect(m.heroTotal).toBe('--');
+    expect(m.heroPerKm).toBe('--');
+  });
+});
+
 describe('指标取值', () => {
   it('纯电车里程取 evMileage（不取恒为 0 的 fuelMileage）', () => {
     const m = buildShareCardModel(input({
@@ -322,10 +336,19 @@ describe('精简模式：仅指标卡 + 环形图', () => {
     expect(full.height - brief.height).toBeGreaterThan(900);
   });
 
-  it('两种模式的指标卡与分类数据完全一致', () => {
+  it('精简模式只保留一行三格指标，分类数据与详细版一致', () => {
     const brief = buildShareCardModel(input(), 'brief');
     const full = buildShareCardModel(input(), 'full');
-    expect(brief.groups).toEqual(full.groups);
+    // 精简版压成一组「增加里程 / 平均能耗 / 每公里支出」，避免与头部总支出重复
+    expect(brief.groups.length).toBe(1);
+    expect(brief.groups[0].key).toBe('brief');
+    expect(brief.groups[0].metrics.length).toBe(3);
+    expect(brief.groups[0].metrics.map(m => m.label)).toEqual([
+      '增加总里程 (km)',
+      '平均油耗 (L/100km)',
+      '每公里支出 (元/km)'
+    ]);
+    // 分类数据两版一致
     expect(brief.categories).toEqual(full.categories);
   });
 

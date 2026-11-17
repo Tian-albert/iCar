@@ -5,7 +5,7 @@
 //
 // 约定：所有函数只接收 ctx 与尺寸/数据，不调用任何 wx.* API，
 // 因此既能在组件里用 canvas 节点，也能在页面离屏画布上用，还可在 node 里用假 ctx 单测。
-import { CHART_THEME, drawBubble } from './chart-draw';
+import { CHART_THEME as BASE_THEME, ChartTheme, drawBubble } from './chart-draw';
 import { layoutDonutLabels } from './chart-math';
 import { maxOf } from './number';
 import { MAX_FUEL_CONSUMPTION } from '../domain/fuel.service';
@@ -167,10 +167,17 @@ export interface DonutRenderOptions {
    * 两位小数太长，改传「名称 55%」能少占宽度、也更好读。
    */
   labelFormatter?: (seg: DonutSegment, index: number) => string;
+  /**
+   * 颜色覆盖：深色主题的分享卡需要浅色文字与更淡的网格，
+   * 但 Canvas 不读 CSS 变量，只能由调用方注入。
+   */
+  ink?: Partial<ChartTheme>;
 }
 
 /** 绘制环形图（与 donut-chart 组件完全同一算法） */
 export function renderDonut(opts: DonutRenderOptions): void {
+  // 局部覆盖：下面的 CHART_THEME.xxx 自动取注入后的值，未传的字段回落到全局主题
+  const CHART_THEME: ChartTheme = { ...BASE_THEME, ...(opts.ink || {}) };
   const { ctx, w, h, segments, total } = opts;
   const active = typeof opts.activeIndex === 'number' ? opts.activeIndex : -1;
   const scale = opts.fontScale && opts.fontScale > 0 ? opts.fontScale : 1;
@@ -313,10 +320,13 @@ export interface LineRenderOptions {
    * 纯电车电耗可达 33+，若沿用油耗上限 30，数据点会被压到图顶而标签仍显示真值。
    */
   ceiling?: number;
+  /** 颜色覆盖：深色主题的分享卡需要更淡的网格与更亮的折线 */
+  ink?: Partial<ChartTheme>;
 }
 
 /** 绘制折线图（与 line-chart 组件完全同一算法） */
 export function renderLine(opts: LineRenderOptions): void {
+  const CHART_THEME: ChartTheme = { ...BASE_THEME, ...(opts.ink || {}) };
   const { ctx, w, h, points: pts } = opts;
   if (!pts.length) return;
 
@@ -427,10 +437,13 @@ export interface BarRenderOptions {
   activeIndex?: number;
   /** 字号缩放，默认 1（页面组件）；分享卡片传约 2 */
   fontScale?: number;
+  /** 颜色覆盖：深色主题的分享卡需要更淡的网格与更亮的柱子 */
+  ink?: Partial<ChartTheme>;
 }
 
 /** 绘制柱状图（与 bar-chart 组件完全同一算法） */
 export function renderBars(opts: BarRenderOptions): void {
+  const CHART_THEME: ChartTheme = { ...BASE_THEME, ...(opts.ink || {}) };
   const { ctx, w, h, bars } = opts;
   if (!bars.length) return;
 

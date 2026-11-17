@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分享图 · 3 种风格 × 详细/简略 共 6 版原型</title>
+<style>
+  :root{
+    --c1:#3B82F6; --c2:#22C55E; --c3:#F59E0B; --c4:#EF4444;
+    --c5:#A855F7; --c6:#14B8A6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#DFE3EA;padding:26px 16px 70px;color:#1F2430;
+  }
+  .wrap{max-width:980px;margin:0 auto;}
+  h1{font-size:19px;font-weight:700;margin-bottom:4px;}
+  .intro{font-size:13px;color:#5A6272;line-height:1.7;margin-bottom:8px;}
+  .intro b{color:#1F2430;}
+
+  .style-block{margin-top:34px;}
+  .style-block > h2{font-size:16px;font-weight:700;margin-bottom:3px;}
+  .style-block > .desc{font-size:12.5px;color:#5A6272;line-height:1.65;margin-bottom:14px;}
+
+  .pair{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;}
+  .col{flex:1 1 400px;max-width:440px;}
+  .col-h{font-size:11px;font-weight:700;letter-spacing:1.5px;color:#5A6272;
+    margin-bottom:8px;text-transform:uppercase;}
+  .col-h span{font-weight:500;letter-spacing:.5px;text-transform:none;color:#8A93A6;margin-left:6px;}
+
+  .frame{width:100%;overflow:hidden;border-radius:14px;
+    box-shadow:0 14px 36px rgba(15,23,42,.20);background:#fff;}
+  .card{width:750px;zoom:.56;font-size:0;line-height:1;}
+
+  /* ===== 主题变量 ===== */
+  .card{--bg:#fff;--ink:#11151C;--sub:#8A93A6;--line:#EEF0F4;--panel:#fff;--track:#F2F3F5;--accent:#11151C;}
+  .card.t-b{--bg:#F7F5F0;--ink:#161616;--sub:#9A9384;--line:#E6E0D4;--panel:#FFFFFF;--track:#EDE9E0;--accent:#161616;}
+  .card.t-c{--bg:#0E1116;--ink:#FFFFFF;--sub:#8A93A6;--line:rgba(255,255,255,.12);--panel:#161B22;--track:rgba(255,255,255,.10);--accent:#6E8BFF;}
+
+  /* ===== 头部 A：极简线稿 ===== */
+  .hd{position:relative;background:var(--bg);}
+  .hd-a{padding:30px 30px 26px;border-bottom:1px solid var(--line);}
+  .hd-a .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+  .hd-a .kicker{font-size:11px;letter-spacing:2.5px;color:var(--sub);font-weight:600;}
+  .hd-a .range{font-size:11px;letter-spacing:2px;color:var(--sub);}
+  .hd-a .carline{position:absolute;right:22px;bottom:54px;width:206px;height:116px;color:#C9D0DB;}
+  .hero{font-size:62px;font-weight:700;letter-spacing:-2px;color:var(--ink);line-height:1;}
+  .hero small{font-size:24px;font-weight:600;margin-right:2px;letter-spacing:0;}
+  .hd-a .per{font-size:13px;color:var(--sub);margin-top:12px;letter-spacing:.5px;}
+  .hd-a .bottom{margin-top:32px;}
+  .car-name{font-size:20px;font-weight:700;color:var(--ink);letter-spacing:.5px;}
+  .meta{font-size:12px;color:var(--sub);margin-top:5px;letter-spacing:.5px;}
+
+  /* ===== 头部 B：杂志封面 ===== */
+  .hd-b{padding:30px 32px 28px;}
+  .hd-b .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px;}
+  .hd-b .kicker{font-size:9px;letter-spacing:3px;color:var(--sub);font-weight:600;}
+  .hd-b .kicker b{display:block;font-size:11px;letter-spacing:2px;color:var(--ink);margin-top:3px;}
+  .logo-s{width:34px;height:34px;border-radius:8px;object-fit:cover;}
+  .hd-b .hero{font-size:100px;font-weight:800;letter-spacing:-6px;}
+  .hd-b .hero small{font-size:30px;font-weight:700;letter-spacing:0;vertical-align:super;}
+  .hd-b .vr{position:absolute;right:32px;top:128px;writing-mode:vertical-rl;
+    font-size:11px;letter-spacing:6px;color:var(--sub);}
+  .hd-b .rule{height:1px;background:var(--accent);margin:22px 0 12px;}
+  .hd-b .under{display:flex;justify-content:space-between;align-items:baseline;}
+  .hd-b .under .l{font-size:12px;letter-spacing:2px;color:var(--ink);font-weight:600;}
+  .hd-b .under .r{font-size:12px;color:var(--sub);}
+  .hd-b .car-name{font-size:26px;font-weight:800;color:var(--ink);margin-top:18px;}
+
+  /* ===== 头部 C：深色运动 ===== */
+  .hd-c{padding:30px 30px 28px;overflow:hidden;}
+  .hd-c .slash{position:absolute;right:-40px;top:-60px;width:260px;height:190px;
+    background:linear-gradient(135deg,#3B6FF6,#1D4ED8);transform:skewX(-24deg);opacity:.92;}
+  .hd-c .slash2{position:absolute;right:180px;top:-90px;width:70px;height:220px;
+    background:#3B6FF6;transform:skewX(-24deg);opacity:.25;}
+  .hd-c .top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+  .hd-c .brand{display:flex;align-items:center;gap:10px;}
+  .hd-c .brand span{font-size:13px;font-weight:700;letter-spacing:3px;color:#fff;}
+  .hd-c .range{font-size:10px;letter-spacing:2px;color:var(--sub);border:1px solid var(--line);padding:4px 10px;}
+  .hd-c .car-name{position:relative;z-index:1;font-size:34px;font-weight:800;letter-spacing:5px;color:#fff;text-transform:uppercase;}
+  .hd-c .meta{position:relative;z-index:1;font-size:11px;letter-spacing:2px;color:var(--sub);margin-top:6px;}
+  .hd-c .hero-row{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;margin-top:24px;}
+  .hd-c .hero{font-size:56px;font-weight:800;letter-spacing:-2px;color:#fff;}
+  .hd-c .hero small{font-size:24px;color:var(--accent);}
+  .hd-c .lbl{text-align:right;font-size:10px;letter-spacing:2px;color:var(--sub);line-height:1.7;}
+  .hd-c .lbl b{display:block;font-size:13px;color:#fff;letter-spacing:1px;}
+
+  /* ===== 主体 ===== */
+  .bd{background:var(--bg);padding:24px 28px 8px;}
+  .mg-group{display:flex;background:var(--panel);border-radius:14px;padding:18px 6px;margin-bottom:14px;
+    border:1px solid var(--line);}
+  .mc{flex:1;text-align:center;padding:0 4px;}
+  .mc + .mc{border-left:1px solid var(--line);}
+  .mc b{display:block;font-size:28px;font-weight:700;color:var(--ink);letter-spacing:-.5px;}
+  .mc span{display:block;font-size:11px;color:var(--sub);margin-top:6px;line-height:1.4;}
+
+  .cat-h{display:flex;justify-content:space-between;align-items:baseline;margin:6px 2px 10px;}
+  .cat-h .a{font-size:14px;font-weight:600;color:var(--ink);}
+  .cat-h .b{font-size:12px;color:var(--sub);}
+  .cat-card{background:var(--panel);border-radius:14px;padding:20px;border:1px solid var(--line);}
+  .cat-body{display:flex;align-items:center;gap:22px;}
+  .donut{width:160px;height:160px;border-radius:50%;position:relative;flex-shrink:0;
+    background:conic-gradient(#3B82F6 0deg 164deg,#22C55E 164deg 217deg,#F59E0B 217deg 263deg,#EF4444 263deg 299deg,#A855F7 299deg 315deg,#14B8A6 315deg 360deg);}
+  .donut::after{content:"";position:absolute;inset:36px;border-radius:50%;background:var(--panel);}
+  .donut .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;}
+  .donut .c b{font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.3px;}
+  .donut .c span{font-size:10px;color:var(--sub);margin-top:3px;}
+  .rows{flex:1;}
+  .r{display:flex;align-items:center;gap:10px;padding:7px 0;}
+  .r + .r{border-top:1px solid var(--line);}
+  .r .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .r .nm{width:66px;font-size:13px;color:var(--ink);}
+  .r .tr{flex:1;height:8px;border-radius:4px;background:var(--track);overflow:hidden;}
+  .r .tr i{display:block;height:100%;border-radius:4px;}
+  .r .am{width:84px;text-align:right;font-size:13px;font-weight:600;color:var(--ink);}
+  .r .pc{width:46px;text-align:right;font-size:11px;color:var(--sub);}
+
+  .chart{margin-top:18px;}
+  .chart-t{font-size:13px;font-weight:600;color:var(--ink);margin:0 2px 8px;}
+  .chart-card{background:var(--panel);border-radius:14px;padding:18px;border:1px solid var(--line);}
+  .line-svg{width:100%;height:150px;display:block;}
+  /* 网格线跟随主题，深色底上不会刺眼 */
+  .line-svg line{stroke:var(--line);}
+  .bars{display:flex;align-items:flex-end;gap:9px;height:140px;padding:0 4px;}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .bar i{width:66%;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#5B8CFF,#3B6FF6);}
+  .bar em{font-style:normal;font-size:10px;color:var(--sub);margin-bottom:5px;}
+  .bar u{text-decoration:none;font-size:10px;color:var(--sub);margin-top:6px;}
+
+  /* ===== 尾部 ===== */
+  .ft{display:flex;align-items:center;justify-content:space-between;margin-top:22px;}
+  .ft-a{background:var(--bg);padding:22px 30px;border-top:1px solid var(--line);}
+  .ft-b{background:var(--bg);padding:20px 32px;border-top:1px solid var(--accent);}
+  .ft-c{background:var(--bg);padding:22px 30px;border-top:1px solid var(--line);}
+  .ft .slogan{font-size:14px;font-weight:700;letter-spacing:2px;color:var(--ink);display:flex;align-items:center;}
+  .ft .sub{font-size:10px;letter-spacing:1.5px;color:var(--sub);margin-top:6px;}
+  .ft-c .slogan i{width:7px;height:7px;border-radius:50%;background:#3B6FF6;margin-right:9px;}
+  .qr{width:56px;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:8px;letter-spacing:1px;color:var(--sub);gap:2px;}
+  .ft-a .qr{border:1px solid #C9D0DB;color:#8A93A6;}
+  .ft-b .qr{border:1px solid var(--accent);color:var(--ink);}
+  .ft-c .qr{background:#fff;color:#0E1116;border-radius:4px;}
+  .qr i{font-style:normal;font-size:20px;line-height:1;color:var(--ink);}
+  .ft-c .qr i{color:#0E1116;}
+
+  /* 车辆线稿候选 */
+  .car-picker{margin-top:14px;}
+  .car-picker h2{font-size:16px;font-weight:700;margin-bottom:3px;}
+  .car-picker .desc{font-size:12.5px;color:#5A6272;margin-bottom:12px;}
+  .car-opts{display:flex;gap:16px;flex-wrap:wrap;}
+  .car-opt{flex:1 1 calc(50% - 8px);background:#fff;border-radius:14px;padding:16px 18px 12px;
+    box-shadow:0 10px 26px rgba(15,23,42,.12);}
+  .car-opt svg{width:100%;height:auto;color:#11151C;display:block;}
+  .car-opt span{display:block;font-size:12px;color:#5A6272;margin-top:6px;}
+  .car-opt b{color:#1F2430;}
+  .car-opt .used{color:#1D4ED8;font-weight:600;}
+
+  .note{margin-top:34px;background:#fff;border-radius:14px;padding:18px 22px;
+    font-size:13px;line-height:1.9;color:#5A6272;}
+  .note b{color:#1F2430;}
+  .note .k{color:#1F2430;font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>分享图 · 3 种风格 × 详细 / 简略 = 6 版</h1>
+  <p class="intro">
+    同一份数据、同一套信息结构，只换「视觉语言」。<b>详细版</b>含三组指标卡 + 分类环形图 + 趋势/行程/费用三图；
+    <b>简略版</b>只留一行三格 + 分类环形图，一屏看完。
+  </p>
+  <section class="car-picker">
+    <h2>与车相关的图形元素</h2>
+    <div class="desc">不再画整车，改用几何感更强的汽车符号。<b>点任意一个即可替换下方 A 风格里的装饰图形</b>，直接看实际效果。</div>
+    <div class="car-opts">
+      <div class="car-opt">
+        <svg viewBox="0 0 200 130" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 110A80 80 0 1 1 180 110"/>
+          <path d="M37 84L26 79"/>
+          <path d="M52 62L43 53"/>
+          <path d="M100 42V30"/>
+          <path d="M148 62L157 53"/>
+          <path d="M163 84L174 79"/>
+          <path d="M100 110L139 71"/>
+          <circle cx="100" cy="110" r="5" fill="currentColor"/>
+        </svg>
+        <span><b>① 速度表</b> — 半圆刻度 + 指针，最贴「数据/里程/油耗」</span>
+      </div>
+      <div class="car-opt">
+        <svg viewBox="0 0 140 140" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="70" cy="70" r="58"/>
+          <circle cx="70" cy="70" r="20"/>
+          <path d="M70 90V128"/>
+          <path d="M53 60L20 41"/>
+          <path d="M87 60L120 41"/>
+        </svg>
+        <span><b>② 方向盘</b> — 一眼就是车，几何最干净</span>
+      </div>
+      <div class="car-opt">
+        <svg viewBox="0 0 200 130" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="40" x2="196" y2="40" opacity=".5"/>
+          <path d="M16 126L86 40"/>
+          <path d="M184 126L114 40"/>
+          <path d="M100 118v-14"/>
+          <path d="M100 92v-12"/>
+          <path d="M100 68v-9"/>
+          <path d="M100 50v-6"/>
+        </svg>
+        <span><b>③ 公路</b> — 透视消失点 + 虚线，呼应「记录每一公里」<br><span class="used">已用于下方 A 风格</span></span>
+      </div>
+      <div class="car-opt">
+        <svg viewBox="0 0 130 130" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="65" cy="65" r="58"/>
+          <circle cx="65" cy="65" r="34"/>
+          <circle cx="65" cy="65" r="6"/>
+          <path d="M65 31V9" opacity="0"/>
+        </svg>
+        <span><b>④ 轮毂</b> — 同心圆，最抽象、最像徽标</span>
+      </div>
+    </div>
+  </section>
+
+  <div id="app"></div>
+  <div class="note">
+    <b>选择建议：</b><br>
+    · <span class="k">A 极简线稿</span>：最轻、最像「手账/杂志内页」，白底克制；缺点是信息流里抓眼度一般。<br>
+    · <span class="k">B 杂志封面</span>：暖米白纸感 + 超大字重，高级感和辨识度平衡最好，<b>推荐作主方案</b>。<br>
+    · <span class="k">C 深色运动</span>：最抓眼、最贴汽车品类，但和 App 浅色基调反差大，适合偶尔发。<br><br>
+    <b>落地成本：</b>A / B 全是矩形 + 文字 + 线条 + 贝塞尔，Canvas 零障碍；C 的斜切光带用 path 也能画，
+    但要处理圆角裁剪与抗锯齿，成本略高。<br>
+    <b>两种模式的取舍：</b>详细版给「想认真看数据」的人（车友群、自存）；简略版给「朋友圈 3 秒扫一眼」的人，
+    核心是「花了多少 / 跑了多少 / 钱花在哪」。
+  </div>
+</div>
+
+<script>
+const CAR_SVG = `
+<svg class="carline" viewBox="0 0 200 130" fill="none" stroke="currentColor"
+     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+  <line x1="4" y1="40" x2="196" y2="40" opacity=".5"/>
+  <path d="M16 126L86 40"/>
+  <path d="M184 126L114 40"/>
+  <path d="M100 118v-14"/>
+  <path d="M100 92v-12"/>
+  <path d="M100 68v-9"/>
+  <path d="M100 50v-6"/>
+</svg>`;
+
+/* ---------- 头部 ---------- */
+function headA() {
+  return `
+  <div class="hd hd-a">
+    <div class="top"><span class="kicker">车记本 · ICAR</span><span class="range">2026</span></div>
+    ${CAR_SVG}
+    <div class="hero"><small>¥</small>8,200</div>
+    <div class="per">每公里 ¥1.40</div>
+    <div class="bottom">
+      <div class="car-name">我的 CRV</div>
+      <div class="meta">燃油车 · 本年度</div>
+    </div>
+  </div>`;
+}
+
+function headB() {
+  return `
+  <div class="hd hd-b">
+    <div class="top">
+      <div class="kicker">CAR JOURNAL<b>车记本 · ICAR</b></div>
+      <img class="logo-s" src="../../assets/logo.png" alt="logo">
+    </div>
+    <div class="hero"><small>¥</small>8,200</div>
+    <div class="vr">TOTAL COST 2026</div>
+    <div class="rule"></div>
+    <div class="under"><span class="l">总支出</span><span class="r">每公里 ¥1.40</span></div>
+    <div class="car-name">我的 CRV</div>
+  </div>`;
+}
+
+function headC() {
+  return `
+  <div class="hd hd-c">
+    <i class="slash"></i><i class="slash2"></i>
+    <div class="top">
+      <div class="brand"><img class="logo-s" src="../../assets/logo.png" alt="logo"><span>车记本</span></div>
+      <span class="range">2026</span>
+    </div>
+    <div class="car-name">MY CRV</div>
+    <div class="meta">燃油车 · 本年度统计</div>
+    <div class="hero-row">
+      <div class="hero"><small>¥</small>8,200</div>
+      <div class="lbl">总支出<b>每公里 ¥1.40</b></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- 主体 ---------- */
+const METRIC_GROUPS = [
+  [['5,850','最新总里程 (km)'],['5,850','增加总里程 (km)'],['5,850','加油里程 (km)']],
+  [['3,900','总油费 (元)'],['8.46','平均油耗 (L/100km)'],['0.667','平均油耗 (元/km)']],
+  [['8,200','总支出 (元)'],['1.402','每公里支出 (元/km)'],['0.735','除掉油费 (元/km)']]
+];
+const METRIC_BRIEF = [['5,850','增加总里程 (km)'],['8.46','平均油耗 (L/100km)'],['1.40','每公里支出 (元/km)']];
+
+function metricRow(list) {
+  return `<div class="mg-group">${list.map(m =>
+    `<div class="mc"><b>${m[0]}</b><span>${m[1]}</span></div>`).join('')}</div>`;
+}
+
+const CAT_ROWS = [
+  ['加油','45.6','605.00','var(--c1)'],
+  ['保养','14.7','194.71','var(--c2)'],
+  ['停车','12.7','168.00','var(--c3)']
+];
+
+function catBlock() {
+  return `
+  <div class="cat-h"><span class="a">分类支出</span><span class="b">总支出 ¥1,325.63</span></div>
+  <div class="cat-card">
+    <div class="cat-body">
+      <div class="donut"><div class="c"><b>¥1,325.63</b><span>总支出</span></div></div>
+      <div class="rows">
+        ${CAT_ROWS.map(r => `
+        <div class="r">
+          <span class="dot" style="background:${r[3]}"></span><span class="nm">${r[0]}</span>
+          <span class="tr"><i style="width:${r[1]}%;background:${r[3]}"></i></span>
+          <span class="am">¥${r[2]}</span><span class="pc">${r[1]}%</span>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function lineChart() {
+  return `
+  <div class="chart">
+    <div class="chart-t">能耗趋势 (L/100km)</div>
+    <div class="chart-card">
+      <svg class="line-svg" viewBox="0 0 640 150" preserveAspectRatio="none">
+        <line x1="0" y1="30" x2="640" y2="30" stroke="#EEF0F3" stroke-width="1"/>
+        <line x1="0" y1="90" x2="640" y2="90" stroke="#EEF0F3" stroke-width="1"/>
+        <line x1="0" y1="150" x2="640" y2="150" stroke="#EEF0F3" stroke-width="1"/>
+        <polyline points="36,84 148,74 260,100 372,58 484,70 604,50"
+          fill="none" stroke="#3B6FF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="36" cy="84" r="4.5" fill="#3B6FF6"/><circle cx="148" cy="74" r="4.5" fill="#3B6FF6"/>
+        <circle cx="260" cy="100" r="4.5" fill="#3B6FF6"/><circle cx="372" cy="58" r="4.5" fill="#3B6FF6"/>
+        <circle cx="484" cy="70" r="4.5" fill="#3B6FF6"/><circle cx="604" cy="50" r="4.5" fill="#3B6FF6"/>
+      </svg>
+    </div>
+  </div>`;
+}
+
+function barChart(title, values, unit) {
+  const max = Math.max.apply(null, values);
+  return `
+  <div class="chart">
+    <div class="chart-t">${title}</div>
+    <div class="chart-card">
+      <div class="bars">
+        ${values.map((v, i) => `
+        <div class="bar">
+          <em>${v}</em>
+          <i style="height:${Math.max(8, Math.round(v / max * 100))}%"></i>
+          <u>${i + 1}月</u>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function body(mode) {
+  if (mode === 'brief') {
+    return `<div class="bd">${metricRow(METRIC_BRIEF)}${catBlock()}</div>`;
+  }
+  return `
+  <div class="bd">
+    ${METRIC_GROUPS.map(g => metricRow(g)).join('')}
+    ${catBlock()}
+    ${lineChart()}
+    ${barChart('行程 (km)', [650, 480, 720, 890, 1400, 620])}
+    ${barChart('费用 (元)', [380, 520, 410, 760, 1000, 580])}
+  </div>`;
+}
+
+/* ---------- 尾部 ---------- */
+function footA() {
+  return `
+  <div class="ft ft-a">
+    <div>
+      <div class="slogan">记录每一公里</div>
+      <div class="sub">NO ADS · NO MEMBERSHIP · LOCAL ONLY</div>
+    </div>
+    <div class="qr"><i>▦</i>扫码体验</div>
+  </div>`;
+}
+
+function footB() {
+  return `
+  <div class="ft ft-b">
+    <div>
+      <div class="slogan">记录每一公里</div>
+      <div class="sub">无广告 · 无会员 · 纯本地</div>
+    </div>
+    <div class="qr"><i>▦</i>扫码体验</div>
+  </div>`;
+}
+
+function footC() {
+  return `
+  <div class="ft ft-c">
+    <div>
+      <div class="slogan"><i></i>记录每一公里</div>
+      <div class="sub">无广告 · 无会员 · 纯本地</div>
+    </div>
+    <div class="qr"><i>▦</i>扫码体验</div>
+  </div>`;
+}
+
+const STYLES = [
+  {
+    key: 'a', theme: '', name: 'A. 极简线稿',
+    desc: '白底 + 手绘感汽车侧影 + 超大字重数字 + 大量留白。最轻、最耐看，像汽车杂志内页。',
+    head: headA, foot: footA
+  },
+  {
+    key: 'b', theme: 't-b', name: 'B. 杂志封面',
+    desc: '暖米白纸感 + 超大字重 + 细黑分隔线 + 竖排刊头字。高级感与辨识度平衡最好。',
+    head: headB, foot: footB
+  },
+  {
+    key: 'c', theme: 't-c', name: 'C. 深色运动',
+    desc: '近黑底 + 蓝色斜切光带 + 大写字距。参考汽车品牌海报，信息流里最抓眼。',
+    head: headC, foot: footC
+  }
+];
+
+function card(style, mode) {
+  return `
+  <div class="frame">
+    <div class="card ${style.theme}">
+      ${style.head()}
+      ${body(mode)}
+      ${style.foot()}
+    </div>
+  </div>`;
+}
+
+document.getElementById('app').innerHTML = STYLES.map(s => `
+  <section class="style-block">
+    <h2>${s.name}</h2>
+    <div class="desc">${s.desc}</div>
+    <div class="pair">
+      <div class="col">
+        <div class="col-h">详细版 full<span>含三张图表</span></div>
+        ${card(s, 'full')}
+      </div>
+      <div class="col">
+        <div class="col-h">简略版 brief<span>一屏看完</span></div>
+        ${card(s, 'brief')}
+      </div>
+    </div>
+  </section>`).join('');
+
+// 点击上方候选线稿，直接替换 A 风格（极简线稿）里的车，方便对比实际效果
+document.querySelectorAll('.car-opt').forEach(opt => {
+  opt.style.cursor = 'pointer';
+  opt.addEventListener('click', () => {
+    const src = opt.querySelector('svg');
+    if (!src) return;
+    document.querySelectorAll('.card .carline').forEach(el => {
+      const clone = src.cloneNode(true);
+      clone.setAttribute('class', 'carline');
+      el.parentNode.replaceChild(clone, el);
+    });
+    document.querySelectorAll('.car-opt').forEach(o => o.style.outline = 'none');
+    opt.style.outline = '2px solid #1D4ED8';
+    opt.style.outlineOffset = '3px';
+  });
+});
+</script>
+</body>
+</html>

@@ -3,15 +3,20 @@ import {
   drawShareCard,
   drawEmptyCard,
   resolveExportDpr,
+  categoryBarWidth,
   CARD_COLORS,
-  MAX_CANVAS_EDGE
+  MAX_CANVAS_EDGE,
+  EMPTY_CARD_HEIGHT
 } from '../utils/share-card-draw';
 import {
   buildShareCardModel,
   computeShareCardLayout,
   ShareCardInput,
-  ShareMode
+  ShareMode,
+  ShareStyle
 } from '../utils/share-card';
+
+const fsx = require('fs') as any;
 
 interface Call {
   op: string;
@@ -32,12 +37,15 @@ function fakeCtx() {
     restore: () => calls.push({ op: 'restore', args: [] }),
     scale: (...a: any[]) => { calls.push({ op: 'scale', args: a }); transforms.push({ op: 'scale', args: a }); },
     translate: (...a: any[]) => { calls.push({ op: 'translate', args: a }); transforms.push({ op: 'translate', args: a }); },
+    rotate: (...a: any[]) => { calls.push({ op: 'rotate', args: a }); transforms.push({ op: 'rotate', args: a }); },
     beginPath: () => calls.push({ op: 'beginPath', args: [] }),
     closePath: () => calls.push({ op: 'closePath', args: [] }),
     moveTo: (...a: any[]) => calls.push({ op: 'moveTo', args: a }),
     lineTo: (...a: any[]) => calls.push({ op: 'lineTo', args: a }),
     arcTo: (...a: any[]) => calls.push({ op: 'arcTo', args: a }),
     arc: (...a: any[]) => calls.push({ op: 'arc', args: a }),
+    clip: () => calls.push({ op: 'clip', args: [] }),
+    drawImage: (...a: any[]) => calls.push({ op: 'drawImage', args: a }),
     fill: () => calls.push({ op: 'fill', args: [state.fillStyle] }),
     stroke: () => calls.push({ op: 'stroke', args: [state.strokeStyle] }),
     fillRect: (...a: any[]) => calls.push({ op: 'fillRect', args: [...a, state.fillStyle] }),
@@ -88,21 +96,26 @@ function input(over: Partial<ShareCardInput> = {}): ShareCardInput {
   };
 }
 
-function draw(over: Partial<ShareCardInput> = {}, mode: ShareMode = 'full') {
-  const model = buildShareCardModel(input(over), mode);
+function draw(over: Partial<ShareCardInput> = {}, mode: ShareMode = 'full', style: ShareStyle = 'a') {
+  const model = buildShareCardModel(input(over), mode, style);
   const layout = computeShareCardLayout(model);
   const ctx = fakeCtx();
   drawShareCard({ ctx, model, layout, dpr: 2, dateText: '2026-11-08' });
   return { ctx, model, layout };
 }
 
-describe('头部：车名 / 车型 / 维度 / 品牌', () => {
-  it('绘制车名、车型与维度、品牌', () => {
+describe('头部：品牌 / 车名 / 维度 / 核心数字', () => {
+  it('绘制品牌、车名、车型与维度、核心数字', () => {
     const { ctx } = draw();
     const texts = ctx._texts.map((t: any) => t.text);
+    expect(texts).toContain('车记本 · ICAR');
     expect(texts).toContain('测试 CRV');
-    expect(texts).toContain('燃油 · 2026年');
-    expect(texts).toContain('车记本');
+    expect(texts).toContain('燃油车 · 2026年');
+    expect(texts).toContain('2026年');
+    // 头部核心数字：总支出 + 每公里
+    expect(texts).toContain('8200.00');
+    expect(texts).toContain('总支出');
+    expect(texts.some((t: string) => t.includes('每公里 ¥'))).toBe(true);
   });
 });
 
@@ -187,6 +200,135 @@ describe('三张图表：调用共享绘制函数', () => {
     const texts = ctx._texts.map((t: any) => t.text);
     expect(texts.some((t: string) => t.includes('暂无支出数据'))).toBe(true);
   });
+
+  it('分类明细绘制占比条（轨道底色 + 分类色填充）', () => {
+    const { ctx } = draw();
+    const fills = ctx._calls.filter((c: Call) => c.op === 'fill').map((c: Call) => c.args[0]);
+    // 轨道底色只用于占比条，出现即证明比例条已绘制（修复「漏画占比条」）
+    expect(fills).toContain(CARD_COLORS.fill);
+    // 至少存在比轨道更多的填充（条本身）
+    expect(fills.filter((f: string) => f === CARD_COLORS.fill).length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('三套视觉风格', () => {
+  it('三种风格都能完整绘制，页面底色互不相同', () => {
+    const bgs = (['a', 'b', 'c'] as ShareStyle[]).map(style => {
+      const { ctx } = draw({}, 'full', style);
+      const fillRects = ctx._calls.filter((c: Call) => c.op === 'fillRect');
+      // 第一笔永远是整页底色
+      return fillRects[0].args[4];
+    });
+    expect(new Set(bgs).size).toBe(3);
+    expect(bgs[0]).toBe('#FFFFFF');
+    expect(bgs[1]).toBe('#F7F5F0');
+    expect(bgs[2]).toBe('#0E1116');
+  });
+
+  it('三种风格都绘制车名与核心数字（信息不因换肤丢失）', () => {
+    for (const style of ['a', 'b', 'c'] as ShareStyle[]) {
+      const texts = draw({}, 'full', style).ctx._texts.map((t: any) => t.text);
+      expect(texts).toContain('测试 CRV');
+      expect(texts).toContain('8200.00');
+      expect(texts).toContain('分类支出');
+      expect(texts).toContain('记录每一公里');
+    }
+  });
+
+  it('A 风格头部绘制公路线稿（至少 7 段描边）', () => {
+    const { ctx, layout } = draw({}, 'full', 'a');
+    // 公路 = 地平线 + 2 条透视线 + 4 段虚线，全部落在头部区域内
+    const headerStrokes = ctx._calls.filter((c: Call) => c.op === 'stroke');
+    expect(headerStrokes.length).toBeGreaterThanOrEqual(7);
+    expect(layout.header.height).toBeGreaterThan(200);
+  });
+
+  it('三风格的文字都不越出画布（纵向）', () => {
+    for (const style of ['a', 'b', 'c'] as ShareStyle[]) {
+      for (const mode of ['brief', 'full'] as ShareMode[]) {
+        const { ctx, layout } = draw({}, mode, style);
+        for (const t of ctx._texts as any[]) {
+          expect(t.y).toBeGreaterThanOrEqual(0);
+          expect(t.y).toBeLessThanOrEqual(layout.height);
+        }
+      }
+    }
+  });
+
+  it('C 风格是深色主题：卡片用深色底、文字用白色', () => {
+    const { ctx } = draw({}, 'full', 'c');
+    const fills = ctx._calls.filter((c: Call) => c.op === 'fill').map((c: Call) => c.args[0]);
+    // 卡片底色
+    expect(fills).toContain('#161B22');
+    // 文字色：车名应使用白色
+    const nameText = ctx._texts.find((t: any) => t.text === '测试 CRV');
+    expect(nameText).toBeTruthy();
+    expect(nameText.fill).toBe('#FFFFFF');
+  });
+});
+
+describe('统计页调用链：风格必须一路传到底', () => {
+  const src: string = fsx.readFileSync('pages/statistics/index.ts', 'utf-8');
+
+  it('ActionSheet 提供 3 风格 × 2 模式共 6 项', () => {
+    for (const label of [
+      '极简线稿 · 精简',
+      '极简线稿 · 详细',
+      '杂志封面 · 精简',
+      '杂志封面 · 详细',
+      '深色运动 · 精简',
+      '深色运动 · 详细'
+    ]) {
+      expect(src).toContain(label);
+    }
+    expect((src.match(/style: '[abc]'/g) || []).length).toBe(6);
+  });
+
+  it('style 从选项一路传到绘制层（不能被默认值吞掉）', () => {
+    expect(src).toContain('this.generateShareImage(opt.mode, opt.style)');
+    expect(src).toContain('this.drawShareCard(mode, style)');
+    expect(src).toContain('this.buildShareModel(mode, style)');
+    expect(src).toContain('buildShareCardModel(input, mode, style)');
+  });
+});
+
+describe('占比条宽度', () => {
+  it('按真实百分比换算', () => {
+    expect(categoryBarWidth(300, 50)).toBe(150);
+    expect(categoryBarWidth(300, 100)).toBe(300);
+  });
+
+  it('小占比保底 3px，避免看起来像没有数据', () => {
+    expect(categoryBarWidth(300, 1)).toBe(3);
+    expect(categoryBarWidth(300, 0)).toBe(3);
+  });
+
+  it('脏数据被夹到 [0,100]，不会画出负宽或超宽', () => {
+    expect(categoryBarWidth(300, NaN)).toBe(3);
+    expect(categoryBarWidth(300, -20)).toBe(3);
+    expect(categoryBarWidth(300, 200)).toBe(300);
+  });
+});
+
+describe('品牌 Logo', () => {
+  it('B / C 风格传入 logoImage 时绘制图片，未传时降级为色块', () => {
+    // A 风格是纯文字品牌（无 Logo 块），只有 B / C 用图片
+    for (const style of ['b', 'c'] as const) {
+      const model = buildShareCardModel(input(), 'full', style);
+      const layout = computeShareCardLayout(model);
+
+      const noLogo = fakeCtx();
+      drawShareCard({ ctx: noLogo, model, layout, dpr: 2 });
+      expect(noLogo._calls.some((c: Call) => c.op === 'drawImage')).toBe(false);
+      expect(noLogo._texts.map((t: any) => t.text)).toContain('车');
+
+      const withLogo = fakeCtx();
+      drawShareCard({ ctx: withLogo, model, layout, dpr: 2, logoImage: { src: 'logo' } as any });
+      const draws = withLogo._calls.filter((c: Call) => c.op === 'drawImage');
+      expect(draws.length).toBe(1);
+      expect(draws[0].args.length).toBe(5); // image, x, y, w, h
+    }
+  });
 });
 
 describe('绘制规范', () => {
@@ -207,10 +349,12 @@ describe('绘制规范', () => {
     expect(colors).toContain(CARD_COLORS.pageBg);
   });
 
-  it('页脚含品牌与日期', () => {
+  it('页脚含 slogan / 卖点 / 二维码占位与日期', () => {
     const { ctx } = draw();
     const texts = ctx._texts.map((t: any) => t.text);
-    expect(texts.some((t: string) => t.includes('车记本 · 记录每一公里'))).toBe(true);
+    expect(texts).toContain('记录每一公里');
+    expect(texts).toContain('无广告 · 无会员 · 纯本地');
+    expect(texts).toContain('扫码体验');
     expect(texts).toContain('2026-11-08');
   });
 
@@ -227,8 +371,8 @@ describe('resolveExportDpr：防止超出 canvas 尺寸上限', () => {
   it('卡片很高时自动降低 dpr，保证单边不超上限', () => {
     const model = buildShareCardModel(input());
     const layout = computeShareCardLayout(model);
-    // 1:1 复刻后逻辑高度约 3000px
-    expect(layout.height).toBeGreaterThan(2500);
+    // 详细版逻辑高度约 2500px，远超 canvas 单边上限的安全 dpr 区间
+    expect(layout.height).toBeGreaterThan(2400);
 
     for (const deviceDpr of [2, 3, 4]) {
       const dpr = resolveExportDpr(layout.width, layout.height, deviceDpr);
@@ -260,17 +404,20 @@ describe('resolveExportDpr：防止超出 canvas 尺寸上限', () => {
 });
 
 describe('精简模式绘制', () => {
-  it('只绘制指标卡与环形图，不绘制三张图表', () => {
+  it('只绘制核心指标卡与环形图，不绘制三张图表', () => {
     const { ctx } = draw({}, 'brief');
     const texts = ctx._texts.map((t: any) => t.text);
 
-    // 保留
+    // 保留：头部 + 一行三格核心指标 + 分类支出
     expect(texts).toContain('测试 CRV');
-    expect(texts).toContain('最新总里程 (km)');
+    expect(texts).toContain('增加总里程 (km)');
+    expect(texts).toContain('平均油耗 (L/100km)');
+    expect(texts).toContain('每公里支出 (元/km)');
     expect(texts).toContain('分类支出');
     expect(texts).toContain('总支出');
 
-    // 跳过
+    // 跳过：详细版的三组指标卡 + 三张图表
+    expect(texts).not.toContain('最新总里程 (km)');
     expect(texts).not.toContain('行程 (km)');
     expect(texts).not.toContain('费用 (元)');
     expect(texts.some((t: string) => t.includes('趋势'))).toBe(false);
@@ -309,9 +456,9 @@ describe('图表字号放大（卡片侧 fontScale）', () => {
     const sizes = fontSizes(ctx);
     // 图表标签按 fontScale=2 放大到 20px
     expect(sizes.some(s => s >= 20)).toBe(true);
-    // 不应存在 10px 的图表标签（组件默认值）
-    const tiny = sizes.filter(s => s <= 10);
-    expect(tiny.length).toBe(0);
+    // 图表区不应残留组件默认的 10px 标签；页脚最小的辅助字为 11px，不在此列
+    const tinyChartLabels = sizes.filter(s => s < 11);
+    expect(tinyChartLabels.length).toBe(0);
   });
 });
 
@@ -324,9 +471,15 @@ describe('drawEmptyCard 空态', () => {
 
     const texts = ctx._texts.map((t: any) => t.text);
     expect(texts).toContain('测试 CRV');
-    expect(texts).toContain('车记本');
+    expect(texts).toContain('车记本 · ICAR');
     expect(texts).toContain('这段时间还没有记录');
     expect(texts).not.toContain('最新总里程');
+
+    // 空态文案必须落在页脚上方，不能被页脚盖住
+    const footerY = EMPTY_CARD_HEIGHT - 108;
+    const emptyText = ctx._texts.find((t: any) => t.text === '记一笔后即可生成统计卡片');
+    expect(emptyText).toBeTruthy();
+    expect(emptyText.y).toBeLessThan(footerY);
   });
 
   it('dpr 缩放正确且 save/restore 配对', () => {

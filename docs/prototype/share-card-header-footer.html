@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分享图 · 头部 / 尾部 三版海报方案</title>
+<style>
+  :root{
+    --primary:#3B6FF6; --t1:#1F2430; --t2:#5A6272; --t3:#6B7486;
+    --c1:#3B82F6; --c2:#22C55E; --c3:#F59E0B; --c4:#EF4444;
+    --c5:#A855F7; --c6:#14B8A6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#DFE3EA;padding:26px 16px 60px;color:var(--t1);
+  }
+  .wrap{max-width:1320px;margin:0 auto;}
+  h1{font-size:19px;font-weight:700;margin-bottom:4px;}
+  .intro{font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:22px;}
+  .intro b{color:var(--t1);}
+
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;}
+  .col{flex:1 1 400px;max-width:420px;}
+  .col h2{font-size:15px;font-weight:700;margin-bottom:3px;}
+  .col .desc{font-size:12px;color:var(--t2);line-height:1.65;margin-bottom:10px;min-height:52px;}
+
+  /* 卡片缩放容器 */
+  .frame{
+    width:100%;overflow:hidden;border-radius:16px;
+    box-shadow:0 16px 40px rgba(15,23,42,.22);background:#fff;
+  }
+  .card{width:750px;transform-origin:top left;transform:scale(.54);font-size:0;}
+  .card-inner{width:750px;}
+
+  /* 通用：中间内容区 */
+  .body{padding:26px 28px;font-size:0;}
+  .mini-metrics{display:flex;gap:0;margin-bottom:22px;}
+  .mm{flex:1;text-align:center;}
+  .mm .v{font-size:30px;font-weight:700;letter-spacing:-.5px;}
+  .mm .l{font-size:12px;color:var(--t3);margin-top:6px;}
+
+  .cat-block{font-size:0;}
+  .cat-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;}
+  .cat-title .a{font-size:15px;font-weight:600;}
+  .cat-title .b{font-size:12px;color:var(--t3);}
+  .cat-body{display:flex;align-items:center;gap:22px;}
+  .donut{width:150px;height:150px;border-radius:50%;position:relative;flex-shrink:0;
+    background:conic-gradient(#3B82F6 0deg 164deg,#22C55E 164deg 217deg,#F59E0B 217deg 263deg,#EF4444 263deg 299deg,#A855F7 299deg 315deg,#14B8A6 315deg 360deg);}
+  .donut::after{content:"";position:absolute;inset:40px;border-radius:50%;background:inherit;filter:none;}
+  .cat-lines{flex:1;}
+  .cl{display:flex;align-items:center;gap:10px;padding:6px 0;}
+  .cl .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .cl .nm{width:64px;font-size:13px;}
+  .cl .tr{flex:1;height:7px;border-radius:4px;overflow:hidden;}
+  .cl .tr span{display:block;height:100%;border-radius:4px;}
+  .cl .am{width:82px;text-align:right;font-size:13px;font-weight:600;}
+
+  /* ============ 方案 A：极简线稿 ============ */
+  .a-head{position:relative;background:#fff;padding:30px 30px 26px;border-bottom:1px solid #EEF0F4;}
+  .a-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px;}
+  .a-brand{font-size:11px;letter-spacing:2.5px;color:#8A93A6;font-weight:600;}
+  .a-range{font-size:11px;letter-spacing:2px;color:#8A93A6;}
+  .a-car{position:absolute;right:24px;bottom:56px;width:206px;height:116px;color:#C9D0DB;}
+  .a-num{font-size:62px;font-weight:700;letter-spacing:-2px;color:#11151C;line-height:1;}
+  .a-num small{font-size:24px;font-weight:600;margin-right:2px;letter-spacing:0;}
+  .a-per{font-size:13px;color:#6B7486;margin-top:12px;letter-spacing:.5px;}
+  .a-foot-row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:34px;}
+  .a-car-name{font-size:20px;font-weight:700;color:#11151C;letter-spacing:.5px;}
+  .a-meta{font-size:12px;color:#8A93A6;margin-top:5px;letter-spacing:.5px;}
+
+  .a-foot{background:#fff;padding:22px 30px;border-top:1px solid #EEF0F4;display:flex;align-items:center;justify-content:space-between;}
+  .a-slogan{font-size:14px;font-weight:600;color:#11151C;letter-spacing:1px;}
+  .a-slogan-sub{font-size:10px;color:#8A93A6;letter-spacing:1.5px;margin-top:5px;}
+  .a-qr{width:56px;height:56px;border:1px solid #C9D0DB;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8px;color:#8A93A6;letter-spacing:1px;gap:2px;}
+  .a-qr i{font-style:normal;font-size:20px;line-height:1;color:#11151C;}
+
+  /* ============ 方案 B：杂志封面 ============ */
+  .b-head{position:relative;background:#F7F5F0;padding:30px 32px 28px;}
+  .b-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:34px;}
+  .b-kicker{font-size:9px;letter-spacing:3px;color:#9A9384;font-weight:600;}
+  .b-kicker b{display:block;font-size:11px;letter-spacing:2px;color:#161616;margin-top:3px;}
+  .b-logo{width:34px;height:34px;border-radius:8px;object-fit:cover;}
+  .b-num{font-size:100px;font-weight:800;letter-spacing:-6px;color:#161616;line-height:.9;}
+  .b-num small{font-size:30px;font-weight:700;letter-spacing:0;vertical-align:super;margin-right:2px;}
+  .b-side{position:absolute;right:32px;top:120px;writing-mode:vertical-rl;font-size:11px;letter-spacing:6px;color:#9A9384;}
+  .b-rule{height:1px;background:#161616;margin:22px 0 12px;}
+  .b-under{display:flex;justify-content:space-between;align-items:baseline;}
+  .b-under .l{font-size:12px;letter-spacing:2px;color:#161616;font-weight:600;}
+  .b-under .r{font-size:12px;color:#7C7668;letter-spacing:.5px;}
+  .b-name{font-size:26px;font-weight:800;color:#161616;letter-spacing:.5px;margin-top:18px;}
+
+  .b-foot{background:#F7F5F0;padding:20px 32px;border-top:1px solid #161616;display:flex;align-items:center;justify-content:space-between;}
+  .b-slogan{font-size:13px;font-weight:800;letter-spacing:3px;color:#161616;}
+  .b-slogan-sub{font-size:9px;letter-spacing:2px;color:#9A9384;margin-top:5px;}
+  .b-qr{width:54px;height:54px;border:1px solid #161616;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8px;letter-spacing:1px;color:#161616;gap:2px;}
+  .b-qr i{font-style:normal;font-size:19px;line-height:1;}
+
+  /* ============ 方案 C：深色运动 ============ */
+  .c-head{position:relative;background:#0E1116;padding:30px 30px 28px;overflow:hidden;}
+  .c-slash{position:absolute;right:-40px;top:-60px;width:260px;height:190px;background:linear-gradient(135deg,#3B6FF6,#1D4ED8);transform:skewX(-24deg);opacity:.92;}
+  .c-slash2{position:absolute;right:180px;top:-90px;width:70px;height:220px;background:#3B6FF6;transform:skewX(-24deg);opacity:.25;}
+  .c-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;margin-bottom:30px;}
+  .c-brand{display:flex;align-items:center;gap:10px;}
+  .c-brand img{width:36px;height:36px;border-radius:8px;object-fit:cover;}
+  .c-brand span{font-size:13px;font-weight:700;letter-spacing:3px;color:#fff;}
+  .c-range{font-size:10px;letter-spacing:2px;color:#8A93A6;border:1px solid rgba(255,255,255,.18);padding:4px 10px;border-radius:2px;}
+  .c-name{position:relative;z-index:1;font-size:34px;font-weight:800;letter-spacing:5px;color:#fff;text-transform:uppercase;}
+  .c-meta{position:relative;z-index:1;font-size:11px;letter-spacing:2px;color:#8A93A6;margin-top:6px;}
+  .c-num-row{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px;}
+  .c-num{font-size:56px;font-weight:800;letter-spacing:-2px;color:#fff;line-height:1;}
+  .c-num small{font-size:24px;margin-right:2px;color:#6E8BFF;}
+  .c-lbl{text-align:right;font-size:10px;letter-spacing:2px;color:#8A93A6;line-height:1.7;}
+  .c-lbl b{display:block;font-size:13px;color:#fff;letter-spacing:1px;}
+
+  .c-foot{background:#0E1116;padding:22px 30px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between;}
+  .c-dot{width:7px;height:7px;border-radius:50%;background:#3B6FF6;display:inline-block;margin-right:10px;}
+  .c-slogan{font-size:13px;font-weight:700;letter-spacing:2px;color:#fff;display:flex;align-items:center;}
+  .c-slogan-sub{font-size:9px;letter-spacing:2px;color:#8A93A6;margin-top:6px;margin-left:17px;}
+  .c-qr{width:54px;height:54px;background:#fff;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8px;letter-spacing:1px;color:#0E1116;gap:2px;}
+  .c-qr i{font-style:normal;font-size:19px;line-height:1;}
+
+  /* 中间内容按方案换色 */
+  .body-a{background:#fff;}
+  .body-b{background:#F7F5F0;}
+  .body-c{background:#0E1116;}
+  .body-c .mm .v{color:#fff;}
+  .body-c .mm .l{color:#8A93A6;}
+  .body-c .cat-title .a{color:#fff;}
+  .body-c .cat-title .b{color:#8A93A6;}
+  .body-c .cl .nm{color:#fff;}
+  .body-c .cl .am{color:#fff;}
+  .body-c .cl .tr{background:rgba(255,255,255,.1);}
+  .body-c .donut::after{background:#0E1116;}
+
+  .tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;}
+  .tag.low{background:#E4F6EA;color:#1E7F3C;}
+  .tag.mid{background:#FFF3E0;color:#B4471A;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>分享图 · 头部 / 尾部 三版海报方案</h1>
+  <div class="intro">
+    针对「头部像后台面板、尾部像设置页」的问题，参考三种真实海报语言重做。<b>中间内容区仅为示意</b>，重点看头尾。
+    每版都标了 Canvas 落地难度。
+  </div>
+
+  <div class="row">
+    <!-- ===== A 极简线稿 ===== -->
+    <div class="col">
+      <h2>A. 极简线稿<span class="tag low">落地易</span></h2>
+      <div class="desc">
+        白底 + 一条手绘感汽车侧影线稿 + 超大字重数字。像一本汽车杂志的内页，
+        留白多、无渐变、无阴影，最接近你说的「简笔画极简」。
+      </div>
+      <div class="frame">
+        <div class="card">
+          <div class="card-inner">
+            <div class="a-head">
+              <div class="a-top">
+                <div class="a-brand">车记本 · ICAR</div>
+                <div class="a-range">2026</div>
+              </div>
+              <svg class="a-car" viewBox="0 0 200 130" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="40" x2="196" y2="40" opacity=".5"/>
+                <path d="M16 126L86 40"/>
+                <path d="M184 126L114 40"/>
+                <path d="M100 118v-14"/>
+                <path d="M100 92v-12"/>
+                <path d="M100 68v-9"/>
+                <path d="M100 50v-6"/>
+              </svg>
+              <div class="a-num"><small>¥</small>8,200</div>
+              <div class="a-per">每公里 ¥1.40</div>
+              <div class="a-foot-row">
+                <div>
+                  <div class="a-car-name">我的 CRV</div>
+                  <div class="a-meta">燃油车 · 本年度</div>
+                </div>
+              </div>
+            </div>
+            <div class="body body-a">
+              <div class="mini-metrics">
+                <div class="mm"><div class="v">5,850</div><div class="l">增加总里程 (km)</div></div>
+                <div class="mm"><div class="v">8.46</div><div class="l">平均油耗 (L/100km)</div></div>
+                <div class="mm"><div class="v">¥1.40</div><div class="l">每公里支出</div></div>
+              </div>
+              <div class="cat-block">
+                <div class="cat-title"><span class="a">分类支出</span><span class="b">总支出 ¥1,325.63</span></div>
+                <div class="cat-body">
+                  <div class="donut"></div>
+                  <div class="cat-lines">
+                    <div class="cl"><span class="dot" style="background:var(--c1)"></span><span class="nm">加油</span><span class="tr" style="background:#F2F3F5"><span style="width:45.6%;background:var(--c1)"></span></span><span class="am">¥605.00</span></div>
+                    <div class="cl"><span class="dot" style="background:var(--c2)"></span><span class="nm">保养</span><span class="tr" style="background:#F2F3F5"><span style="width:14.7%;background:var(--c2)"></span></span><span class="am">¥194.71</span></div>
+                    <div class="cl"><span class="dot" style="background:var(--c3)"></span><span class="nm">停车</span><span class="tr" style="background:#F2F3F5"><span style="width:12.7%;background:var(--c3)"></span></span><span class="am">¥168.00</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="a-foot">
+              <div>
+                <div class="a-slogan">记录每一公里</div>
+                <div class="a-slogan-sub">NO ADS · NO MEMBERSHIP · LOCAL ONLY</div>
+              </div>
+              <div class="a-qr"><i>▦</i>扫码体验</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== B 杂志封面 ===== -->
+    <div class="col">
+      <h2>B. 杂志封面<span class="tag low">落地易</span></h2>
+      <div class="desc">
+        暖米白纸感 + 超大字重 + 细黑分隔线 + 竖排刊头字。像一本独立杂志的封面，
+        信息层级靠字号和留白拉，不靠色块。高级感最强。
+      </div>
+      <div class="frame">
+        <div class="card">
+          <div class="card-inner">
+            <div class="b-head">
+              <div class="b-top">
+                <div class="b-kicker">CAR JOURNAL<b>车记本 · ICAR</b></div>
+                <img class="b-logo" src="../../assets/logo.png" alt="logo">
+              </div>
+              <div class="b-num"><small>¥</small>8,200</div>
+              <div class="b-side">TOTAL COST 2026</div>
+              <div class="b-rule"></div>
+              <div class="b-under">
+                <div class="l">总支出</div>
+                <div class="r">每公里 ¥1.40</div>
+              </div>
+              <div class="b-name">我的 CRV</div>
+            </div>
+            <div class="body body-b">
+              <div class="mini-metrics">
+                <div class="mm"><div class="v">5,850</div><div class="l">增加总里程 (km)</div></div>
+                <div class="mm"><div class="v">8.46</div><div class="l">平均油耗 (L/100km)</div></div>
+                <div class="mm"><div class="v">¥1.40</div><div class="l">每公里支出</div></div>
+              </div>
+              <div class="cat-block">
+                <div class="cat-title"><span class="a">分类支出</span><span class="b">总支出 ¥1,325.63</span></div>
+                <div class="cat-body">
+                  <div class="donut"></div>
+                  <div class="cat-lines">
+                    <div class="cl"><span class="dot" style="background:var(--c1)"></span><span class="nm">加油</span><span class="tr" style="background:#EDE9E0"><span style="width:45.6%;background:var(--c1)"></span></span><span class="am">¥605.00</span></div>
+                    <div class="cl"><span class="dot" style="background:var(--c2)"></span><span class="nm">保养</span><span class="tr" style="background:#EDE9E0"><span style="width:14.7%;background:var(--c2)"></span></span><span class="am">¥194.71</span></div>
+                    <div class="cl"><span class="dot" style="background:var(--c3)"></span><span class="nm">停车</span><span class="tr" style="background:#EDE9E0"><span style="width:12.7%;background:var(--c3)"></span></span><span class="am">¥168.00</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="b-foot">
+              <div>
+                <div class="b-slogan">记录每一公里</div>
+                <div class="b-slogan-sub">无广告 · 无会员 · 纯本地</div>
+              </div>
+              <div class="b-qr"><i>▦</i>扫码体验</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== C 深色运动 ===== -->
+    <div class="col">
+      <h2>C. 深色运动<span class="tag mid">落地中</span></h2>
+      <div class="desc">
+        近黑底 + 蓝色斜切光带 + 大写字距。参考汽车品牌海报（Audi/BMW 那类），
+        力量感强、信息流里最抓眼，和「车」的品类最匹配。
+      </div>
+      <div class="frame">
+        <div class="card">
+          <div class="card-inner">
+            <div class="c-head">
+              <div class="c-slash"></div>
+              <div class="c-slash2"></div>
+              <div class="c-top">
+                <div class="c-brand">
+                  <img src="../../assets/logo.png" alt="logo">
+                  <span>车记本</span>
+                </div>
+                <div class="c-range">2026</div>
+              </div>
+              <div class="c-name">MY CRV</div>
+              <div class="c-meta">燃油车 · 本年度统计</div>
+              <div class="c-num-row">
+                <div class="c-num"><small>¥</small>8,200</div>
+                <div class="c-lbl">总支出<b>每公里 ¥1.40</b></div>
+              </div>
+            </div>
+            <div class="body body-c">
+              <div class="mini-metrics">
+                <div class="mm"><div class="v">5,850</div><div class="l">增加总里程 (km)</div></div>
+                <div class="mm"><div class="v">8.46</div><div class="l">平均油耗 (L/100km)</div></div>
+                <div class="mm"><div class="v">¥1.40</div><div class="l">每公里支出</div></div>
+              </div>
+              <div class="cat-block">
+                <div class="cat-title"><span class="a">分类支出</span><span class="b">总支出 ¥1,325.63</span></div>
+                <div class="cat-body">
+                  <div class="donut"></div>
+                  <div class="cat-lines">
+                    <div class="cl"><span class="dot" style="background:var(--c1)"></span><span class="nm">加油</span><span class="tr"><span style="width:45.6%;background:var(--c1)"></span></span><span class="am">¥605.00</span></div>
+                    <div class="cl"><span class="dot" style="background:var(--c2)"></span><span class="nm">保养</span><span class="tr"><span style="width:14.7%;background:var(--c2)"></span></span><span class="am">¥194.71</span></div>
+                    <div class="cl"><span class="dot" style="background:var(--c3)"></span><span class="nm">停车</span><span class="tr"><span style="width:12.7%;background:var(--c3)"></span></span><span class="am">¥168.00</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="c-foot">
+              <div>
+                <div class="c-slogan"><span class="c-dot"></span>记录每一公里</div>
+                <div class="c-slogan-sub">无广告 · 无会员 · 纯本地</div>
+              </div>
+              <div class="c-qr"><i>▦</i>扫码体验</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:30px;background:#fff;border-radius:14px;padding:18px 22px;font-size:13px;line-height:1.9;color:#5A6272;">
+    <b style="color:#1F2430;">怎么选（我的建议）：</b><br>
+    · <b>A 极简线稿</b>：最轻、最耐看，但白底在信息流里抓眼度一般，适合「想给人清爽、克制」的印象。<br>
+    · <b>B 杂志封面</b>：高级感和辨识度平衡最好，暖米白比纯白更「有纸感」，我推荐作为主方案。<br>
+    · <b>C 深色运动</b>：最抓眼、最贴汽车品类，但和 App 的浅色基调反差大，适合偶尔发、不适合长期统一。<br><br>
+    <b style="color:#1F2430;">落地成本：</b>A/B 只需矩形+文字+线条+贝塞尔（汽车线稿可用一段 path），Canvas 完全没问题；C 的斜切光带用 path 也能画，但要做抗锯齿和圆角裁剪，成本略高。
+  </div>
+</div>
+</body>
+</html>

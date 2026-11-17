@@ -11,6 +11,7 @@ import {
   computeShareCardLayout,
   formatRangeLabel,
   ShareMode,
+  ShareStyle,
   ShareCardInput
 } from '../../utils/share-card';
 import {
@@ -22,6 +23,21 @@ import {
 import { formatDate } from '../../utils/date';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { safeBack } from '../../utils/safe-back';
+
+/**
+ * 分享选项：风格 × 模式共六种。
+ *
+ * 一次 ActionSheet 展示完，避免「先选模式再选风格」的两段式弹窗；
+ * 微信 ActionSheet 最多 6 项，正好够用。
+ */
+const SHARE_OPTIONS: Array<{ label: string; mode: ShareMode; style: ShareStyle }> = [
+  { label: '极简线稿 · 精简', mode: 'brief', style: 'a' },
+  { label: '极简线稿 · 详细', mode: 'full', style: 'a' },
+  { label: '杂志封面 · 精简', mode: 'brief', style: 'b' },
+  { label: '杂志封面 · 详细', mode: 'full', style: 'b' },
+  { label: '深色运动 · 精简', mode: 'brief', style: 'c' },
+  { label: '深色运动 · 详细', mode: 'full', style: 'c' }
+];
 
 interface CatView {
   name: string;
@@ -204,14 +220,16 @@ Page({
    * 所以在页面里的离屏 canvas 上重绘一张卡片，再交给 wx.showShareImageMenu
    * （自带「发送给朋友 / 分享到朋友圈 / 保存到相册」三个入口）。
    */
-  /** 第一步：选择精简 / 详细模式 */
+  /** 第一步：一次选定「风格 + 模式」（六选一，省掉二次弹窗） */
   onShareStatistics() {
     if (this.data.sharing) return;
+    const options = SHARE_OPTIONS;
     wx.showActionSheet({
-      itemList: ['精简模式（指标卡 + 环形图）', '详细模式（完整统计页）'],
+      itemList: options.map(o => o.label),
       success: res => {
-        const mode: ShareMode = res.tapIndex === 1 ? 'full' : 'brief';
-        this.generateShareImage(mode);
+        const opt = options[res.tapIndex];
+        if (!opt) return;
+        this.generateShareImage(opt.mode, opt.style);
       },
       fail: () => {
         // 用户取消，无需提示
@@ -219,13 +237,13 @@ Page({
     });
   },
 
-  /** 第二步：按模式绘制并唤起分享菜单 */
-  generateShareImage(mode: ShareMode) {
+  /** 第二步：按风格与模式绘制并唤起分享菜单 */
+  generateShareImage(mode: ShareMode, style: ShareStyle) {
     if (this.data.sharing) return;
     this.setData({ sharing: true });
     wx.showLoading({ title: '生成中…', mask: true });
 
-    this.drawShareCard(mode)
+    this.drawShareCard(mode, style)
       .then((filePath: string) => {
         wx.hideLoading();
         this.setData({ sharing: false });
@@ -268,7 +286,7 @@ Page({
   },
 
   /** 组装模型（供绘制与调试复用） */
-  buildShareModel(mode: ShareMode = 'full') {
+  buildShareModel(mode: ShareMode, style: ShareStyle) {
     const storage = getStorage();
     const car = getCar(storage, this.data.carId);
     if (!car) return null;
@@ -308,13 +326,13 @@ Page({
       monthlyMileage: snap.monthlyMileage.map(m => ({ label: m.label, value: m.value })),
       monthlyCost: snap.monthlyCost.map(m => ({ label: m.label, value: m.value }))
     };
-    return buildShareCardModel(input, mode);
+    return buildShareCardModel(input, mode, style);
   },
 
   /** 在离屏 canvas 上绘制并导出临时文件路径 */
-  drawShareCard(mode: ShareMode = 'full'): Promise<string> {
+  drawShareCard(mode: ShareMode, style: ShareStyle): Promise<string> {
     return new Promise((resolve, reject) => {
-      const model = this.buildShareModel(mode);
+      const model = this.buildShareModel(mode, style);
       if (!model) {
         reject(new Error('car not found'));
         return;
@@ -327,7 +345,7 @@ Page({
       this.createSelectorQuery()
         .select('#shareCanvas')
         .fields({ node: true, size: true })
-        .exec((res: any) => {
+        .exec(async (res: any) => {
           try {
           const canvas = res && res[0] && res[0].node;
           if (!canvas) {
@@ -348,13 +366,16 @@ Page({
           canvas.height = Math.round(height * dpr);
 
           const ctx = canvas.getContext('2d');
+          // 品牌 Logo：加载失败 / 超时都返回 null，绘制层降级为色块「车」
+          const logoImage = await this.loadLogo(canvas);
           const opts = {
             ctx,
             model,
             layout: { ...layout, height },
             dpr,
-            footerText: '车记本 · 记录每一公里',
-            dateText: formatDate(Date.now())
+            footerText: '记录每一公里',
+            dateText: formatDate(Date.now()),
+            logoImage
           };
           if (model.hasData) {
             drawShareCard(opts);
@@ -385,6 +406,43 @@ Page({
         });
       } catch (err) {
         reject(err);
+      }
+    });
+  },
+
+  /**
+   * 加载品牌 Logo（绘制层可选项）。
+   * 失败 / 超时 / 老基础库不支持都返回 null，让绘制层降级为色块，
+   * 绝不能因为一张图卡住整张分享卡的生成。
+   */
+  loadLogo(canvas: any): Promise<any> {
+    return new Promise(resolve => {
+      if (!canvas || typeof canvas.createImage !== 'function') {
+        resolve(null);
+        return;
+      }
+      let settled = false;
+      const done = (img: any) => {
+        if (settled) return;
+        settled = true;
+        resolve(img);
+      };
+      // 兜底超时：部分机型 onerror 不触发，避免 Promise 永不 settle
+      const timer = setTimeout(() => done(null), 1500);
+      try {
+        const img = canvas.createImage();
+        img.onload = () => {
+          clearTimeout(timer);
+          done(img);
+        };
+        img.onerror = () => {
+          clearTimeout(timer);
+          done(null);
+        };
+        img.src = '/assets/logo.png';
+      } catch (e) {
+        clearTimeout(timer);
+        done(null);
       }
     });
   }
