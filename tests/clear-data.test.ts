@@ -237,20 +237,33 @@ describe('推荐项的样式细节', () => {
     expect(btn![0]).not.toContain('把车记本推荐给朋友');
   });
 
-  it('覆盖层铺满整行、视觉不可见但可点击', () => {
+  it('覆盖层用 inset 铺满整行（width:100% 压不住 button 内置尺寸）', () => {
     const cover = wxss.match(/\.share-cover \{[\s\S]*?\}/);
     expect(cover).toBeTruthy();
     const css = cover![0];
     expect(css).toMatch(/position:\s*absolute/);
-    expect(css).toMatch(/width:\s*100%/);
-    expect(css).toMatch(/height:\s*100%/);
-    // 用接近 0 而非 0：opacity:0 在部分渲染引擎下不接收点击，分享会调不起来
-    expect(css).toMatch(/opacity:\s*0\.0?1/);
+    // inset 四边归零，比 width/height:100% 更能压住 button 的默认尺寸
+    expect(css).toMatch(/top:\s*0/);
+    expect(css).toMatch(/right:\s*0/);
+    expect(css).toMatch(/bottom:\s*0/);
+    expect(css).toMatch(/left:\s*0/);
     expect(css).toMatch(/z-index:\s*1/);
-    // 无默认外观残留
-    expect(css).toMatch(/padding:\s*0/);
-    expect(css).toMatch(/border:\s*none/);
+  });
+
+  it('覆盖层**不使用 opacity**（接近 0 的透明度会被判为不可交互）', () => {
+    const cover = wxss.match(/\.share-cover \{[\s\S]*?\}/);
+    const css = cover![0];
+    // 这是真机 bug 的根因：opacity: 0.01 让渲染层跳过命中测试，
+    // 结果只有文字区域能点。必须靠 transparent 背景隐形，而不是透明度。
+    expect(css).not.toMatch(/opacity:/);
     expect(css).toMatch(/background:\s*transparent/);
+    expect(css).toMatch(/color:\s*transparent/);
+    // 空 button 不被内置行高撑开
+    expect(css).toMatch(/font-size:\s*0/);
+  });
+
+  it('覆盖层去掉 button 默认 ::after 边框', () => {
+    expect(wxss).toMatch(/\.share-cover::after \{[\s\S]{0,40}border:\s*none/);
   });
 
   it('行容器为覆盖层提供定位参照', () => {

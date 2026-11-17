@@ -45,7 +45,8 @@ interface PageCase {
 const PAGE_CASES: PageCase[] = [
   { name: 'reminder（概览）', path: 'pages/reminder/index', options: () => ({}) },
   { name: 'index（车辆）', path: 'pages/index/index', options: () => ({}) },
-  { name: 'user（我的）', path: 'pages/user/index', options: () => ({}) },
+  { name: 'user（设置）', path: 'pages/user/index', options: () => ({}) },
+  { name: 'faq（常见问题）', path: 'pages/faq/index', options: () => ({}) },
   { name: 'about', path: 'pages/about/index', options: () => ({}) },
   { name: 'privacy', path: 'pages/privacy/index', options: () => ({}) },
   { name: 'category-manage', path: 'pages/category-manage/index', options: () => ({}) },

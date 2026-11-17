@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>底栏毛玻璃调优 + 齿轮 B</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #E4E8EF; padding: 26px 18px 70px; color: #1F2430;
+  }
+  .doc-title { font-size: 21px; font-weight: 700; text-align: center; margin-bottom: 5px; }
+  .doc-sub { font-size: 12.5px; color: #6B7486; text-align: center; margin-bottom: 8px; line-height: 1.6; }
+  .root-cause {
+    max-width: 1060px; margin: 0 auto 24px; background: #FFF8E6;
+    border: 1px solid #F0DFA8; border-radius: 12px; padding: 14px 18px;
+  }
+  .root-cause b { color: #8A6100; }
+  .root-cause p { font-size: 12.5px; color: #6B5A2A; line-height: 1.7; }
+  .root-cause code {
+    background: #FFF1CC; padding: 1px 5px; border-radius: 4px;
+    font-family: "SF Mono", Consolas, monospace; font-size: 11.5px; color: #8A6100;
+  }
+
+  .stage { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; }
+
+  .col { width: 300px; }
+  .col-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .col-title { font-size: 13px; font-weight: 700; }
+  .tag { font-size: 9.5px; font-weight: 700; padding: 2px 6px; border-radius: 5px; }
+  .tag-cur { background: #F0F1F4; color: #5A6272; }
+  .tag-a { background: #EEF3FE; color: #1D4ED8; }
+  .tag-b { background: #E8F7EE; color: #1D7A34; }
+  .col-desc { font-size: 11px; color: #6B7486; margin-bottom: 10px; line-height: 1.5; min-height: 46px; }
+
+  .phone {
+    width: 300px; height: 500px; background: #F5F6F8;
+    border-radius: 20px; overflow: hidden;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.14);
+    border: 1px solid #D6DCE6; position: relative;
+    display: flex; flex-direction: column;
+  }
+  .navbar {
+    height: 42px; flex-shrink: 0; background: #fff; display: flex; align-items: center;
+    justify-content: center; font-size: 15px; font-weight: 600;
+    border-bottom: 1px solid #F0F1F4; position: relative; z-index: 3;
+  }
+  .body { flex: 1; overflow-y: auto; padding: 11px; }
+  .body::-webkit-scrollbar { width: 0; }
+
+  .card {
+    background: #fff; border-radius: 15px; padding: 11px 15px;
+    box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05); margin-bottom: 11px;
+  }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 47px; border-bottom: 1px solid #F0F1F4;
+  }
+  .row:last-child { border-bottom: none; }
+  .row-label { font-size: 13.5px; color: #1F2430; }
+  .row-arrow { font-size: 19px; color: #6B7486; }
+
+  .color-strip {
+    height: 40px; border-radius: 11px; margin-bottom: 8px;
+    display: flex; align-items: center; padding: 0 13px;
+    font-size: 11px; font-weight: 600; color: #fff;
+  }
+  .s1 { background: #3B6FF6; } .s2 { background: #F5474F; }
+  .s3 { background: #2BA84A; } .s4 { background: #E8912A; }
+  .s5 { background: #8B5CF6; } .s6 { background: #0EA5E9; }
+
+  /* ============ 底栏：毛玻璃 + 不同不透明度 ============ */
+  .tab-bar {
+    position: absolute; left: 13px; right: 13px; bottom: 9px;
+    height: 51px; display: flex; align-items: center; padding: 0 4px;
+    border-radius: 999px; z-index: 100;
+    box-shadow: 0 5px 15px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.05);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    backdrop-filter: blur(15px) saturate(180%);
+  }
+  /* 毛玻璃保留，只调不透明度 */
+  .g-062 { background: rgba(255,255,255,0.62); border: 1px solid rgba(255,255,255,0.75); }
+  .g-048 { background: rgba(255,255,255,0.48); border: 1px solid rgba(255,255,255,0.70); }
+  .g-038 { background: rgba(255,255,255,0.38); border: 1px solid rgba(255,255,255,0.65); }
+  .g-028 { background: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.60); }
+
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 43px; border-radius: 22px;
+  }
+  .tab-active { background: rgba(59, 111, 246, 0.12); }
+  .tab-icon { width: 22px; height: 22px; }
+  .tab-text { margin-top: 2px; font-size: 9.5px; line-height: 1; color: #6B7486; }
+  .tab-active .tab-text { color: #3B6FF6; font-weight: 600; }
+
+  .legend {
+    margin-top: 8px; font-size: 10.5px; color: #6B7486; line-height: 1.6;
+    background: #fff; border-radius: 9px; padding: 8px 10px; border: 1px solid #E6EAF1;
+  }
+  .legend b { color: #1F2430; }
+
+  /* 大图区 */
+  .big {
+    max-width: 1060px; margin: 26px auto 0; background: #fff;
+    border-radius: 14px; padding: 22px 24px; border: 1px solid #E6EAF1;
+  }
+  .big h3 { font-size: 14.5px; margin-bottom: 14px; }
+  .gear-row { display: flex; flex-wrap: wrap; gap: 30px; align-items: flex-end; }
+  .gear-cell { text-align: center; }
+  .gear-cell .nm { font-size: 11.5px; font-weight: 700; margin-bottom: 8px; }
+  .gear-box {
+    background: #F5F6F8; border-radius: 10px; padding: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gear-box.blue { background: rgba(59,111,246,0.12); }
+  .gear-box.glass {
+    background: linear-gradient(135deg, #3B6FF6 0%, #F5474F 50%, #2BA84A 100%);
+  }
+  .gear-note { font-size: 10px; color: #8A93A6; margin-top: 5px; }
+
+  .note {
+    max-width: 1060px; margin: 22px auto 0; background: #fff;
+    border-radius: 14px; padding: 20px 24px; border: 1px solid #E6EAF1;
+  }
+  .note h3 { font-size: 14.5px; margin-bottom: 9px; }
+  .note h3:not(:first-child) { margin-top: 19px; }
+  .note p, .note li { font-size: 12.5px; color: #5A6272; line-height: 1.75; }
+  .note ul { padding-left: 18px; margin: 6px 0; }
+  .note code {
+    background: #F2F3F5; padding: 1px 5px; border-radius: 4px;
+    font-family: "SF Mono", Consolas, monospace; font-size: 11.5px; color: #C2262D;
+  }
+  .note table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+  .note th, .note td { text-align: left; padding: 7px 9px; border-bottom: 1px solid #F0F1F4; vertical-align: top; }
+  .note th { color: #6B7486; font-weight: 600; background: #FAFBFC; }
+</style>
+</head>
+<body>
+
+<div class="doc-title">底栏毛玻璃调优 · 齿轮 B</div>
+<div class="doc-sub">保留 <code>backdrop-filter</code>，只调不透明度</div>
+
+<div class="root-cause">
+  <p><b>为什么当前毛玻璃不明显？</b></p>
+  <p style="margin-top:6px;">
+    底栏背景是 <code>rgba(255,255,255,0.62)</code>，而它下面通常是
+    页面底色 <code>#F5F6F8</code> 或卡片 <code>#FFFFFF</code> —— <b>两者都接近纯白</b>。
+  </p>
+  <p style="margin-top:5px;">
+    毛玻璃的本质是「模糊底下有对比度的内容」。<b>模糊一片接近白的纯色，结果还是那片纯色</b>，
+    所以 blur 再强也看不出来。这不是 blur 强度问题，是<b>底下没有可模糊的内容</b>。
+  </p>
+  <p style="margin-top:5px;">
+    下面四档把不透明度逐级降低（更透），你可以观察：<b>降到 0.38~0.28 时，底下的浅灰开始透出来，
+    毛玻璃的层次感才显现</b>。但同时要留意图标文字是否还看得清。
+  </p>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<div class="big">
+  <h3>齿轮 B · 6 齿圆润（放大 3 倍 + 实际尺寸 + 彩色底测试）</h3>
+  <div class="gear-row" id="gearRow"></div>
+</div>
+
+<div class="note">
+  <h3>「更透」是对的方向，但有代价</h3>
+  <table>
+    <tr><th style="width:100px;">不透明度</th><th>毛玻璃可见度</th><th>图标可读性</th><th>风险</th></tr>
+    <tr><td><b>0.62</b>（现状）</td><td>几乎看不见</td><td>好</td><td>等于白底，白花性能</td></tr>
+    <tr><td><b>0.48</b></td><td>隐约可见</td><td>好</td><td>较稳，改善有限</td></tr>
+    <tr><td><b>0.38</b></td><td><b>明显可见</b></td><td>尚可</td><td>浅灰图标压在彩色上会吃力</td></tr>
+    <tr><td><b>0.28</b></td><td>很明显的玻璃感</td><td><b>有风险</b></td><td>滚动彩色内容时文字可能看不清</td></tr>
+  </table>
+  <p style="margin-top:8px;">
+    我推荐 <b>0.38</b>：这是「毛玻璃能看出来」与「图标还看得清」的平衡点。
+    0.28 在纯浅色背景上很好看，但一旦下方滚过彩色内容（比如概览页的环图、
+    统计页的彩色柱子），灰色图标就会糊在彩色上。
+  </p>
+  <p style="margin-top:6px;">
+    如果选 0.38 或更低，建议<b>同步给图标与文字加一层极淡的白色描边或阴影</b>（<code>text-shadow: 0 1px 2px rgba(255,255,255,0.8)</code>），
+    这样压在任何底色上都能读。这个我可以在实现时一并加上。
+  </p>
+
+  <h3>齿轮 B 的规格</h3>
+  <table>
+    <tr><th style="width:130px;">参数</th><th>取值</th></tr>
+    <tr><td>齿数</td><td>6</td></tr>
+    <tr><td>齿顶半径 / 齿根半径</td><td>9.3 / 6.7</td></tr>
+    <tr><td>中心孔半径</td><td>3.4</td></tr>
+    <tr><td>齿顶半角 / 齿根半角</td><td>13° / 12°（比 8 齿宽，齿更"厚实圆润"）</td></tr>
+    <tr><td>描边 / 端点</td><td><code>1.7</code> / <code>round</code>（对齐现有图标）</td></tr>
+    <tr><td>未选中 / 选中</td><td><code>#6B7486</code> 描边 / <code>#3B6FF6</code> 实心（evenodd 挖孔）</td></tr>
+  </table>
+  <p style="margin-top:8px;">
+    6 齿的好处是每个齿更宽，缩到 22px 时<b>齿形依然清晰</b>；
+    8 齿在这个尺寸下齿缝容易糊在一起。你选 B 是对的。
+  </p>
+
+  <h3>图标 key 改名为 gear</h3>
+  <p>需要同步改 4 处：</p>
+  <table>
+    <tr><th style="width:290px;">位置</th><th>改动</th></tr>
+    <tr><td><code>utils/tab-icons.ts</code> 的 <code>TAB_ICONS_LINE</code> / <code>TAB_ICONS_FILL</code></td><td><code>user</code> → <code>gear</code>（内容换成齿轮）</td></tr>
+    <tr><td><code>custom-tab-bar/index.ts</code> 的 <code>TAB_ITEMS[2]</code></td><td><code>icon: 'user'</code> → <code>icon: 'gear'</code>，<code>text: '我的'</code> → <code>'设置'</code></td></tr>
+    <tr><td><code>tests/tab-bar.test.ts</code></td><td>三处 <code>['overview','car','user']</code> → <code>['overview','car','gear']</code></td></tr>
+    <tr><td><code>app.json</code> 的 tabBar.list[2].text</td><td><code>我的</code> → <code>设置</code></td></tr>
+  </table>
+
+  <h3>请你确认</h3>
+  <ul>
+    <li><b>不透明度选哪档</b>：0.62 / 0.48 / <b>0.38（推荐）</b> / 0.28？</li>
+    <li>要不要给图标文字加<b>白色描边/阴影</b>兜底（选了 0.38 或更低时建议加）？</li>
+    <li>齿轮 B 的齿形看着还行吗？（如果觉得齿太宽或太窄，我可以微调齿顶半角）</li>
+  </ul>
+</div>
+
+<script>
+/* ============ 齿轮路径生成（6 齿圆润，对齐现有图标规范） ============ */
+const CX = 12, CY = 12;
+
+function polar(r, deg) {
+  const a = (deg - 90) * Math.PI / 180;
+  return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+}
+function f(n) {
+  const s = n.toFixed(2).replace(/\.?0+$/, '');
+  return s === '' || s === '-' ? '0' : s;
+}
+function gearPath(teeth, rOut, rRoot, toothHalf, gapHalf) {
+  const step = 360 / teeth;
+  const d = [];
+  for (let i = 0; i < teeth; i++) {
+    const base = i * step;
+    const pRootR = polar(rRoot, base + step / 2 - gapHalf);
+    const pOutR  = polar(rOut,  base + toothHalf);
+    const pOutL  = polar(rOut,  base - toothHalf);
+    const pRootL = polar(rRoot, base - step / 2 + gapHalf);
+    d.push((i === 0 ? 'M' : 'L') + f(pRootR[0]) + ' ' + f(pRootR[1]));
+    d.push('L' + f(pOutR[0]) + ' ' + f(pOutR[1]));
+    d.push('A' + f(rOut) + ' ' + f(rOut) + ' 0 0 1 ' + f(pOutL[0]) + ' ' + f(pOutL[1]));
+    d.push('L' + f(pRootL[0]) + ' ' + f(pRootL[1]));
+    if (i < teeth - 1) {
+      const next = polar(rRoot, base + step / 2 + gapHalf);
+      d.push('A' + f(rRoot) + ' ' + f(rRoot) + ' 0 0 1 ' + f(next[0]) + ' ' + f(next[1]));
+    }
+  }
+  d.push('Z');
+  return d.join('');
+}
+function circlePath(r) {
+  return 'M' + CX + ' ' + (CY - r) +
+    'A' + r + ' ' + r + ' 0 1 0 ' + CX + ' ' + (CY + r) +
+    'A' + r + ' ' + r + ' 0 1 0 ' + CX + ' ' + (CY - r) + 'Z';
+}
+
+// 齿轮 B：6 齿圆润
+const GEAR = { teeth: 6, rOut: 9.3, rRoot: 6.7, th: 13, gh: 12, hole: 3.4 };
+
+function lineSvg(size) {
+  const d = gearPath(GEAR.teeth, GEAR.rOut, GEAR.rRoot, GEAR.th, GEAR.gh);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none"
+    stroke="#6B7486" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="${d}"/><circle cx="12" cy="12" r="${GEAR.hole}"/></svg>`;
+}
+function fillSvg(size) {
+  const d = gearPath(GEAR.teeth, GEAR.rOut, GEAR.rRoot, GEAR.th, GEAR.gh) + circlePath(GEAR.hole);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24">
+    <path fill="#3B6FF6" fill-rule="evenodd" d="${d}"/></svg>`;
+}
+
+/* 现有两个图标（照抄实现） */
+const OV_LINE = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7.5" height="9" rx="2"/><rect x="13" y="4" width="7" height="5.5" rx="2"/><rect x="13" y="11.5" width="7" height="8.5" rx="2"/><rect x="4" y="15" width="7.5" height="5" rx="2"/></svg>`;
+const OV_FILL = `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="4" y="4" width="7.5" height="9" rx="2" fill="#3B6FF6"/><rect x="13" y="4" width="7" height="5.5" rx="2" fill="#3B6FF6"/><rect x="13" y="11.5" width="7" height="8.5" rx="2" fill="none" stroke="#3B6FF6" stroke-width="1.7" stroke-linejoin="round"/><rect x="4" y="15" width="7.5" height="5" rx="2" fill="none" stroke="#3B6FF6" stroke-width="1.7" stroke-linejoin="round"/></svg>`;
+const CAR_LINE = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5v2a1 1 0 0 0 1 1h1.6a1 1 0 0 0 1-1v-1"/><path d="M19.4 17.5v2a1 1 0 0 1-1 1h-1.6a1 1 0 0 1-1-1v-1"/><path d="M3.5 16.5h17a1 1 0 0 0 1-1v-3.2a1.5 1.5 0 0 0-1.2-1.47l-1.7-.3-1.5-3.5A2 2 0 0 0 15.2 5.6H8.8a2 2 0 0 0-1.9 1.43l-1.5 3.5-1.7.3A1.5 1.5 0 0 0 2.5 12.3v3.2a1 1 0 0 0 1 1Z"/><circle cx="7" cy="14" r="1.3"/><circle cx="17" cy="14" r="1.3"/></svg>`;
+const CAR_FILL = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3B6FF6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5v2a1 1 0 0 0 1 1h1.6a1 1 0 0 0 1-1v-1"/><path d="M19.4 17.5v2a1 1 0 0 1-1 1h-1.6a1 1 0 0 1-1-1v-1"/><path d="M3.5 16.5h17a1 1 0 0 0 1-1v-3.2a1.5 1.5 0 0 0-1.2-1.47l-1.7-.3-1.5-3.5A2 2 0 0 0 15.2 5.6H8.8a2 2 0 0 0-1.9 1.43l-1.5 3.5-1.7.3A1.5 1.5 0 0 0 2.5 12.3v3.2a1 1 0 0 0 1 1Z"/><circle cx="7" cy="14" r="1.3" fill="#3B6FF6"/><circle cx="17" cy="14" r="1.3" fill="#3B6FF6"/></svg>`;
+
+/* ============ 四档不透明度 ============ */
+const LEVELS = [
+  { cls: 'g-062', label: '0.62', title: '现状', rec: false,
+    desc: '毛玻璃几乎看不出。底下是 #F5F6F8 或 #FFFFFF，模糊后还是那个颜色。' },
+  { cls: 'g-048', label: '0.48', title: '略透', rec: false,
+    desc: '底下浅灰开始透出来，玻璃感隐约可见。图标可读性仍然很好。' },
+  { cls: 'g-038', label: '0.38', title: '推荐', rec: true,
+    desc: '玻璃层次明显，图标仍清晰。滚动彩色内容时也基本能读。' },
+  { cls: 'g-028', label: '0.28', title: '最透', rec: false,
+    desc: '玻璃感最强，但下方滚过彩色内容时，灰色图标会糊在彩色上。' }
+];
+
+const stage = document.getElementById('stage');
+
+LEVELS.forEach(lv => {
+  const col = document.createElement('div');
+  col.className = 'col';
+  col.innerHTML = `
+    <div class="col-head">
+      <div class="col-title">不透明度 ${lv.label}</div>
+      <span class="tag ${lv.rec ? 'tag-b' : (lv.label === '0.62' ? 'tag-cur' : 'tag-a')}">${lv.title}</span>
+    </div>
+    <div class="col-desc">${lv.desc}</div>
+    <div class="phone">
+      <div class="navbar">设置</div>
+      <div class="body">
+        <div class="card">
+          <div class="row"><div class="row-label">保养到期提醒</div>
+            <div style="width:40px;height:24px;background:#3B6FF6;border-radius:12px;position:relative;">
+              <div style="position:absolute;right:2px;top:2px;width:20px;height:20px;background:#fff;border-radius:50%;"></div>
+            </div>
+          </div>
+          <div class="row"><div class="row-label">支出类别管理</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">数据导入导出</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">回收站</div><div class="row-arrow">›</div></div>
+        </div>
+        <div class="color-strip s1">蓝色块（滚到底栏下方）</div>
+        <div class="color-strip s2">红色块</div>
+        <div class="color-strip s3">绿色块</div>
+        <div class="color-strip s4">橙色块</div>
+        <div class="color-strip s5">紫色块</div>
+        <div class="color-strip s6">青色块</div>
+      </div>
+      <div class="tab-bar ${lv.cls}">
+        <div class="tab-item">${OV_LINE}<div class="tab-text">概览</div></div>
+        <div class="tab-item">${CAR_LINE}<div class="tab-text">车辆</div></div>
+        <div class="tab-item tab-active">${fillSvg(22)}<div class="tab-text">设置</div></div>
+      </div>
+    </div>
+  `;
+  stage.appendChild(col);
+});
+
+/* ============ 齿轮放大对比 ============ */
+document.getElementById('gearRow').innerHTML = `
+  <div class="gear-cell">
+    <div class="nm">描边态（未选中）</div>
+    <div class="gear-box">${lineSvg(66)}</div>
+    <div class="gear-note">66px</div>
+  </div>
+  <div class="gear-cell">
+    <div class="nm">选中态（淡蓝胶囊底）</div>
+    <div class="gear-box blue">${fillSvg(66)}</div>
+    <div class="gear-note">66px</div>
+  </div>
+  <div class="gear-cell">
+    <div class="nm">彩色底测试（最坏情况）</div>
+    <div class="gear-box glass">${lineSvg(66)}</div>
+    <div class="gear-note">灰色压在彩色上是否可辨</div>
+  </div>
+  <div class="gear-cell">
+    <div class="nm">实际尺寸 22px</div>
+    <div class="gear-box" style="padding:6px;">${lineSvg(22)}</div>
+    <div class="gear-note">真机尺寸</div>
+  </div>
+  <div class="gear-cell">
+    <div class="nm">实际尺寸 22px</div>
+    <div class="gear-box blue" style="padding:6px;">${fillSvg(22)}</div>
+    <div class="gear-note">选中态</div>
+  </div>
+`;
+
+/* ============ 三图标并排 ============ */
+const combo = document.createElement('div');
+combo.style.cssText = 'margin-top:24px; padding-top:18px; border-top:1px solid #F0F1F4;';
+combo.innerHTML = `
+  <div style="font-size:12.5px; font-weight:700; margin-bottom:12px;">三个图标并排 · 检查风格是否统一</div>
+  <div style="display:flex; gap:34px; align-items:flex-end;">
+    <div style="text-align:center;">
+      <div class="gear-box" style="padding:9px;">${OV_LINE}</div>
+      <div class="gear-note">概览（现有）</div>
+    </div>
+    <div style="text-align:center;">
+      <div class="gear-box" style="padding:9px;">${CAR_LINE}</div>
+      <div class="gear-note">车辆（现有）</div>
+    </div>
+    <div style="text-align:center;">
+      <div class="gear-box" style="padding:9px;">${lineSvg(22)}</div>
+      <div class="gear-note">设置（齿轮 B）</div>
+    </div>
+  </div>
+  <div style="display:flex; gap:34px; align-items:flex-end; margin-top:14px;">
+    <div style="text-align:center;">
+      <div class="gear-box blue" style="padding:9px;">${OV_FILL}</div>
+      <div class="gear-note">选中态</div>
+    </div>
+    <div style="text-align:center;">
+      <div class="gear-box blue" style="padding:9px;">${CAR_FILL}</div>
+      <div class="gear-note">选中态</div>
+    </div>
+    <div style="text-align:center;">
+      <div class="gear-box blue" style="padding:9px;">${fillSvg(22)}</div>
+      <div class="gear-note">选中态</div>
+    </div>
+  </div>
+`;
+document.querySelector('.big').appendChild(combo);
+</script>
+
+</body>
+</html>

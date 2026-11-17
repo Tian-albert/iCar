@@ -1,0 +1,32 @@
+<view class="page">
+  <!--
+    折叠式：默认全部收起，点标题展开。
+    wx:key 用 "组序号-项序号" 而不是下标或问题文本 ——
+    问题文本可能重复（不同组出现相似问法），下标在增删条目时会导致复用错乱。
+  -->
+  <block wx:for="{{groups}}" wx:for-item="group" wx:for-index="gi" wx:key="title">
+    <view class="group-title">{{group.title}}</view>
+    <view class="card">
+      <view
+        wx:for="{{group.items}}"
+        wx:for-item="item"
+        wx:for-index="ii"
+        wx:key="q"
+        class="faq-item"
+        data-key="{{gi}}-{{ii}}"
+        bindtap="onToggle">
+        <view class="faq-q">
+          <text class="faq-q-text">{{item.q}}</text>
+          <text class="faq-chev {{openKey === gi + '-' + ii ? 'faq-chev-open' : ''}}">›</text>
+        </view>
+        <view class="faq-a" wx:if="{{openKey === gi + '-' + ii}}">{{item.a}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 底部兜底入口：FAQ 的主任务是自助解决，反馈是兜底，所以用文字链接而非按钮 -->
+  <view class="faq-foot">
+    <text>没找到答案？</text>
+    <text class="faq-foot-link" bindtap="onFeedback">点这里反馈 ›</text>
+  </view>
+</view>

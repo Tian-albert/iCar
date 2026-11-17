@@ -17,6 +17,7 @@
     "pages/records/index",
     "pages/data-transfer/index",
     "pages/about/index",
+    "pages/faq/index",
     "pages/privacy/index",
     "pages/category-manage/index",
     "pages/recycle-bin/index",
@@ -45,7 +46,7 @@
       },
       {
         "pagePath": "pages/user/index",
-        "text": "我的"
+        "text": "设置"
       }
     ]
   },

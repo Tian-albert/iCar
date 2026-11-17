@@ -93,7 +93,7 @@ Page({
     const id = e.currentTarget.dataset.id as string;
     wx.showModal({
       title: '删除记录',
-      content: '删除后可在「我的 → 回收站」中撤销（保留 30 天），确定删除吗？',
+      content: '删除后可在「设置 → 回收站」中撤销（保留 30 天），确定删除吗？',
       confirmColor: '#F5474F',
       success: res => {
         if (!res.confirm) return;

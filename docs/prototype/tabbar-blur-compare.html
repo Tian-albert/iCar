@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>底栏毛玻璃对比</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #E4E8EF;
+    padding: 26px 18px 70px;
+    color: #1F2430;
+  }
+  .doc-title { font-size: 21px; font-weight: 700; text-align: center; margin-bottom: 5px; }
+  .doc-sub { font-size: 12.5px; color: #6B7486; text-align: center; margin-bottom: 26px; line-height: 1.6; }
+
+  .stage { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; }
+
+  .col { width: 330px; }
+  .col-head { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+  .col-title { font-size: 13.5px; font-weight: 700; }
+  .tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 5px; }
+  .tag-cur { background: #EEF3FE; color: #1D4ED8; }
+  .tag-a { background: #FFF3E0; color: #9A5B00; }
+  .tag-b { background: #E8F7EE; color: #1D7A34; }
+  .col-desc { font-size: 11.5px; color: #6B7486; margin-bottom: 11px; line-height: 1.55; min-height: 46px; }
+
+  .phone {
+    width: 330px; height: 600px;
+    background: #F5F6F8; border-radius: 22px; overflow: hidden;
+    box-shadow: 0 8px 30px rgba(15, 23, 42, 0.14);
+    border: 1px solid #D6DCE6;
+    position: relative; display: flex; flex-direction: column;
+  }
+  .navbar {
+    height: 44px; flex-shrink: 0; background: #fff; display: flex; align-items: center;
+    justify-content: center; font-size: 16px; font-weight: 600;
+    border-bottom: 1px solid #F0F1F4; position: relative; z-index: 3;
+  }
+  .body { flex: 1; overflow-y: auto; padding: 12px; padding-bottom: 6px; }
+  .body::-webkit-scrollbar { width: 0; }
+
+  .card {
+    background: #fff; border-radius: 16px; padding: 12px 16px;
+    box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05); margin-bottom: 12px;
+  }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 52px; border-bottom: 1px solid #F0F1F4;
+  }
+  .row:last-child { border-bottom: none; }
+  .row-label { font-size: 14px; color: #1F2430; }
+  .row-arrow { font-size: 20px; color: #6B7486; }
+
+  /* 彩色内容块：用来观察底栏下方能否看见 */
+  .color-strip {
+    height: 46px; border-radius: 12px; margin-bottom: 10px;
+    display: flex; align-items: center; padding: 0 14px;
+    font-size: 12px; font-weight: 600; color: #fff;
+  }
+  .s1 { background: #3B6FF6; }
+  .s2 { background: #F5474F; }
+  .s3 { background: #2BA84A; }
+  .s4 { background: #E8912A; }
+  .s5 { background: #8B5CF6; }
+  .s6 { background: #0EA5E9; }
+
+  /* ============ 底栏三版 ============ */
+  .tab-bar {
+    position: absolute;
+    left: 14px; right: 14px;
+    bottom: 10px;
+    height: 54px;
+    display: flex; align-items: center;
+    padding: 0 4px;
+    border-radius: 999px;
+    z-index: 100;
+  }
+  /* 版本 1：当前（毛玻璃） */
+  .bar-glass {
+    background: rgba(255, 255, 255, 0.62);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 0 5px 15px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.05);
+  }
+  /* 版本 2：半透明无模糊 */
+  .bar-noblur {
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 0 5px 15px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.05);
+  }
+  /* 版本 3：完全不透明 */
+  .bar-solid {
+    background: #FFFFFF;
+    border: 1px solid #EDF0F5;
+    box-shadow: 0 5px 15px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.05);
+  }
+
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 46px; border-radius: 23px;
+  }
+  .tab-active { background: rgba(59, 111, 246, 0.12); }
+  .tab-icon { width: 23px; height: 23px; }
+  .tab-text { margin-top: 2px; font-size: 10px; line-height: 1; color: #6B7486; }
+  .tab-active .tab-text { color: #3B6FF6; font-weight: 600; }
+
+  .legend {
+    margin-top: 9px; font-size: 11px; color: #6B7486; line-height: 1.65;
+    background: #fff; border-radius: 10px; padding: 9px 11px;
+    border: 1px solid #E6EAF1;
+  }
+  .legend b { color: #1F2430; }
+
+  /* FAQ 页（无底栏） */
+  .faq-group-title {
+    font-size: 11.5px; color: #8A93A6; font-weight: 600;
+    margin: 2px 0 7px 4px;
+  }
+  .faq-item { padding: 12px 0; border-bottom: 1px solid #F0F1F4; cursor: pointer; }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-q {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 10px; font-size: 13.5px; color: #1F2430; line-height: 1.45;
+  }
+  .faq-q .chev { color: #8A93A6; font-size: 14px; flex-shrink: 0; transition: transform .2s; }
+  .faq-a {
+    display: none; margin-top: 7px; font-size: 12.5px; color: #5A6272;
+    line-height: 1.66; padding-right: 16px;
+  }
+  .faq-item.open .faq-a { display: block; }
+  .faq-item.open .chev { transform: rotate(90deg); }
+  .faq-foot {
+    text-align: center; font-size: 12.5px; color: #6B7486;
+    padding: 16px 0 14px; line-height: 1.6;
+  }
+  .faq-foot-link { color: #3B6FF6; font-weight: 600; }
+
+  .note {
+    max-width: 1060px; margin: 32px auto 0; background: #fff;
+    border-radius: 14px; padding: 20px 24px; border: 1px solid #E6EAF1;
+  }
+  .note h3 { font-size: 14.5px; margin-bottom: 9px; }
+  .note h3:not(:first-child) { margin-top: 19px; }
+  .note p, .note li { font-size: 12.5px; color: #5A6272; line-height: 1.75; }
+  .note ul { padding-left: 18px; margin: 6px 0; }
+  .note code {
+    background: #F2F3F5; padding: 1px 5px; border-radius: 4px;
+    font-family: "SF Mono", Consolas, monospace; font-size: 11.5px; color: #C2262D;
+  }
+  .note table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+  .note th, .note td { text-align: left; padding: 7px 9px; border-bottom: 1px solid #F0F1F4; vertical-align: top; }
+  .note th { color: #6B7486; font-weight: 600; background: #FAFBFC; }
+</style>
+</head>
+<body>
+
+<div class="doc-title">底栏去掉毛玻璃 · 三版对比</div>
+<div class="doc-sub">
+  内容区故意放彩色色块并让它滚到底栏下方 —— 这样才能看出差别
+</div>
+
+<div class="stage">
+
+  <!-- ============ 版本 1：当前（毛玻璃） ============ -->
+  <div class="col">
+    <div class="col-head">
+      <div class="col-title">当前实现</div>
+      <span class="tag tag-cur">毛玻璃</span>
+    </div>
+    <div class="col-desc">
+      底栏是半透明白 + <code>blur(30rpx)</code>。下方色块被<b>模糊成柔和光晕</b>，能感知到「后面有东西」但看不清。
+    </div>
+
+    <div class="phone">
+      <div class="navbar">设置</div>
+      <div class="body">
+        <div class="card">
+          <div class="row"><div class="row-label">保养到期提醒</div>
+            <div style="width:44px;height:26px;background:#3B6FF6;border-radius:13px;position:relative;">
+              <div style="position:absolute;right:2px;top:2px;width:22px;height:22px;background:#fff;border-radius:50%;"></div>
+            </div>
+          </div>
+          <div class="row"><div class="row-label">支出类别管理</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">数据导入导出</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">回收站</div><div class="row-arrow">›</div></div>
+        </div>
+        <div class="card">
+          <div class="row"><div class="row-label" style="color:#F5474F;">清除所有数据</div><div class="row-arrow">›</div></div>
+        </div>
+        <!-- 让内容滚到底栏下方 -->
+        <div class="color-strip s1">蓝色色块（滚到底栏下方）</div>
+        <div class="color-strip s2">红色色块</div>
+        <div class="color-strip s3">绿色色块</div>
+        <div class="color-strip s4">橙色色块</div>
+        <div class="color-strip s5">紫色色块</div>
+        <div class="color-strip s6">青色色块</div>
+        <div class="color-strip s1">再来一组</div>
+        <div class="color-strip s2">用来填充滚动</div>
+      </div>
+
+      <div class="tab-bar bar-glass">
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
+            <rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>
+          </svg>
+          <div class="tab-text">概览</div>
+        </div>
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 13l1.8-5A2 2 0 0 1 6.7 6.7h10.6a2 2 0 0 1 1.9 1.3L21 13"/>
+            <path d="M3 13h18v4a1 1 0 0 1-1 1h-1.5"/><path d="M3 13v4a1 1 0 0 0 1 1h1.5"/>
+            <circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>
+          </svg>
+          <div class="tab-text">车辆</div>
+        </div>
+        <div class="tab-item tab-active">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#3B6FF6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>
+          </svg>
+          <div class="tab-text">设置</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <b>特点</b>：通透、有层次，iOS 风格。<br>
+      <b>代价</b>：<code>backdrop-filter</code> 是<b>逐帧实时采样</b>，滚动时开销明显，低端安卓易掉帧。
+    </div>
+  </div>
+
+  <!-- ============ 版本 2：半透明无模糊 ============ -->
+  <div class="col">
+    <div class="col-head">
+      <div class="col-title">方案 A</div>
+      <span class="tag tag-a">半透明 · 无模糊</span>
+    </div>
+    <div class="col-desc">
+      只去掉 <code>backdrop-filter</code>，背景不透明度提到 0.82。色块<b>透过底栏能隐约看到轮廓</b>，但不会被模糊。
+    </div>
+
+    <div class="phone">
+      <div class="navbar">设置</div>
+      <div class="body">
+        <div class="card">
+          <div class="row"><div class="row-label">保养到期提醒</div>
+            <div style="width:44px;height:26px;background:#3B6FF6;border-radius:13px;position:relative;">
+              <div style="position:absolute;right:2px;top:2px;width:22px;height:22px;background:#fff;border-radius:50%;"></div>
+            </div>
+          </div>
+          <div class="row"><div class="row-label">支出类别管理</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">数据导入导出</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">回收站</div><div class="row-arrow">›</div></div>
+        </div>
+        <div class="card">
+          <div class="row"><div class="row-label" style="color:#F5474F;">清除所有数据</div><div class="row-arrow">›</div></div>
+        </div>
+        <div class="color-strip s1">蓝色色块（滚到底栏下方）</div>
+        <div class="color-strip s2">红色色块</div>
+        <div class="color-strip s3">绿色色块</div>
+        <div class="color-strip s4">橙色色块</div>
+        <div class="color-strip s5">紫色色块</div>
+        <div class="color-strip s6">青色色块</div>
+        <div class="color-strip s1">再来一组</div>
+        <div class="color-strip s2">用来填充滚动</div>
+      </div>
+
+      <div class="tab-bar bar-noblur">
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
+            <rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>
+          </svg>
+          <div class="tab-text">概览</div>
+        </div>
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 13l1.8-5A2 2 0 0 1 6.7 6.7h10.6a2 2 0 0 1 1.9 1.3L21 13"/>
+            <path d="M3 13h18v4a1 1 0 0 1-1 1h-1.5"/><path d="M3 13v4a1 1 0 0 0 1 1h1.5"/>
+            <circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>
+          </svg>
+          <div class="tab-text">车辆</div>
+        </div>
+        <div class="tab-item tab-active">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#3B6FF6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>
+          </svg>
+          <div class="tab-text">设置</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <b>特点</b>：保留一点通透感，但<b>透出的内容是「实心色块」</b>，没有模糊过渡，
+      所以文字与图标在彩色底上<b>对比度会下降</b>。<br>
+      <b>代价</b>：滚动时下方色块会「穿」过底栏，视觉略脏。
+    </div>
+  </div>
+
+  <!-- ============ 版本 3：完全不透明 ============ -->
+  <div class="col">
+    <div class="col-head">
+      <div class="col-title">方案 B</div>
+      <span class="tag tag-b">完全不透明</span>
+    </div>
+    <div class="col-desc">
+      纯白实底，无任何透明。色块滚到底栏处被<b>完全遮挡</b>，图标与文字始终清晰。
+    </div>
+
+    <div class="phone">
+      <div class="navbar">设置</div>
+      <div class="body">
+        <div class="card">
+          <div class="row"><div class="row-label">保养到期提醒</div>
+            <div style="width:44px;height:26px;background:#3B6FF6;border-radius:13px;position:relative;">
+              <div style="position:absolute;right:2px;top:2px;width:22px;height:22px;background:#fff;border-radius:50%;"></div>
+            </div>
+          </div>
+          <div class="row"><div class="row-label">支出类别管理</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">数据导入导出</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">回收站</div><div class="row-arrow">›</div></div>
+        </div>
+        <div class="card">
+          <div class="row"><div class="row-label" style="color:#F5474F;">清除所有数据</div><div class="row-arrow">›</div></div>
+        </div>
+        <div class="color-strip s1">蓝色色块（滚到底栏下方）</div>
+        <div class="color-strip s2">红色色块</div>
+        <div class="color-strip s3">绿色色块</div>
+        <div class="color-strip s4">橙色色块</div>
+        <div class="color-strip s5">紫色色块</div>
+        <div class="color-strip s6">青色色块</div>
+        <div class="color-strip s1">再来一组</div>
+        <div class="color-strip s2">用来填充滚动</div>
+      </div>
+
+      <div class="tab-bar bar-solid">
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
+            <rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>
+          </svg>
+          <div class="tab-text">概览</div>
+        </div>
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 13l1.8-5A2 2 0 0 1 6.7 6.7h10.6a2 2 0 0 1 1.9 1.3L21 13"/>
+            <path d="M3 13h18v4a1 1 0 0 1-1 1h-1.5"/><path d="M3 13v4a1 1 0 0 0 1 1h1.5"/>
+            <circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>
+          </svg>
+          <div class="tab-text">车辆</div>
+        </div>
+        <div class="tab-item tab-active">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#3B6FF6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>
+          </svg>
+          <div class="tab-text">设置</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <b>特点</b>：<b>性能最好</b>（无实时采样），可读性最好（图标文字永远清晰），
+      与页面卡片同色，观感统一。<br>
+      <b>代价</b>：少了「悬浮玻璃」的通透感，更像一个普通的固定底栏。
+    </div>
+  </div>
+
+  <!-- ============ 屏 4：FAQ 页（无底栏） ============ -->
+  <div class="col">
+    <div class="col-head">
+      <div class="col-title">FAQ 页 · 无底栏</div>
+      <span class="tag tag-b">已按你的要求</span>
+    </div>
+    <div class="col-desc">
+      二级页不显示底栏。内容可一直滚到屏幕底部，底部留白 20px + 安全区。
+    </div>
+
+    <div class="phone">
+      <div class="navbar">常见问题</div>
+      <div class="body" style="padding-bottom: 20px;">
+        <div class="faq-group-title">数据与备份</div>
+        <div class="card" style="padding: 4px 16px;">
+          <div class="faq-item open">
+            <div class="faq-q"><span>数据存在哪里？会不会丢？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              全部存在你手机本地，不上传服务器。这意味着：<b>卸载小程序、清理微信存储、换手机，数据都会消失。</b>
+              建议定期到「数据导入导出」备份一份。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>换手机怎么把数据带过去？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              旧手机：「数据导入导出」→ 导出备份文件 → 发给自己的微信文件传输助手。
+              新手机：下载该文件 → 「数据导入导出」→ 从聊天记录导入。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>删掉的记录还能找回吗？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              能，30 天内都可以。删除只是移入「回收站」，到设置 → 回收站里点恢复即可。
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group-title">油耗与里程</div>
+        <div class="card" style="padding: 4px 16px;">
+          <div class="faq-item">
+            <div class="faq-q"><span>为什么油耗显示「--」？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              油耗需要「两次加满」才能算出：本次加满，且上一次也是加满（或低油量补油），
+              两者之间的里程才算有效区间。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>为什么「总里程」和仪表盘不一样？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              本 App 显示的是<b>建档后行驶里程</b> = 当前里程 − 购车时填的里程。
+              这样每公里成本才准确：买车前跑的路不该算进你记录的开销里。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>混动车的油耗和电耗怎么分开算？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              加油记录按升算油耗，充电记录按度算电耗，两者分开统计、不会相加。
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group-title">保养提醒</div>
+        <div class="card" style="padding: 4px 16px;">
+          <div class="faq-item">
+            <div class="faq-q"><span>保养提醒什么时候才会亮？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              默认剩余里程 ≤ 500 km 或剩余天数 ≤ 15 天时提醒。可在车辆详情 → 保养管理里按车调整。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>保养项删了怎么又冒出来了？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              这是旧版本的问题，已修复。现在删光后不会自动重建。
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-foot">
+          没找到答案？<span class="faq-foot-link">点这里反馈 ›</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      没有底栏后，内容区可用高度增加约 <b>108rpx</b>，一屏能多放约 2 条。
+      底部只留 20px + 安全区，不会与内容贴边。
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <h3>去掉毛玻璃，实际能省多少</h3>
+  <p>
+    <code>backdrop-filter: blur()</code> 是<b>逐帧对底栏背后区域做实时采样 + 高斯模糊</b>。
+    滚动时这个采样每帧都要重做，是底栏最大的性能开销来源。
+  </p>
+  <table>
+    <tr><th style="width:130px;">场景</th><th>保留毛玻璃</th><th>去掉毛玻璃</th></tr>
+    <tr>
+      <td>静止不动</td><td>无感</td><td>无感</td>
+    </tr>
+    <tr>
+      <td>列表快速滚动</td>
+      <td>中低端安卓可能出现掉帧 / 边缘撕裂</td>
+      <td><b>明显更稳</b></td>
+    </tr>
+    <tr>
+      <td>深色/彩色内容经过</td>
+      <td>模糊成柔和光晕，观感好</td>
+      <td>取决于是否透明（见下）</td>
+    </tr>
+  </table>
+
+  <h3>方案 A 和 B 的关键差别</h3>
+  <p>
+    <b>方案 A（半透明无模糊）</b>其实有个隐患：<b>透出的内容是「实心色块」，没有模糊过渡。</b>
+    这时底栏里的灰色图标与浅灰文字压在彩色块上，<b>对比度会下降</b>，
+    在最坏情况（浅黄色块）下可能看不太清。
+  </p>
+  <p style="margin-top:6px;">
+    <b>方案 B（完全不透明）</b>没有这个问题：图标与文字永远压在纯白上，对比度恒定。
+    而且它<b>与页面里的卡片同色（都是 #FFFFFF）</b>，视觉上更统一。
+  </p>
+
+  <h3>我的建议：方案 B（完全不透明）</h3>
+  <ul>
+    <li><b>性能最好</b>：去掉实时采样，滚动更稳</li>
+    <li><b>可读性最好</b>：图标文字对比度不受下方内容影响</li>
+    <li><b>观感统一</b>：底栏与卡片同色，都是 #FFFFFF</li>
+    <li>唯一的损失是「玻璃通透感」，但<b>这个 App 是记账工具，不是展示型应用</b>，稳定性比通透感重要</li>
+  </ul>
+  <p style="margin-top:8px;">
+    如果觉得纯白太"平"，可以只保留<b>阴影</b>（<code>0 10rpx 30rpx rgba(15,23,42,0.12)</code>）
+    来维持"浮起来"的感觉 —— 阴影不消耗额外性能。原型方案 B 就是这么做的。
+  </p>
+
+  <h3>FAQ 页去掉底栏的连带影响</h3>
+  <table>
+    <tr><th style="width:170px;">项</th><th>改动</th></tr>
+    <tr>
+      <td>内容区底部留白</td>
+      <td>从 <code>168rpx + 安全区</code> 改为 <code>40rpx + 安全区</code>（二级页无底栏，不需要那么多留白）</td>
+    </tr>
+    <tr>
+      <td>页面高度</td>
+      <td>可用高度增加约 108rpx，一屏多放约 2 条</td>
+    </tr>
+    <tr>
+      <td>返回方式</td>
+      <td>靠导航栏左上角返回箭头（二级页标准交互），不需要额外处理</td>
+    </tr>
+  </table>
+  <p style="margin-top:8px;">
+    注意：现有其他二级页（类别管理、数据导入导出、回收站、关于）也都是无底栏的，
+    所以 FAQ 页与它们保持一致，<b>不需要新增任何特殊处理</b>。
+  </p>
+
+  <h3>需要你确认</h3>
+  <ul>
+    <li>底栏选 <b>方案 A（半透明无模糊）</b> 还是 <b>方案 B（完全不透明）</b>？我推荐 B。</li>
+    <li>FAQ 用<b>折叠式</b>（这版原型里用的）还是平铺式？</li>
+    <li>9 条问题内容有没有要删或要补的？</li>
+  </ul>
+</div>
+
+<script>
+  document.querySelectorAll('.faq-item').forEach(function (item) {
+    item.addEventListener('click', function () {
+      item.classList.toggle('open');
+    });
+  });
+</script>
+
+</body>
+</html>

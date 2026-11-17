@@ -68,7 +68,7 @@ Page({
     const id = e.currentTarget.dataset.id as string;
     wx.showModal({
       title: '删除保养项',
-      content: '将同时移除该保养项的历史记录，可在「我的 → 回收站」中撤销（保留 30 天）。',
+      content: '将同时移除该保养项的历史记录，可在「设置 → 回收站」中撤销（保留 30 天）。',
       confirmColor: '#F5474F',
       success: res => {
         if (!res.confirm) return;

@@ -20,20 +20,20 @@ const ts: string = fsx.readFileSync('custom-tab-bar/index.ts', 'utf-8');
 
 describe('图标：手绘 SVG 而非 emoji', () => {
   it('三个图标都有描边态与实心态', () => {
-    for (const key of ['overview', 'car', 'user']) {
+    for (const key of ['overview', 'car', 'gear']) {
       expect(TAB_ICONS_LINE[key]).toMatch(/^data:image\/svg\+xml;base64,/);
       expect(TAB_ICONS_FILL[key]).toMatch(/^data:image\/svg\+xml;base64,/);
     }
   });
 
   it('两态是不同内容（选中态确实换图）', () => {
-    for (const key of ['overview', 'car', 'user']) {
+    for (const key of ['overview', 'car', 'gear']) {
       expect(TAB_ICONS_LINE[key]).not.toBe(TAB_ICONS_FILL[key]);
     }
   });
 
   it('data URI 能解回合法 SVG', () => {
-    for (const key of ['overview', 'car', 'user']) {
+    for (const key of ['overview', 'car', 'gear']) {
       const svg = decode(TAB_ICONS_LINE[key]);
       expect(svg).toContain('<svg');
       expect(svg).toContain('viewBox="0 0 24 24"');
@@ -59,6 +59,43 @@ describe('图标：手绘 SVG 而非 emoji', () => {
   });
 });
 
+describe('设置图标：齿轮（替换原「用户」图标）', () => {
+  it('key 已从 user 改为 gear', () => {
+    expect(TAB_ICONS_LINE.gear).toBeTruthy();
+    expect(TAB_ICONS_FILL.gear).toBeTruthy();
+    expect((TAB_ICONS_LINE as any).user).toBeUndefined();
+    expect((TAB_ICONS_FILL as any).user).toBeUndefined();
+  });
+
+  it('齿轮对齐现有图标规范：24×24 视框 / 描边 1.7 / 圆角端点', () => {
+    const svg = decode(TAB_ICONS_LINE.gear);
+    expect(svg).toContain('viewBox="0 0 24 24"');
+    expect(svg).toContain('stroke-width="1.7"');
+    expect(svg).toContain('stroke-linecap="round"');
+    expect(svg).toContain('stroke-linejoin="round"');
+  });
+
+  it('齿轮是 6 齿（8 齿在 22px 下齿缝会糊在一起）', () => {
+    const svg = decode(TAB_ICONS_LINE.gear);
+    // 每个齿贡献一段齿顶圆弧，6 齿 = 6 段 A 指令（含中心圆共 7 段）
+    const arcs = (svg.match(/A/g) || []).length;
+    expect(arcs).toBeGreaterThanOrEqual(6);
+    // 中心孔用 circle 元素
+    expect(svg).toContain('<circle');
+  });
+
+  it('选中态是实心蓝并挖出中心孔（fill-rule=evenodd）', () => {
+    const svg = decode(TAB_ICONS_FILL.gear);
+    expect(svg).toContain('#3B6FF6');
+    expect(svg).toContain('evenodd');
+  });
+
+  it('底栏文案是「设置」而不是「我的」', () => {
+    expect(ts).toContain("text: '设置'");
+    expect(ts).not.toContain("text: '我的'");
+  });
+});
+
 describe('组件：按选中态切换图标', () => {
   it('WXML 用 image 渲染并在选中时切换', () => {
     expect(wxml).toContain('<image');
@@ -78,7 +115,7 @@ describe('组件：按选中态切换图标', () => {
     while ((m = re.exec(ts)) !== null) {
       keys.push(m[1]);
     }
-    expect(keys).toEqual(['overview', 'car', 'user']);
+    expect(keys).toEqual(['overview', 'car', 'gear']);
     for (const k of keys) {
       expect(TAB_ICONS_LINE[k]).toBeTruthy();
       expect(TAB_ICONS_FILL[k]).toBeTruthy();
@@ -94,9 +131,16 @@ describe('形态：悬浮胶囊 + 毛玻璃', () => {
     expect(wxss).toMatch(/\.tab-bar \{[\s\S]{0,900}border-radius:\s*999rpx/);
   });
 
-  it('毛玻璃：backdrop-filter + 半透明底', () => {
+  it('毛玻璃：backdrop-filter + 不透明度 0.38', () => {
     expect(wxss).toContain('backdrop-filter');
-    expect(wxss).toMatch(/background:\s*rgba\(255,\s*255,\s*255,\s*0\.\d+\)/);
+    // 0.62 时毛玻璃「看不出来」：底下是 #F5F6F8 / #FFFFFF，模糊纯白还是纯白。
+    // 降到 0.38 才能让底下内容透上来、产生玻璃层次。
+    expect(wxss).toMatch(/background:\s*rgba\(255,\s*255,\s*255,\s*0\.38\)/);
+  });
+
+  it('图标与文字有白色阴影兜底（低不透明度下压住彩色内容）', () => {
+    expect(wxss).toMatch(/\.tab-text \{[\s\S]{0,200}text-shadow:/);
+    expect(wxss).toMatch(/\.tab-icon \{[\s\S]{0,200}drop-shadow/);
   });
 
   it('有玻璃厚度感的高光描边与投影', () => {

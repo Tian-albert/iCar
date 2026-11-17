@@ -11,11 +11,19 @@
   padding: 0 8rpx;
   box-sizing: border-box;
 
-  background: rgba(255, 255, 255, 0.62);
+  /*
+   * 不透明度 0.38（原 0.62）。
+   *
+   * 原来的毛玻璃「看不出来」不是 blur 不够强，而是底栏下方通常是
+   * 页面底色 #F5F6F8 或卡片 #FFFFFF —— 模糊一片接近纯白的纯色，结果还是纯色。
+   * 毛玻璃要看得出来，必须让底下**有对比度的内容**透上来，所以降不透明度是唯一有效手段。
+   * 0.38 是「玻璃感明显」与「图标仍清晰」的平衡点（0.28 在彩色内容上会糊）。
+   */
+  background: rgba(255, 255, 255, 0.38);
   -webkit-backdrop-filter: blur(30rpx) saturate(180%);
   backdrop-filter: blur(30rpx) saturate(180%);
   /* 高光描边：上边偏亮，模拟玻璃厚度 */
-  border: 1rpx solid rgba(255, 255, 255, 0.75);
+  border: 1rpx solid rgba(255, 255, 255, 0.70);
   border-radius: 999rpx;
   box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.12), 0 2rpx 6rpx rgba(15, 23, 42, 0.05);
   z-index: 100;
@@ -37,20 +45,28 @@
   background: rgba(59, 111, 246, 0.12);
 }
 
+/* 图标同样加白色阴影：图标是位图，用 drop-shadow 才能贴合轮廓 */
 .tab-icon {
   width: 46rpx;
   height: 46rpx;
+  filter: drop-shadow(0 1rpx 3rpx rgba(255, 255, 255, 0.9));
 }
 
 /* 说明：自定义组件的「样式隔离」只影响**选择器匹配**，不影响自定义属性的继承 ——
    `page { --color-text-3 }` 这类变量其实是能传进组件的（icon-picker 就直接用 var()）。
    这里仍写死字面量，是为了让底栏配色钉死、不随主题变量调整而漂移：
    底栏固定在页面上方叠着各种内容，颜色一变就可能在某个背景上失真。 */
+/*
+ * 白色阴影兜底：底栏不透明度降到 0.38 后，下方滚过彩色内容时
+ * 灰色文字会压不住。加一层极淡的白色光晕，任何底色上都能读，
+ * 且在浅色背景上看不出痕迹。
+ */
 .tab-text {
   margin-top: 4rpx;
   font-size: 20rpx;
   line-height: 1;
   color: #6B7486;
+  text-shadow: 0 1rpx 4rpx rgba(255, 255, 255, 0.9);
 }
 
 .tab-active .tab-text {

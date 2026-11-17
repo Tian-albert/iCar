@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设置页 + 常见问题 · 三版原型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #E4E8EF;
+    padding: 26px 18px 70px;
+    color: #1F2430;
+  }
+  .doc-title { font-size: 21px; font-weight: 700; text-align: center; margin-bottom: 5px; }
+  .doc-sub { font-size: 12.5px; color: #6B7486; text-align: center; margin-bottom: 26px; line-height: 1.6; }
+
+  .stage { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; }
+
+  .col { width: 330px; }
+  .col-head { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+  .col-title { font-size: 13.5px; font-weight: 700; }
+  .tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 5px; }
+  .tag-a { background: #EEF3FE; color: #1D4ED8; }
+  .tag-b { background: #E8F7EE; color: #1D7A34; }
+  .tag-c { background: #FFF3E0; color: #9A5B00; }
+  .col-desc { font-size: 11.5px; color: #6B7486; margin-bottom: 11px; line-height: 1.55; min-height: 48px; }
+
+  /* ---------- 手机框 ---------- */
+  .phone {
+    width: 330px;
+    height: 620px;             /* 固定高度，便于展示底栏悬浮效果 */
+    background: #F5F6F8;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(15, 23, 42, 0.14);
+    border: 1px solid #D6DCE6;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .navbar {
+    height: 44px; flex-shrink: 0; background: #fff; display: flex; align-items: center;
+    justify-content: center; font-size: 16px; font-weight: 600;
+    border-bottom: 1px solid #F0F1F4; position: relative; z-index: 3;
+  }
+  /* 内容区可滚动，底栏固定悬浮 */
+  .body {
+    flex: 1; overflow-y: auto; padding: 12px;
+    padding-bottom: 96px;      /* 给悬浮底栏留出空间 */
+  }
+  .body::-webkit-scrollbar { width: 0; }
+
+  .card {
+    background: #fff; border-radius: 16px; padding: 12px 16px;
+    box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05); margin-bottom: 12px;
+  }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 52px; border-bottom: 1px solid #F0F1F4; position: relative;
+  }
+  .row:last-child { border-bottom: none; }
+  .row-label { font-size: 14px; color: #1F2430; }
+  .row-danger { color: #F5474F; }
+  .row-arrow { font-size: 20px; color: #6B7486; }
+  .version { text-align: center; font-size: 12px; color: #6B7486; margin-top: 18px; }
+
+  /* ---------- 悬浮胶囊底栏（还原真实实现） ---------- */
+  .tab-bar {
+    position: absolute;
+    left: 14px; right: 14px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    height: 54px;
+    display: flex; align-items: center;
+    padding: 0 4px;
+    background: rgba(255, 255, 255, 0.62);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 999px;
+    box-shadow: 0 5px 15px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.05);
+    z-index: 100;
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 46px; border-radius: 23px;
+  }
+  .tab-active { background: rgba(59, 111, 246, 0.12); }
+  .tab-icon { width: 23px; height: 23px; }
+  .tab-text { margin-top: 2px; font-size: 10px; line-height: 1; color: #6B7486; }
+  .tab-active .tab-text { color: #3B6FF6; font-weight: 600; }
+
+  /* 底栏上方的「内容被遮住」提示（仅屏1 用于说明留白） */
+  .bar-hint {
+    position: absolute; left: 0; right: 0; bottom: 76px;
+    text-align: center; font-size: 9px; color: #B4BBC8;
+    pointer-events: none;
+  }
+
+  /* ---------- FAQ 折叠式 ---------- */
+  .faq-group-title {
+    font-size: 11.5px; color: #8A93A6; font-weight: 600;
+    margin: 2px 0 7px 4px; letter-spacing: 0.3px;
+  }
+  .faq-item { padding: 12px 0; border-bottom: 1px solid #F0F1F4; cursor: pointer; }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-q {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 10px; font-size: 13.5px; color: #1F2430; line-height: 1.45;
+  }
+  .faq-q .chev { color: #8A93A6; font-size: 14px; flex-shrink: 0; transition: transform .2s; }
+  .faq-a {
+    display: none; margin-top: 7px; font-size: 12.5px; color: #5A6272;
+    line-height: 1.66; padding-right: 16px;
+  }
+  .faq-item.open .faq-a { display: block; }
+  .faq-item.open .chev { transform: rotate(90deg); }
+
+  /* ---------- FAQ 平铺式 ---------- */
+  .flat-item { padding: 13px 0; border-bottom: 1px solid #F0F1F4; }
+  .flat-item:last-child { border-bottom: none; }
+  .flat-q { font-size: 13.5px; font-weight: 600; color: #1F2430; line-height: 1.45; margin-bottom: 5px; }
+  .flat-a { font-size: 12.5px; color: #5A6272; line-height: 1.66; }
+
+  /* ---------- 底部反馈引导 ---------- */
+  .faq-foot {
+    text-align: center; font-size: 12.5px; color: #6B7486;
+    padding: 16px 0 8px; line-height: 1.6;
+  }
+  .faq-foot-link { color: #3B6FF6; font-weight: 600; }
+  .faq-foot-btn {
+    display: block; margin: 14px auto 6px; width: 200px;
+    text-align: center; font-size: 13.5px; font-weight: 600; color: #3B6FF6;
+    background: #EEF3FE; border-radius: 999px; padding: 10px 0;
+  }
+
+  .legend {
+    margin-top: 9px; font-size: 11px; color: #6B7486; line-height: 1.65;
+    background: #fff; border-radius: 10px; padding: 9px 11px;
+    border: 1px solid #E6EAF1;
+  }
+  .legend b { color: #1F2430; }
+
+  .note {
+    max-width: 1060px; margin: 32px auto 0; background: #fff;
+    border-radius: 14px; padding: 20px 24px; border: 1px solid #E6EAF1;
+  }
+  .note h3 { font-size: 14.5px; margin-bottom: 9px; }
+  .note h3:not(:first-child) { margin-top: 19px; }
+  .note p, .note li { font-size: 12.5px; color: #5A6272; line-height: 1.75; }
+  .note ul { padding-left: 18px; margin: 6px 0; }
+  .note code {
+    background: #F2F3F5; padding: 1px 5px; border-radius: 4px;
+    font-family: "SF Mono", Consolas, monospace; font-size: 11.5px; color: #C2262D;
+  }
+  .note table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+  .note th, .note td { text-align: left; padding: 7px 9px; border-bottom: 1px solid #F0F1F4; vertical-align: top; }
+  .note th { color: #6B7486; font-weight: 600; background: #FAFBFC; }
+</style>
+</head>
+<body>
+
+<div class="doc-title">设置页 + 常见问题 · 三版对比</div>
+<div class="doc-sub">
+  底栏胶囊已按真实实现还原（悬浮 / 毛玻璃 / 选中项淡蓝胶囊）
+</div>
+
+<div class="stage">
+
+  <!-- ================= 屏 1：设置页（含底栏） ================= -->
+  <div class="col">
+    <div class="col-head">
+      <div class="col-title">设置页 · 含悬浮底栏</div>
+      <span class="tag tag-c">底栏</span>
+    </div>
+    <div class="col-desc">
+      底栏显示「<b>设置</b>」而非「我的」。这是唯一能看到改动后底栏文案的屏。
+    </div>
+
+    <div class="phone">
+      <div class="navbar">设置</div>
+      <div class="body">
+
+        <div class="card">
+          <div class="row">
+            <div class="row-label">保养到期提醒</div>
+            <div style="width:44px;height:26px;background:#3B6FF6;border-radius:13px;position:relative;">
+              <div style="position:absolute;right:2px;top:2px;width:22px;height:22px;background:#fff;border-radius:50%;"></div>
+            </div>
+          </div>
+          <div class="row"><div class="row-label">支出类别管理</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">数据导入导出</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">回收站</div><div class="row-arrow">›</div></div>
+        </div>
+
+        <div class="card">
+          <div class="row"><div class="row-label row-danger">清除所有数据</div><div class="row-arrow">›</div></div>
+        </div>
+
+        <div class="card">
+          <div class="row"><div class="row-label">反馈与建议</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">常见问题</div><div class="row-arrow">›</div></div>
+          <div class="row"><div class="row-label">关于</div><div class="row-arrow">›</div></div>
+        </div>
+
+        <div class="card">
+          <div class="row"><div class="row-label">把车记本推荐给朋友</div><div class="row-arrow">›</div></div>
+        </div>
+
+        <div class="version">车记本 v1.2.0</div>
+      </div>
+
+      <!-- 悬浮胶囊底栏 -->
+      <div class="tab-bar">
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
+            <rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>
+          </svg>
+          <div class="tab-text">概览</div>
+        </div>
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 13l1.8-5A2 2 0 0 1 6.7 6.7h10.6a2 2 0 0 1 1.9 1.3L21 13"/>
+            <path d="M3 13h18v4a1 1 0 0 1-1 1h-1.5"/><path d="M3 13v4a1 1 0 0 0 1 1h1.5"/>
+            <circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>
+          </svg>
+          <div class="tab-text">车辆</div>
+        </div>
+        <div class="tab-item tab-active">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#3B6FF6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>
+          </svg>
+          <div class="tab-text">设置</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <b>底栏改动</b>：第三个 tab 文案「我的」→「<b>设置</b>」，图标仍是人形（不换成齿轮，避免三个 tab 视觉重量失衡）。
+      底栏本身是悬浮胶囊：左右各 14px、底部 10px + 安全区、高 54px、毛玻璃 + 淡蓝选中胶囊。
+    </div>
+  </div>
+
+  <!-- ================= 屏 2：FAQ 折叠式 ================= -->
+  <div class="col">
+    <div class="col-head">
+      <div class="col-title">常见问题 · 折叠式</div>
+      <span class="tag tag-a">方案 A</span>
+    </div>
+    <div class="col-desc">
+      默认全部收起，点标题展开。页面短，便于扫标题；用户只展开自己关心的那条。
+    </div>
+
+    <div class="phone">
+      <div class="navbar">常见问题</div>
+      <div class="body">
+
+        <div class="faq-group-title">数据与备份</div>
+        <div class="card" style="padding: 4px 16px;">
+          <div class="faq-item open">
+            <div class="faq-q"><span>数据存在哪里？会不会丢？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              全部存在你手机本地，不上传服务器。这意味着：<b>卸载小程序、清理微信存储、换手机，数据都会消失。</b>
+              建议定期到「数据导入导出」备份一份。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>换手机怎么把数据带过去？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              旧手机：「数据导入导出」→ 导出备份文件 → 发给自己的微信文件传输助手。
+              新手机：下载该文件 → 「数据导入导出」→ 从聊天记录导入。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>删掉的记录还能找回吗？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              能，30 天内都可以。删除只是移入「回收站」，到设置 → 回收站里点恢复即可。超过 30 天会被自动清理。
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group-title">油耗与里程</div>
+        <div class="card" style="padding: 4px 16px;">
+          <div class="faq-item">
+            <div class="faq-q"><span>为什么油耗显示「--」？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              油耗需要「两次加满」才能算出：本次加满，且上一次也是加满（或低油量补油），
+              两者之间的里程才算有效区间。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>为什么「总里程」和仪表盘不一样？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              本 App 显示的是<b>建档后行驶里程</b> = 当前里程 − 购车时填的里程。
+              这样每公里成本才准确：买车前跑的路不该算进你记录的开销里。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>混动车的油耗和电耗怎么分开算？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              加油记录按升算油耗，充电记录按度算电耗，两者分开统计、不会相加。
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group-title">保养提醒</div>
+        <div class="card" style="padding: 4px 16px;">
+          <div class="faq-item">
+            <div class="faq-q"><span>保养提醒什么时候才会亮？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              默认剩余里程 ≤ 500 km 或剩余天数 ≤ 15 天时提醒。可在车辆详情 → 保养管理里按车调整。
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q"><span>保养项删了怎么又冒出来了？</span><span class="chev">›</span></div>
+            <div class="faq-a">
+              这是旧版本的问题，已修复。现在删光后不会自动重建。
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-foot">
+          没找到答案？<span class="faq-foot-link">点这里反馈 ›</span>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
+            <rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>
+          </svg>
+          <div class="tab-text">概览</div>
+        </div>
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 13l1.8-5A2 2 0 0 1 6.7 6.7h10.6a2 2 0 0 1 1.9 1.3L21 13"/>
+            <path d="M3 13h18v4a1 1 0 0 1-1 1h-1.5"/><path d="M3 13v4a1 1 0 0 0 1 1h1.5"/>
+            <circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>
+          </svg>
+          <div class="tab-text">车辆</div>
+        </div>
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>
+          </svg>
+          <div class="tab-text">设置</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <b>折叠式</b>：9 条全部收起时约占 1.2 屏，展开一条后其余保持收起。
+      底部「没找到答案？点这里反馈」用<b>文字链接</b>形式，不抢视觉。
+    </div>
+  </div>
+
+  <!-- ================= 屏 3：FAQ 平铺式 ================= -->
+  <div class="col">
+    <div class="col-head">
+      <div class="col-title">常见问题 · 平铺式</div>
+      <span class="tag tag-b">方案 B</span>
+    </div>
+    <div class="col-desc">
+      所有答案直接展开，不用点。信息一次看全，但页面很长（约 3 屏），需要滑动。
+    </div>
+
+    <div class="phone">
+      <div class="navbar">常见问题</div>
+      <div class="body">
+
+        <div class="faq-group-title">数据与备份</div>
+        <div class="card" style="padding: 4px 16px;">
+          <div class="flat-item">
+            <div class="flat-q">数据存在哪里？会不会丢？</div>
+            <div class="flat-a">
+              全部存在你手机本地，不上传服务器。这意味着：<b>卸载小程序、清理微信存储、换手机，数据都会消失。</b>
+              建议定期到「数据导入导出」备份一份。
+            </div>
+          </div>
+          <div class="flat-item">
+            <div class="flat-q">换手机怎么把数据带过去？</div>
+            <div class="flat-a">
+              旧手机：「数据导入导出」→ 导出备份文件 → 发给自己的微信文件传输助手。
+              新手机：下载该文件 → 「数据导入导出」→ 从聊天记录导入。
+            </div>
+          </div>
+          <div class="flat-item">
+            <div class="flat-q">删掉的记录还能找回吗？</div>
+            <div class="flat-a">
+              能，30 天内都可以。删除只是移入「回收站」，到设置 → 回收站里点恢复即可。超过 30 天会被自动清理。
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group-title">油耗与里程</div>
+        <div class="card" style="padding: 4px 16px;">
+          <div class="flat-item">
+            <div class="flat-q">为什么油耗显示「--」？</div>
+            <div class="flat-a">
+              油耗需要「两次加满」才能算出：本次加满，且上一次也是加满（或低油量补油），
+              两者之间的里程才算有效区间。只加过一次、或中间有未加满的记录，就会显示「--」。
+            </div>
+          </div>
+          <div class="flat-item">
+            <div class="flat-q">为什么「总里程」和仪表盘不一样？</div>
+            <div class="flat-a">
+              本 App 显示的是<b>建档后行驶里程</b> = 当前里程 − 购车时填的里程。
+              这样每公里成本才准确：买车前跑的路不该算进你记录的开销里。
+            </div>
+          </div>
+          <div class="flat-item">
+            <div class="flat-q">混动车的油耗和电耗怎么分开算？</div>
+            <div class="flat-a">
+              加油记录按升算油耗，充电记录按度算电耗，两者分开统计、不会相加。
+              若填写了 EV / HEV 里程拆分，还能看到各自的占比。
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-group-title">保养提醒</div>
+        <div class="card" style="padding: 4px 16px;">
+          <div class="flat-item">
+            <div class="flat-q">保养提醒什么时候才会亮？</div>
+            <div class="flat-a">
+              默认剩余里程 ≤ 500 km 或剩余天数 ≤ 15 天时提醒。可在车辆详情 → 保养管理里按车调整这两个阈值。
+            </div>
+          </div>
+          <div class="flat-item">
+            <div class="flat-q">保养项删了怎么又冒出来了？</div>
+            <div class="flat-a">
+              这是旧版本的问题，已修复。现在删光后不会自动重建；
+              如果想恢复默认保养项，在保养管理页点「恢复默认」。
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-foot">
+          没找到答案？<span class="faq-foot-link">点这里反馈 ›</span>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
+            <rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>
+          </svg>
+          <div class="tab-text">概览</div>
+        </div>
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 13l1.8-5A2 2 0 0 1 6.7 6.7h10.6a2 2 0 0 1 1.9 1.3L21 13"/>
+            <path d="M3 13h18v4a1 1 0 0 1-1 1h-1.5"/><path d="M3 13v4a1 1 0 0 0 1 1h1.5"/>
+            <circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>
+          </svg>
+          <div class="tab-text">车辆</div>
+        </div>
+        <div class="tab-item">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6B7486" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>
+          </svg>
+          <div class="tab-text">设置</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <b>平铺式</b>：不用点就能看到全部答案，适合「想快速查一件事」的场景。
+      代价是页面长约 3 屏，底部反馈入口要滑到底才能看到。
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <h3>折叠 vs 平铺：我建议折叠</h3>
+  <table>
+    <tr><th style="width:110px;"></th><th>折叠式 A</th><th>平铺式 B</th></tr>
+    <tr><td><b>页面长度</b></td><td>约 1.2 屏</td><td>约 3 屏</td></tr>
+    <tr><td><b>找答案</b></td><td>先扫 9 个标题，再展开 → <b>两步</b></td><td>直接看到 → <b>一步</b></td></tr>
+    <tr><td><b>扫读效率</b></td><td><b>高</b>：标题密排，一眼看全</td><td>低：答案夹在标题之间，标题被淹没</td></tr>
+    <tr><td><b>底部反馈入口</b></td><td>容易看到</td><td>要滑 3 屏才看到</td></tr>
+    <tr><td><b>实现复杂度</b></td><td>一个 <code>openIndex</code> 状态</td><td>无需状态</td></tr>
+  </table>
+  <p style="margin-top:8px;">
+    关键是<b>「找答案」这一步</b>：用户来 FAQ 通常是「我遇到了 X，有没有相关说明」——
+    这时<strong>扫标题比读正文快得多</strong>。平铺式把 9 条答案全铺开，标题被正文淹没，
+    反而更难定位。所以折叠式更适合 9 条这个量级。
+  </p>
+  <p style="margin-top:6px;">
+    如果只有 3~4 条，平铺更好（不用点）。9 条已超过这个阈值。
+  </p>
+
+  <h3>底部反馈入口：两种形态</h3>
+  <p>原型里用的是<b>文字链接</b>（屏 2 / 屏 3 底部）：</p>
+  <p style="margin:6px 0;"><code>没找到答案？点这里反馈 ›</code></p>
+  <p>另一种是<b>胶囊按钮</b>（更醒目，但更像营销位）：</p>
+  <p style="margin:6px 0;"><code>[ 没找到答案？去反馈 ]</code></p>
+  <p>
+    我倾向<b>文字链接</b>：FAQ 页的主任务是「自助解决」，反馈是兜底而非主推。
+    用按钮会让人以为「官方更希望你点反馈」，与页面目的相反。
+  </p>
+
+  <h3>底栏胶囊的还原说明</h3>
+  <p>按 <code>custom-tab-bar/index.wxss</code> 的真实参数还原：</p>
+  <table>
+    <tr><th style="width:150px;">参数</th><th>真实值</th></tr>
+    <tr><td>左右留白</td><td>28rpx（原型 14px）</td></tr>
+    <tr><td>底部留白</td><td>20rpx + <code>env(safe-area-inset-bottom)</code></td></tr>
+    <tr><td>高度</td><td>108rpx（原型 54px）</td></tr>
+    <tr><td>背景</td><td><code>rgba(255,255,255,0.62)</code> + <code>backdrop-filter: blur(30rpx)</code></td></tr>
+    <tr><td>圆角</td><td>999rpx（全圆）</td></tr>
+    <tr><td>选中项</td><td><code>rgba(59,111,246,0.12)</code> 淡蓝胶囊 + 文字变蓝加粗</td></tr>
+  </table>
+  <p style="margin-top:8px;">
+    注意原型里 <code>backdrop-filter</code> 在浏览器中效果比小程序弱一些（小程序渲染层更接近原生）。
+    真机上毛玻璃会更明显。
+  </p>
+
+  <h3>还有一处要你确认</h3>
+  <p>
+    FAQ 页<b>要不要也显示底栏胶囊</b>？原型里我画了（保持一致性）。
+    但 FAQ 是从设置页 <code>navigateTo</code> 进去的二级页，不是 tab 页 ——
+    <strong>真实小程序里二级页不会显示 tabBar</strong>。
+  </p>
+  <p style="margin-top:6px;">
+    如果你希望二级页也保留底栏，需要额外做一层封装（把底栏抽成组件放进每个页面），
+    改动不小。默认按「二级页无底栏」实现，原型里的底栏只是为了让三屏视觉对齐。
+  </p>
+</div>
+
+<script>
+  // 折叠式交互
+  document.querySelectorAll('.faq-item').forEach(function (item) {
+    item.addEventListener('click', function () {
+      item.classList.toggle('open');
+    });
+  });
+</script>
+
+</body>
+</html>

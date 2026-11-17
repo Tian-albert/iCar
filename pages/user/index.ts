@@ -47,6 +47,9 @@ Page({
   onOpenRecycleBin() {
     wx.navigateTo({ url: '/pages/recycle-bin/index' });
   },
+  onOpenFaq() {
+    wx.navigateTo({ url: '/pages/faq/index' });
+  },
   onOpenAbout() {
     wx.navigateTo({ url: '/pages/about/index' });
   },

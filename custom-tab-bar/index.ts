@@ -22,7 +22,9 @@ Component({
       // 该页已由「保养」改为全局「概览」面板（保养提醒作为其中一个区块）
       { pagePath: '/pages/reminder/index', text: '概览', icon: 'overview' },
       { pagePath: '/pages/index/index', text: '车辆', icon: 'car' },
-      { pagePath: '/pages/user/index', text: '我的', icon: 'user' }
+      // 文案改「设置」：本页已无账号体系，只有本机设置与数据管理入口。
+  // 图标用齿轮（不再是「用户」语义），仍保持与其他两个图标同一套描边规范。
+  { pagePath: '/pages/user/index', text: '设置', icon: 'gear' }
     ] as TabItem[],
     // WXML 里不能直接引用 import 的常量，必须经 data 传入
     lineIcons: TAB_ICONS_LINE,

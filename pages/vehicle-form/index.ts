@@ -141,7 +141,7 @@ Page({
   onDeleteCar() {
     wx.showModal({
       title: '删除车辆',
-      content: '将同时删除该车名下的全部记录，可在「我的 → 回收站」中撤销（保留 30 天）。确定删除吗？',
+      content: '将同时删除该车名下的全部记录，可在「设置 → 回收站」中撤销（保留 30 天）。确定删除吗？',
       confirmColor: '#F5474F',
       success: res => {
         if (!res.confirm) return;
