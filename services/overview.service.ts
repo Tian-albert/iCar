@@ -9,7 +9,7 @@ import { StorageAdapter } from '../repositories/storage.adapter';
 import { listCars } from './car.service';
 import { listCategories } from './cost.service';
 import { getMaintainProgressBatch } from './maintain-record.service';
-import { getPinnedCarId } from './user.service';
+import { getPinnedCarId, getUser } from './user.service';
 import { CHART_COLORS } from '../domain/stats.service';
 import { Car, Cost, RefuelLog } from '../types/models';
 
@@ -110,6 +110,12 @@ export interface OverviewSnapshot {
   stale: OverviewStale | null;
   /** 每车出行成本（按建档后里程算每公里成本） */
   drivingCosts: OverviewDrivingCost[];
+  /**
+   * 保养到期提醒总开关（User.remindEnabled）。
+   * 关闭时 maintain 为空、pendingCount 为 0（不计算提醒），
+   * 页面按此隐藏整个「保养提醒」区块；保养数据本身不受影响。
+   */
+  remindEnabled: boolean;
 }
 
 function startOfMonth(now: number): number {
@@ -178,6 +184,9 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
   const cars = listCars(storage);
   const pinnedId = getPinnedCarId(storage);
   const mainCar = pickMainCar(cars, pinnedId);
+
+  // 保养到期提醒总开关：关闭时不计算待保养（设计报告 11：关闭后不再计算/推送提醒）
+  const remindEnabled = getUser(storage)?.remindEnabled ?? true;
 
   const catMap = new Map(listCategories(storage).map(c => [c.sourceId, c.name]));
 
@@ -288,22 +297,24 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
       if (r.fuelDate > latestRecord) latestRecord = r.fuelDate;
     }
 
-    // ---- 保养 ----
-    const progress = progressByCar[car.sourceId] || [];
-    for (const p of progress) {
-      if (!p.urgent) continue;
-      pendingCount++;
-      const overdue =
-        (p.remainMileage !== null && p.remainMileage < 0) ||
-        (p.remainDays !== null && p.remainDays < 0);
-      maintain.push({
-        carSourceId: car.sourceId,
-        carName: car.name,
-        name: p.maintain.name,
-        remainText: remainTextOf(p.remainMileage, p.remainDays),
-        level: overdue ? 'bad' : 'warn',
-        progress: p.progress
-      });
+    // ---- 保养（提醒开关关闭时整段跳过，历史记录不受影响）----
+    if (remindEnabled) {
+      const progress = progressByCar[car.sourceId] || [];
+      for (const p of progress) {
+        if (!p.urgent) continue;
+        pendingCount++;
+        const overdue =
+          (p.remainMileage !== null && p.remainMileage < 0) ||
+          (p.remainDays !== null && p.remainDays < 0);
+        maintain.push({
+          carSourceId: car.sourceId,
+          carName: car.name,
+          name: p.maintain.name,
+          remainText: remainTextOf(p.remainMileage, p.remainDays),
+          level: overdue ? 'bad' : 'warn',
+          progress: p.progress
+        });
+      }
     }
 
     // ---- 漏记检测 ----
@@ -364,6 +375,7 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
     yearTotal: Math.round(yearTotal * 100) / 100,
     recent,
     stale,
-    drivingCosts
+    drivingCosts,
+    remindEnabled
   };
 }

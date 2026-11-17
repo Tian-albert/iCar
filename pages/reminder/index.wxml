@@ -23,26 +23,28 @@
       <text>{{stale.carName}} 已 {{stale.days}} 天没记账了</text>
     </view>
 
-    <!-- 保养总览（全部车），标题带待保养项数 -->
-    <view class="sec-title">保养提醒{{pendingCount > 0 ? ' · ' + pendingCount + ' 项待保养' : ''}}</view>
-    <view class="card">
-      <view wx:if="{{maintain.length === 0}}" class="mnt-empty">所有保养项都在周期内</view>
-      <view
-        wx:for="{{maintain}}"
-        wx:key="key"
-        class="mnt-row"
-        hover-class="hover-dim"
-        data-car="{{item.carSourceId}}"
-        bindtap="onTapMaintain">
-        <text class="mnt-car">{{item.carName}}</text>
-        <text class="mnt-name">{{item.name}}</text>
-        <text class="mnt-remain {{item.level}}">{{item.remainText}}</text>
-        <text class="go">›</text>
+    <!-- 保养总览（全部车），标题带待保养项数；总开关关闭时整块隐藏（设置页可开） -->
+    <block wx:if="{{remindEnabled}}">
+      <view class="sec-title">保养提醒{{pendingCount > 0 ? ' · ' + pendingCount + ' 项待保养' : ''}}</view>
+      <view class="card">
+        <view wx:if="{{maintain.length === 0}}" class="mnt-empty">所有保养项都在周期内</view>
+        <view
+          wx:for="{{maintain}}"
+          wx:key="key"
+          class="mnt-row"
+          hover-class="hover-dim"
+          data-car="{{item.carSourceId}}"
+          bindtap="onTapMaintain">
+          <text class="mnt-car">{{item.carName}}</text>
+          <text class="mnt-name">{{item.name}}</text>
+          <text class="mnt-remain {{item.level}}">{{item.remainText}}</text>
+          <text class="go">›</text>
+        </view>
+        <view wx:if="{{pendingCount > 0}}" class="mnt-all" hover-class="hover-dim" bindtap="onManageMaintain">
+          管理保养项 ›
+        </view>
       </view>
-      <view wx:if="{{pendingCount > 0}}" class="mnt-all" hover-class="hover-dim" bindtap="onManageMaintain">
-        管理保养项 ›
-      </view>
-    </view>
+    </block>
 
     <!-- 今年花费 · 按车 -->
     <view class="sec-title">今年花费 · 按车</view>

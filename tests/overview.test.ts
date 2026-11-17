@@ -8,6 +8,8 @@ import { createCar } from '../services/car.service';
 import { saveCost, listCategories } from '../services/cost.service';
 import { saveRefuel } from '../services/refuel.service';
 import { buildOverview, pickMainCar, RECENT_LIMIT, STALE_DAYS } from '../services/overview.service';
+import { ensureMaintainTemplates } from '../services/maintain-record.service';
+import { setRemindEnabled } from '../services/user.service';
 import { Car } from '../types/models';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -83,6 +85,42 @@ describe('概览：空态', () => {
     expect(snap.metric.lastRecordDays).toBeNull();
     // 车辆刚建（createdAt=now），不应算漏记
     expect(snap.stale).toBeNull();
+  });
+});
+
+describe('概览：保养提醒总开关（User.remindEnabled）', () => {
+  function setupUrgent() {
+    const adapter = new StorageAdapter(createMemoryStorage());
+    seedPresetCategories(adapter);
+    // 购车里程 0 + 当前 19550 → 空气滤芯 20000km 周期剩 450km ≤ 500 阈值，产生 urgent 项
+    const car = createCar(adapter, {
+      name: 'A车',
+      mileages: 19550,
+      initMileages: 0,
+      initDate: new Date(2026, 0, 1).getTime(),
+      energyType: 'fuel'
+    });
+    ensureMaintainTemplates(adapter, car.sourceId);
+    return { adapter, car };
+  }
+
+  it('开关开启（默认）：有待保养项', () => {
+    const { adapter } = setupUrgent();
+    const snap = buildOverview(adapter, Date.now());
+    expect(snap.remindEnabled).toBe(true);
+    expect(snap.pendingCount).toBeGreaterThan(0);
+    expect(snap.maintain.length).toBeGreaterThan(0);
+  });
+
+  it('开关关闭：不计算待保养，maintain 空、pendingCount 为 0', () => {
+    const { adapter } = setupUrgent();
+    setRemindEnabled(adapter, false);
+    const snap = buildOverview(adapter, Date.now());
+    expect(snap.remindEnabled).toBe(false);
+    expect(snap.maintain).toEqual([]);
+    expect(snap.pendingCount).toBe(0);
+    // 关闭不影响其他区块：车辆数、支出口径照常
+    expect(snap.metric.carCount).toBe(1);
   });
 });
 

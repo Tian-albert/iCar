@@ -153,6 +153,8 @@ Page({
     totalDrivenText: '0',
     pendingCount: 0,
     stale: null as { carName: string; days: number } | null,
+    /** 保养到期提醒总开关：关闭时隐藏整个保养提醒区块 */
+    remindEnabled: true,
     maintain: [] as MaintainView[],
     carCosts: [] as CarCostView[],
     recent: [] as RecentView[],
@@ -248,6 +250,7 @@ Page({
         totalDrivenText: formatCompact(snap.metric.totalDrivenMileage),
         pendingCount: snap.pendingCount,
         stale: snap.stale ? { carName: snap.stale.carName, days: snap.stale.days } : null,
+        remindEnabled: snap.remindEnabled,
         maintain: snap.maintain.map(m => ({
           // 不用下标：列表重新排序时整列 key 会全变，列表复用失效
           key: `${m.carSourceId}#${m.name}`,
