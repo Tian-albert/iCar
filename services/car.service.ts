@@ -55,6 +55,13 @@ export function listCars(storage: StorageAdapter): Car[] {
   return storage.list<Car>('cars').filter(c => !c.deleted);
 }
 
+/**
+ * 按 id 取车辆。
+ *
+ * 查不到返回 `null`，**不抛错** —— 「这辆车不存在」是正常的查询结果，
+ * 不是异常。调用方自行决定是提示还是走空态（页面通常提示「车辆不存在」并返回）。
+ * 错误处理的分层约定见 `services/service-error.ts`。
+ */
 export function getCar(storage: StorageAdapter, sourceId: string): Car | null {
   const car = storage.get<Car>('cars', sourceId);
   return car && !car.deleted ? car : null;

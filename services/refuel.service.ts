@@ -9,6 +9,7 @@ import {
 import { genId } from '../utils/id';
 import { round2, isValidAmount } from '../utils/number';
 import { syncMileages } from './car.service';
+import { serviceError } from './service-error';
 
 export interface RefuelForm {
   carSourceId: string;
@@ -64,7 +65,8 @@ export function getEnergyCategory(storage: StorageAdapter, energyType: EnergyTyp
 export function saveRefuel(storage: StorageAdapter, form: RefuelForm): RefuelLog {
   const energyType: EnergyType = form.energyType ?? 'fuel';
   const category = getEnergyCategory(storage, energyType);
-  if (!category) throw new Error('预设支出类别缺失');
+  // 预设类别被删后无法自动归类。用户能做的只有去类别管理恢复，所以文案给出动作。
+  if (!category) throw serviceError('缺少「加油」类别，请到类别管理恢复');
 
   const now = Date.now();
   const shouldPay = computeShouldPay(form.unitPrice, form.volume);
@@ -130,7 +132,7 @@ export function saveRefuel(storage: StorageAdapter, form: RefuelForm): RefuelLog
 /** 编辑加油记录（BR-25/26：联动 Cost、全量重算区间、回写里程） */
 export function updateRefuel(storage: StorageAdapter, sourceId: string, form: RefuelForm): RefuelLog {
   const log = storage.get<RefuelLog>('fuelRecords', sourceId);
-  if (!log || log.deleted) throw new Error('记录不存在');
+  if (!log || log.deleted) throw serviceError('这条记录已被删除');
 
   const shouldPay = computeShouldPay(form.unitPrice, form.volume);
   const actualPay = resolveActualPay(form.actualPayAmount, shouldPay);

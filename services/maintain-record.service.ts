@@ -4,6 +4,7 @@ import { StorageAdapter } from '../repositories/storage.adapter';
 import { calcRemaining, findLastHandle, MaintainThresholds, DEFAULT_MAINTAIN_THRESHOLDS } from '../domain/maintain.service';
 import { genId } from '../utils/id';
 import { syncMileages } from './car.service';
+import { serviceError } from './service-error';
 
 /** 默认保养项模板（设计报告 4.2.3 CRV 模板） */
 /**
@@ -216,7 +217,7 @@ export function saveMaintainHandle(storage: StorageAdapter, form: MaintainForm):
 /** 编辑保养执行：更新 handle + 重建 logs + 金额联动 */
 export function updateMaintainHandle(storage: StorageAdapter, sourceId: string, form: MaintainForm): MaintainHandle {
   const handle = storage.get<MaintainHandle>('maintainHandles', sourceId);
-  if (!handle || handle.deleted) throw new Error('记录不存在');
+  if (!handle || handle.deleted) throw serviceError('这条保养记录已被删除');
   const now = Date.now();
 
   handle.makeDate = form.makeDate;

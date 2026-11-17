@@ -3,6 +3,7 @@ import { Category, Cost, RepairRecord } from '../types/models';
 import { StorageAdapter } from '../repositories/storage.adapter';
 import { genId } from '../utils/id';
 import { syncMileages } from './car.service';
+import { serviceError } from './service-error';
 
 export interface RepairForm {
   carSourceId: string;
@@ -71,7 +72,7 @@ export function saveRepair(storage: StorageAdapter, form: RepairForm): RepairRec
 /** 编辑维修记录（含金额与支出流水的增/改/删联动） */
 export function updateRepair(storage: StorageAdapter, sourceId: string, form: RepairForm): RepairRecord {
   const record = storage.get<RepairRecord>('repairRecords', sourceId);
-  if (!record || record.deleted) throw new Error('记录不存在');
+  if (!record || record.deleted) throw serviceError('这条记录已被删除');
 
   record.content = form.content.trim();
   record.mileage = form.mileage;

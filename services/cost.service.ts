@@ -2,6 +2,7 @@
 import { Category, Cost } from '../types/models';
 import { StorageAdapter } from '../repositories/storage.adapter';
 import { genId } from '../utils/id';
+import { serviceError } from './service-error';
 
 export interface CostForm {
   carSourceId: string;
@@ -34,7 +35,9 @@ export function saveCost(storage: StorageAdapter, form: CostForm): Cost {
 /** 编辑手动记的支出 */
 export function updateCost(storage: StorageAdapter, sourceId: string, form: CostForm): Cost {
   const cost = storage.get<Cost>('costs', sourceId);
-  if (!cost || cost.deleted) throw new Error('记录不存在');
+  // 记录可能在别处被删（或已进回收站），此时再保存就是无效操作。
+  // 文案要面向用户：不说「记录不存在」（用户不知道哪条），说「已被删除」。
+  if (!cost || cost.deleted) throw serviceError('这条记录已被删除');
   cost.categorySourceId = form.categorySourceId;
   cost.amount = form.amount;
   cost.costDate = form.costDate;
@@ -110,6 +113,7 @@ export function resolveCategorySelection(
   return { selectedIndex: cats.length ? 0 : -1, locked: false };
 }
 
+/** 按 id 取类别；查不到返回 `null`（查询类不抛错，约定见 `service-error.ts`） */
 export function getCategory(storage: StorageAdapter, sourceId: string): Category | null {
   const cat = storage.get<Category>('categories', sourceId);
   return cat && !cat.deleted ? cat : null;
@@ -233,6 +237,13 @@ export function setCategoryVisible(storage: StorageAdapter, sourceId: string, vi
   storage.update('categories', cat);
 }
 
+/**
+ * 可部分成功 / 有业务前置校验的操作结果。
+ *
+ * 这类操作（删类别、清空数据、导入）不抛错，因为「为什么不能做」是正常的
+ * 业务结论而非异常，且调用方需要拿到 message 直接展示。
+ * 与 `ServiceError` 的分工见 `service-error.ts`。
+ */
 export interface RemoveResult {
   ok: boolean;
   message?: string;

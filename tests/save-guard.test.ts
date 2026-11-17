@@ -47,7 +47,9 @@ describe('guardSave 防重复提交', () => {
       throw new Error('boom');
     };
     expect(guardSave(failing)).toBe(false);
-    expect(toasts).toEqual(['保存失败，请检查输入后重试']);
+    // 普通 Error 的 message 是给开发者看的，不能直接展示；
+    // 用户看到的是通用兜底文案
+    expect(toasts).toEqual(['保存失败，请重试']);
 
     // 失败后应能立即重试（不被节流挡住）
     let ok = 0;
