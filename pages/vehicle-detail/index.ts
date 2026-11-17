@@ -4,6 +4,7 @@ import { getCar } from '../../services/car.service';
 import { listRefuels, getConsumptions, getLatestConsumption } from '../../services/refuel.service';
 import { listCosts, listCategories } from '../../services/cost.service';
 import { getMaintainProgress, ensureMaintainTemplates } from '../../services/maintain-record.service';
+import { formatRemainText, isRemainOverdue } from '../../domain/maintain.service';
 import { buildStats } from '../../domain/stats.service';
 import { displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDateTime, formatDate } from '../../utils/date';
@@ -49,6 +50,8 @@ interface MaintainProgressView {
   remainText: string;
   progressPercent: number;
   urgent: boolean;
+  /** 已超期（负数）：红色，区别于临近的橙色 */
+  overdue: boolean;
 }
 
 Page({
@@ -146,14 +149,10 @@ Page({
     const maintainProgress = soonProgress.map(p => ({
       key: p.maintain.sourceId,
       name: p.maintain.name,
-      remainText:
-        p.remainDays !== null
-          ? `剩余 ${p.remainDays} 天`
-          : p.remainMileage !== null
-            ? `剩余 ${p.remainMileage} km`
-            : '',
+      remainText: formatRemainText(p.remainMileage, p.remainDays),
       progressPercent: Math.round(p.progress * 100),
-      urgent: p.urgent
+      urgent: p.urgent,
+      overdue: isRemainOverdue(p.remainMileage, p.remainDays)
     }));
 
     const catMap = new Map(categories.map(c => [c.sourceId, c]));

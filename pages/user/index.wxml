@@ -28,16 +28,16 @@
   </view>
 
   <view class="card">
-    <view hover-class="hover-dim" class="row" bindtap="onFeedback">
-      <view class="row-label">反馈与建议</view>
-      <view class="row-arrow">›</view>
-    </view>
     <!--
-      顺序有意为之：反馈 → 常见问题 → 关于。
+      顺序有意为之：常见问题 → 反馈与建议 → 关于。
       先让用户自助找答案，找不到再去反馈；把「反馈」放前面会让人跳过自助环节。
     -->
     <view hover-class="hover-dim" class="row" bindtap="onOpenFaq">
       <view class="row-label">常见问题</view>
+      <view class="row-arrow">›</view>
+    </view>
+    <view hover-class="hover-dim" class="row" bindtap="onFeedback">
+      <view class="row-label">反馈与建议</view>
       <view class="row-arrow">›</view>
     </view>
     <view hover-class="hover-dim" class="row" bindtap="onOpenAbout">

@@ -15,7 +15,7 @@
           <text wx:else class="row-icon">{{item.emoji}}</text>
           <view class="row-name">{{item.name}}</view>
         </view>
-        <view class="row-remain {{item.urgent ? 'row-urgent' : ''}}">{{item.remainText}}</view>
+        <view class="row-remain {{item.overdue ? 'row-overdue' : item.urgent ? 'row-urgent' : ''}}">{{item.remainText}}</view>
       </view>
       <view class="mnt-bar">
         <view class="mnt-bar-fill" style="width: {{item.progressPercent + '%'}};"></view>

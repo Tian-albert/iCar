@@ -1,4 +1,4 @@
-import { calcRemaining, findLastHandle } from '../domain/maintain.service';
+import { calcRemaining, findLastHandle, formatRemainText, isRemainOverdue } from '../domain/maintain.service';
 import { sample, sampleCar } from './fixtures/sample';
 
 const TODAY = new Date(2026, 9, 21).getTime(); // 2026-10-21 本地 00:00
@@ -50,5 +50,30 @@ describe('maintain.service 剩余量（样本数据）', () => {
 
     const farMile = { ...sampleCar, mileages: 10000 };
     expect(calcRemaining(getMaintain('空气滤芯'), null, farMile, TODAY).urgent).toBe(false);
+  });
+});
+
+describe('maintain.service 剩余量文案', () => {
+  it('正数 → 「剩余 X 天 / 剩余 X km」', () => {
+    expect(formatRemainText(1200, 291)).toBe('剩余 291 天');
+    expect(formatRemainText(1200, null)).toBe('剩余 1200 km');
+    expect(formatRemainText(null, 291)).toBe('剩余 291 天');
+  });
+
+  it('负数（已超期）→ 「超期 X 天 / 超期 X km」，取绝对值', () => {
+    expect(formatRemainText(-100, null)).toBe('超期 100 km');
+    expect(formatRemainText(null, -100)).toBe('超期 100 天');
+    expect(formatRemainText(-850, -81)).toBe('超期 81 天');
+  });
+
+  it('都为空 → 空串', () => {
+    expect(formatRemainText(null, null)).toBe('');
+  });
+
+  it('isRemainOverdue：任一维度为负即超期，正数/null 不算', () => {
+    expect(isRemainOverdue(null, -100)).toBe(true);
+    expect(isRemainOverdue(-850, 10)).toBe(true);
+    expect(isRemainOverdue(1200, 291)).toBe(false);
+    expect(isRemainOverdue(null, null)).toBe(false);
   });
 });

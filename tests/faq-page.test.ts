@@ -178,13 +178,13 @@ describe('设置页：新增的「常见问题」入口', () => {
     expect(userTs).toContain('/pages/faq/index');
   });
 
-  it('位置在「反馈与建议」与「关于」之间', () => {
+  it('位置在「反馈与建议」之前、「关于」之前（自助优先）', () => {
     const feedback = userWxml.indexOf('反馈与建议');
     const faq = userWxml.indexOf('常见问题');
     const about = userWxml.indexOf('>关于<');
-    expect(feedback).toBeGreaterThan(-1);
-    expect(faq).toBeGreaterThan(feedback);
-    expect(about).toBeGreaterThan(faq);
+    expect(faq).toBeGreaterThan(-1);
+    expect(feedback).toBeGreaterThan(faq);
+    expect(about).toBeGreaterThan(feedback);
   });
 });
 

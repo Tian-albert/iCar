@@ -6,6 +6,7 @@ import {
   formatCycle,
   removeMaintain
 } from '../../services/maintain-record.service';
+import { formatRemainText, isRemainOverdue } from '../../domain/maintain.service';
 import { iconEmoji, isImageIcon } from '../../utils/icons';
 import { getCar } from '../../services/car.service';
 import { safeBack } from '../../utils/safe-back';
@@ -20,6 +21,8 @@ interface MaintainView {
   remainText: string;
   progressPercent: number;
   urgent: boolean;
+  /** 已超期（负数）：红色，区别于临近的橙色 */
+  overdue: boolean;
 }
 
 Page({
@@ -53,14 +56,10 @@ Page({
       emoji: iconEmoji(p.maintain.icon),
       isImage: isImageIcon(p.maintain.icon),
       cycleText: formatCycle(p.maintain),
-      remainText:
-        p.remainDays !== null
-          ? `剩余 ${p.remainDays} 天`
-          : p.remainMileage !== null
-            ? `剩余 ${p.remainMileage} km`
-            : '',
+      remainText: formatRemainText(p.remainMileage, p.remainDays),
       progressPercent: Math.round(p.progress * 100),
-      urgent: p.urgent
+      urgent: p.urgent,
+      overdue: isRemainOverdue(p.remainMileage, p.remainDays)
     }));
     this.setData({ maintains });
   },
