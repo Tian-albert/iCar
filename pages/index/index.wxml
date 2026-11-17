@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <!-- 空态 -->
   <view wx:if="{{carCount === 0}}" class="empty-state">

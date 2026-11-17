@@ -30,6 +30,13 @@
   font-size: 40rpx;
   color: var(--color-text-3);
 }
+/* 行尾当前值（如「皮肤」右侧的皮肤名）：比标签弱一档，箭头前留 8rpx */
+.row-value {
+  margin-left: auto;
+  margin-right: 8rpx;
+  font-size: 26rpx;
+  color: var(--color-text-3);
+}
 
 /*
  * 「把车记本推荐给朋友」

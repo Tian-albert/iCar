@@ -180,8 +180,12 @@ Page({
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 });
+    const tab = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
+    if (tab) {
+      tab.setData({ selected: 0 });
+      // 每个 tab 页各自持有一份底栏组件实例，切页时必须显式对齐皮肤：
+      // 组件内的 pageLifetimes.show 在部分基础库/场景下不触发，会停留在旧皮肤。
+      if (typeof tab.refreshSkin === 'function') tab.refreshSkin();
     }
     enableShareMenu();
     this.load();

@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <!--
     折叠式：默认全部收起，点标题展开。

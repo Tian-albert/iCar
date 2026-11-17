@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <!-- 设置列表 -->
   <view class="card">
@@ -15,6 +16,11 @@
     </view>
     <view hover-class="hover-dim" class="row" bindtap="onOpenRecycleBin">
       <view class="row-label">回收站</view>
+      <view class="row-arrow">›</view>
+    </view>
+    <view hover-class="hover-dim" class="row" bindtap="onOpenSkin">
+      <view class="row-label">皮肤</view>
+      <view class="row-value">{{skinName}}</view>
       <view class="row-arrow">›</view>
     </view>
   </view>

@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <!-- 空态：用户把保养项删光后不应只剩一片空白 -->
   <view wx:if="{{maintains.length === 0}}" class="empty-state">

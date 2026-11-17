@@ -101,7 +101,8 @@
   position: absolute;
   top: 16rpx;
   right: 24rpx;
-  color: var(--color-text-4);
+  /* 在深色卡上，用 on-dark 系列而不是 text-4：后者在深色皮肤下会偏暗 */
+  color: var(--color-on-dark-weak);
   font-size: 40rpx;
   line-height: 1;
 }
@@ -112,12 +113,12 @@
 .stat-value {
   font-size: 40rpx;
   font-weight: 600;
-  color: var(--color-card);
+  color: var(--color-on-dark);
 }
 .stat-label {
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-4);
+  color: var(--color-on-dark-sub);
 }
 .help-icon {
   display: inline-block;
@@ -362,7 +363,7 @@
   text-align: center;
   border-radius: 50%;
   background: var(--color-primary);
-  color: var(--color-card);
+  color: var(--color-on-dark);
   font-size: 56rpx;
   box-shadow: 0 10rpx 28rpx rgba(59, 111, 246, 0.4);
   transition: transform 0.2s ease;

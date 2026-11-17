@@ -145,11 +145,19 @@ export interface FuelConsumption extends BaseEntity {
   costPerKm: number;
 }
 
+/**
+ * 界面皮肤：同一套布局下的三套色板。
+ * 切换只替换 CSS 变量，不动任何 WXML/WXSS 结构。
+ */
+export type SkinKey = 'a' | 'b' | 'c';
+
 export interface User extends BaseEntity {
   openid: string;
   nickname: string;
   avatarUrl: string;
   remindEnabled: boolean;
+  /** 界面皮肤（默认 'a' 极简线稿） */
+  skin: SkinKey;
   reminderSentCount: number;
   memberLevel: MemberLevel;
   memberExpireAt: number;

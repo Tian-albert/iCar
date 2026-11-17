@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <view class="card">
     <view class="group-title">基本信息</view>

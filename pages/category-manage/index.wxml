@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <view class="section-title">支出类别</view>
   <view class="tip">点图标可更换，长按右侧 ≡ 上下拖动排序</view>

@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <!-- 维度切换 -->
   <view class="range-bar">
@@ -88,9 +89,19 @@
   <view class="card cat-card">
     <view wx:if="{{!hasData || categories.length === 0}}" class="chart-empty">暂无支出数据，记一笔后即可查看分类占比</view>
     <block wx:else>
-      <donut-chart segments="{{categories}}" total="{{expenseTotal}}" class="donut-chart" />
+      <donut-chart
+        segments="{{categories}}"
+        total="{{expenseTotal}}"
+        activeIndex="{{catActive}}"
+        bindchange="onCatChange"
+        class="donut-chart" />
       <view class="cat-list">
-        <view wx:for="{{categories}}" wx:key="categorySourceId" class="cat-row">
+        <view
+          wx:for="{{categories}}"
+          wx:key="categorySourceId"
+          class="cat-row {{catActive === index ? 'cat-on' : ''}}"
+          data-index="{{index}}"
+          bindtap="onTapCatRow">
           <view class="cat-dot" style="background: {{item.color}};"></view>
           <view class="cat-name">{{item.name}}</view>
           <!-- 占比条：宽度即该分类占总支出的百分比 -->

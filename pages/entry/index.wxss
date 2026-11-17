@@ -85,7 +85,7 @@
 }
 .mode-opt.mode-active {
   background: var(--color-primary);
-  color: var(--color-card);
+  color: var(--color-on-dark);
   font-weight: 600;
 }
 /* 加油选项：三组两段式开关同排 */
@@ -258,7 +258,7 @@
 }
 .btn-primary {
   background: var(--color-primary);
-  color: var(--color-card);
+  color: var(--color-on-dark);
   border-radius: var(--r-pill);
   font-size: 32rpx;
 }

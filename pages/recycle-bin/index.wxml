@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <view class="tip">删除的记录保留 {{retentionDays}} 天，期间可随时恢复；过期后自动清理。</view>
 

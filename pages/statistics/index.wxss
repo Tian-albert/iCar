@@ -90,15 +90,23 @@
   height: 500rpx;
 }
 .cat-list {
-  margin-top: 8rpx;
+  /* 首行自带 padding-top，这里不再叠加外边距 */
+  margin-top: 0;
 }
 .cat-row {
   display: flex;
   align-items: center;
-  margin-bottom: 16rpx;
+  /*
+   * 左右负外边距抵消 padding：内容起始位置与改动前完全一致，
+   * 只是多出一圈可点击热区；上下 padding 合计 16rpx，正好接替原来的 margin-bottom 行距。
+   */
+  margin: 0 -12rpx;
+  padding: 8rpx 12rpx;
+  border-radius: 12rpx;
 }
-.cat-row:last-child {
-  margin-bottom: 0;
+/* 选中态：与概览页图例 .lg-on 同一套语义（浅色填充） */
+.cat-row.cat-on {
+  background: var(--color-fill);
 }
 .cat-dot {
   width: 16rpx;
@@ -166,7 +174,7 @@
 }
 .btn-share {
   background: var(--color-primary);
-  color: var(--color-card);
+  color: var(--color-on-dark);
   border-radius: var(--r-pill);
   font-size: var(--font-lg);
   line-height: 2.8;

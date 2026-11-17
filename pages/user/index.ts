@@ -7,16 +7,21 @@ import { getUser, setRemindEnabled } from '../../services/user.service';
 import { FEEDBACK_EMAIL } from '../../utils/app-config';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { clearAllData } from '../../services/clear-data.service';
+import { SKIN_LABEL, SKIN_ORDER, applyChartTheme, applyPageSkin, getSkin, setSkin } from '../../utils/skin';
 
 Page({
   data: {
     activeColor: COMPONENT_ACTIVE_COLOR,
     remindEnabled: true,
+    skinName: SKIN_LABEL.a,
     feedbackEmail: FEEDBACK_EMAIL
   },
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 2 });
+    const tab = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
+    if (tab) {
+      tab.setData({ selected: 2 });
+      // 每个 tab 页各自持有一份底栏组件实例，切页时必须显式对齐皮肤
+      if (typeof tab.refreshSkin === 'function') tab.refreshSkin();
     }
     this.load();
     enableShareMenu();
@@ -31,12 +36,39 @@ Page({
     const storage = getStorage();
     const user = getUser(storage);
     this.setData({
-      remindEnabled: user?.remindEnabled ?? true
+      remindEnabled: user?.remindEnabled ?? true,
+      skinName: SKIN_LABEL[getSkin()]
     });
   },
   onRemindChange(e: WechatMiniprogram.SwitchChange) {
     setRemindEnabled(getStorage(), e.detail.value);
     this.setData({ remindEnabled: e.detail.value });
+  },
+  /**
+   * 切换皮肤。
+   *
+   * 选择后立刻把新令牌写进当前页面（不等下次 onShow），
+   * 否则用户点完会看到「设置页没变」，误以为没生效。
+   */
+  onOpenSkin() {
+    const current = getSkin();
+    wx.showActionSheet({
+      itemList: SKIN_ORDER.map(k => `${SKIN_LABEL[k]}${k === current ? ' ✓' : ''}`),
+      success: res => {
+        const skin = SKIN_ORDER[res.tapIndex];
+        if (!skin || skin === current) return;
+        setSkin(skin);
+        applyChartTheme(skin);
+        applyPageSkin(this);
+        this.setData({ skinName: SKIN_LABEL[skin] });
+        // 当前页的底栏也要立刻换，否则用户会看到「内容变了、底栏还是旧色」
+        const tab = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
+        if (tab && typeof tab.refreshSkin === 'function') tab.refreshSkin();
+      },
+      fail: () => {
+        // 用户取消，无需提示
+      }
+    });
   },
   onOpenCategory() {
     wx.navigateTo({ url: '/pages/category-manage/index' });

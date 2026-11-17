@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="crop-page">
   <view class="crop-hint" wx:if="{{!failed}}">拖动调整位置 · 双指或滑杆缩放</view>
 

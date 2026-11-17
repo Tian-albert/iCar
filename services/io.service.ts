@@ -362,7 +362,10 @@ export function importBundle(
           ...importedUser,
           sourceId: importedUser.sourceId || 'mp:user:default',
           sourcePlatform: 'mp',
-          openid: ''
+          openid: '',
+          // 旧备份的 user 没有 skin 字段，导入后要补一个合法值，
+          // 否则 getSkin() 一路回落到默认皮肤，用户会以为设置丢了
+          skin: importedUser.skin === 'b' || importedUser.skin === 'c' ? importedUser.skin : 'a'
         });
         added++;
       } else {

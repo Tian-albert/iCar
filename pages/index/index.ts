@@ -100,8 +100,11 @@ Page({
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 1 });
+    const tab = typeof this.getTabBar === 'function' ? this.getTabBar() : null;
+    if (tab) {
+      tab.setData({ selected: 1 });
+      // 每个 tab 页各自持有一份底栏组件实例，切页时必须显式对齐皮肤
+      if (typeof tab.refreshSkin === 'function') tab.refreshSkin();
     }
     this.load();
     enableShareMenu();

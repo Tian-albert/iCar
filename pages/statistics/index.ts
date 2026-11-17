@@ -80,6 +80,8 @@ Page({
     expensePerKm: '--',
     expensePerKmExFuel: '--',
     categories: [] as CatView[],
+    /** 环图当前选中分类，-1 表示未选中（与下方图例行双向联动） */
+    catActive: -1,
     trend: [] as Array<{ label: string; value: number }>,
     monthlyMileage: [] as Array<{ label: string; value: number }>,
     monthlyCost: [] as Array<{ label: string; value: number }>,
@@ -190,6 +192,8 @@ Page({
         percent: c.percent,
         color: c.color
       })),
+      // 数据换了一批，旧选中的扇区索引可能已不存在
+      catActive: -1,
       trend: snap.consumptionTrend.map(t => ({
         label: `${new Date(t.date).getMonth() + 1}/${new Date(t.date).getDate()}`,
         value: t.value
@@ -201,6 +205,24 @@ Page({
   onRangeChange(e: WechatMiniprogram.TouchEvent) {
     this.setData({ rangeType: e.currentTarget.dataset.type as string });
     this.load();
+  },
+
+  /**
+   * 环图扇区被点击：组件把新索引回传，这里只同步图例高亮。
+   *
+   * 与概览页的联动逻辑一致——那边是页面自己画 canvas 所以直接 setData，
+   * 这边扇区在组件内，必须用事件回传才不会出现「图例和扇区各说各话」。
+   */
+  onCatChange(e: WechatMiniprogram.CustomEvent) {
+    const index = Number((e.detail as any)?.index);
+    this.setData({ catActive: isNaN(index) ? -1 : index });
+  },
+
+  /** 点图例行：反向驱动扇区突出（手指点不到细扇区时的替代入口） */
+  onTapCatRow(e: WechatMiniprogram.TouchEvent) {
+    const index = Number(e.currentTarget.dataset.index);
+    if (isNaN(index) || index < 0 || index >= this.data.categories.length) return;
+    this.setData({ catActive: this.data.catActive === index ? -1 : index });
   },
   onYearChange(e: WechatMiniprogram.PickerChange) {
     const idx = Number(e.detail.value);

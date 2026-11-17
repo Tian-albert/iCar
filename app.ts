@@ -1,6 +1,10 @@
 // iCar 应用入口
 import { getStorage } from './store/index';
 import { cleanupOrphanIcons } from './utils/icon-store';
+import { installSkinPatch } from './utils/skin';
+
+// 必须在任何页面注册前执行：给 Page() 套一层，统一在 onShow 注入皮肤令牌
+installSkinPatch();
 
 App<IAppOption>({
   onLaunch() {

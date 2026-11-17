@@ -16,6 +16,19 @@ page {
   --color-warning-bg: #FFF3E0;
   --color-dark-card: #1E2536;
 
+  /*
+   * 深色卡 / 实色底上的前景色。
+   *
+   * 之前这些位置直接借用了 --color-card（当时它恒为白色），
+   * 深色皮肤下 --color-card 变成深灰，深色卡上就出现「深底深字」。
+   * 拆出独立的语义变量后，卡片底色与前景色互不影响。
+   */
+  /* 半透明白改用「叠在 #1E2536 上」的等效实色：
+     WXSS 对含逗号的 rgba 变量兼容性不稳（见 tests/chart-theme.test.ts） */
+  --color-on-dark: #FFFFFF;
+  --color-on-dark-sub: #A9ACB2;
+  --color-on-dark-weak: #737882;
+
   /* 图表 */
   --chart-1: #3B82F6;
   --chart-2: #22C55E;
@@ -124,7 +137,7 @@ page {
 /* 主按钮：全项目统一形态 */
 .btn-primary {
   background: var(--color-primary);
-  color: var(--color-card);
+  color: var(--color-on-dark);
   border-radius: var(--r-pill);
   font-size: var(--font-lg);
   line-height: 2.6;

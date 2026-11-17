@@ -73,3 +73,60 @@
   color: #3B6FF6;
   font-weight: 600;
 }
+
+/*
+ * 皮肤适配（B 杂志封面 / C 深色运动）。
+ *
+ * 底栏叠在任意内容之上，所以底色与文字色仍写死字面量、不接主题变量 ——
+ * 变量一变就可能在某个背景上失真。这里只是按皮肤另给一套固定值。
+ * 图标集由 index.ts 的 refreshSkin() 换成深色变体（见 utils/tab-icons-dark.ts）。
+ */
+.tab-bar.skin-b {
+  background: rgba(247, 245, 240, 0.52);
+  border-color: rgba(255, 255, 255, 0.75);
+}
+.tab-bar.skin-b .tab-text {
+  color: #9A9384;
+}
+/*
+ * 选中胶囊：用陶土红的浅色版（在米白底上呈现浅棕），与 B 的强调色同源。
+ * 实心图标也换成了暖色版（见 utils/tab-icons-warm.ts），三者同色系。
+ */
+.tab-bar.skin-b .tab-active {
+  background: rgba(180, 71, 26, 0.10);
+}
+.tab-bar.skin-b .tab-active .tab-text {
+  color: #B4471A;
+}
+
+.tab-bar.skin-c {
+  background: rgba(22, 27, 34, 0.62);
+  /*
+   * 深色底上取消白色高光描边。
+   *
+   * 浅色皮肤靠 rgba(255,255,255,.70) 的描边模拟玻璃厚度；
+   * 但同一条边放到近黑底上会变成一圈发亮的白边，配合毛玻璃看起来像脏光晕。
+   * 这里改成透明（保留 border 宽度，避免盒模型变化）。
+   */
+  border-color: transparent;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.35), 0 2rpx 6rpx rgba(0, 0, 0, 0.20);
+}
+/* 深底上白色光晕没有意义，反而会让文字发灰 */
+.tab-bar.skin-c .tab-icon {
+  filter: none;
+}
+.tab-bar.skin-c .tab-text {
+  color: #8A93A6;
+  text-shadow: none;
+}
+/*
+ * 选中胶囊：深色皮肤下改用浅白半透明，而不是浅蓝。
+ * 底栏本身已是深灰玻璃，再叠一层蓝会和图标抢色；
+ * 白色胶囊更像 iOS 的选中态，也更能压住深色背景。
+ */
+.tab-bar.skin-c .tab-active {
+  background: rgba(255, 255, 255, 0.16);
+}
+.tab-bar.skin-c .tab-active .tab-text {
+  color: #FFFFFF;
+}

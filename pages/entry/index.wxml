@@ -1,3 +1,4 @@
+<page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <!-- 分段器 -->
   <view class="seg-tabs">

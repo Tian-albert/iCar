@@ -85,7 +85,7 @@
 }
 .btn-primary {
   background: var(--color-primary);
-  color: var(--color-card);
+  color: var(--color-on-dark);
   border-radius: var(--r-pill);
   font-size: 32rpx;
 }

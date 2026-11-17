@@ -276,6 +276,7 @@ function markCategoriesSeeded(adapter: StorageAdapter): void {
       nickname: '',
       avatarUrl: '',
       remindEnabled: true,
+      skin: 'a',
       reminderSentCount: 0,
       memberLevel: 'free',
       memberExpireAt: 0,

@@ -9,6 +9,7 @@ const DEFAULT_USER: UserSeed = {
   nickname: '',
   avatarUrl: '',
   remindEnabled: true,
+  skin: 'a',
   reminderSentCount: 0,
   memberLevel: 'free',
   memberExpireAt: 0,
@@ -92,12 +93,24 @@ function migrate_v14_to_v15(adapter: StorageAdapter): void {
   }
 }
 
+/** v1.5 -> v1.6：User 回填皮肤（默认 a 极简线稿） */
+function migrate_v15_to_v16(adapter: StorageAdapter): void {
+  const user = adapter.getUser();
+  if (!user) return;
+  if (user.skin === undefined || user.skin === null) {
+    user.skin = 'a';
+    user.updatedAt = Date.now();
+    adapter.setUser(user);
+  }
+}
+
 const MIGRATIONS: Array<(adapter: StorageAdapter) => void> = [
   migrate_v1_to_v11,
   migrate_v11_to_v12,
   migrate_v12_to_v13,
   migrate_v13_to_v14,
-  migrate_v14_to_v15
+  migrate_v14_to_v15,
+  migrate_v15_to_v16
 ];
 
 /** 启动时执行全部待迁移版本；返回迁移到的目标版本号 */

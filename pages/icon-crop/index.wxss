@@ -110,11 +110,11 @@
 }
 .act-cancel {
   background: rgba(255, 255, 255, 0.12);
-  color: var(--color-card);
+  color: var(--color-on-dark);
 }
 .act-confirm {
   background: var(--color-primary);
-  color: var(--color-card);
+  color: var(--color-on-dark);
   font-weight: 600;
 }
 .act-disabled {

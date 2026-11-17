@@ -13,10 +13,15 @@ interface Segment {
 Component({
   properties: {
     segments: { type: Array, value: [] as Segment[] },
-    total: { type: String, value: '' }
-  },
-  data: {
-    activeIndex: -1
+    total: { type: String, value: '' },
+    /**
+     * 受控选中项：-1 表示未选中。
+     *
+     * 页面（统计页的分类图例）可以通过改它来驱动扇区突出；
+     * 用户点扇区时组件用 `change` 事件把新索引回传，页面据此高亮对应图例行。
+     * 双向联动靠这一对「受控属性 + 事件」完成，不依赖页面直接操作组件内部状态。
+     */
+    activeIndex: { type: Number, value: -1 }
   },
   observers: {
     'segments, total'() {
@@ -25,8 +30,16 @@ Component({
       // 渲染层报 "Expected updated data but get first rendering data"。
       // 因此初始绘制统一交给 ready()，这里只处理「就绪后属性变化」。
       if (!(this as any)._ready) return;
-      // 选中态已是初始值时不必 setData（避免无意义的重渲染）
-      if (this.data.activeIndex !== -1) this.setData({ activeIndex: -1 });
+      // 数据换了，旧的选中索引可能越界：清空后由 activeIndex observer 负责重绘；
+      // 本来就是 -1 时 setData 不会触发 observer，这里直接画。
+      if (this.data.activeIndex !== -1) {
+        this.setData({ activeIndex: -1 });
+      } else {
+        this.draw();
+      }
+    },
+    activeIndex() {
+      if (!(this as any)._ready) return;
       this.draw();
     }
   },
@@ -59,8 +72,10 @@ Component({
         lay.offR
       );
       const next = this.data.activeIndex === hit ? -1 : hit;
+      // 重绘交给 activeIndex observer，避免同一次交互画两遍
       this.setData({ activeIndex: next });
-      this.draw();
+      // 通知页面同步图例高亮
+      this.triggerEvent('change', { index: next });
     },
     draw() {
       this.createSelectorQuery()
