@@ -3,6 +3,7 @@ import { StorageAdapter } from '../repositories/storage.adapter';
 import { genId } from '../utils/id';
 import { rebuildConsumptionsForCar } from './refuel.service';
 import { syncMileages } from './car.service';
+import { setPinnedCarId } from './user.service';
 
 export const RETENTION_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -113,12 +114,23 @@ export function restoreBatch(storage: StorageAdapter, batch: string): boolean {
 export function purgeExpired(storage: StorageAdapter, days = RETENTION_DAYS): number {
   const cutoff = Date.now() - days * DAY_MS;
   let n = 0;
+  const removedCarIds = new Set<string>();
   for (const table of SCAN_TABLES) {
     for (const e of storage.list<any>(table)) {
       if (e.deleted && (e.deletedAt || e.updatedAt || 0) <= cutoff) {
+        if (table === 'cars') removedCarIds.add(e.sourceId);
         storage.hardDelete(table, e.sourceId);
         n++;
       }
+    }
+  }
+
+  // 车辆被物理清理后，user.pinnedCarId 会永久悬空 ——
+  // 界面靠 pickMainCar 回落 cars[0] 掩盖，但语义上是错的（下一个置顶操作前一直指向不存在的车）。
+  if (removedCarIds.size) {
+    const user = storage.getUser();
+    if (user && user.pinnedCarId && removedCarIds.has(user.pinnedCarId)) {
+      setPinnedCarId(storage, '');
     }
   }
   return n;

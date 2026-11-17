@@ -1,6 +1,6 @@
 // 统计聚合（对齐设计报告 5.10 / 7.6）
 import { Car, Category, Cost, FuelConsumption, RefuelLog } from '../types/models';
-import { round2, round3 } from '../utils/number';
+import { maxOf, minOf, round2, round3 } from '../utils/number';
 import { monthLabel, monthLabelWithYear, startOfDay } from '../utils/date';
 import { clampFuelConsumption, MAX_EV_CONSUMPTION } from './fuel.service';
 
@@ -131,9 +131,11 @@ export function buildStats(
     .sort((a, b) => a.endDate - b.endDate);
 
   // ---------- 里程 ----------
-  const latest = fuelList.length ? Math.max(...fuelList.map(r => r.makeMileages)) : car.mileages;
+  // 用 maxOf/minOf 而不是 Math.max(...)：记录上万条时展开成实参会栈溢出，
+  // 且一条 NaN 就会让最大值变成 NaN（里程显示 --）
+  const latest = maxOf(fuelList.map(r => r.makeMileages), car.mileages);
   const mileages = fuelList.map(r => r.makeMileages);
-  const increased = mileages.length > 1 ? Math.max(...mileages) - Math.min(...mileages) : 0;
+  const increased = mileages.length > 1 ? maxOf(mileages) - minOf(mileages) : 0;
   // R-07：加油与充电记录 / 区间分开统计，避免把 L 与 kWh 混加
   const isEv = (e: { energyType?: string }) => e.energyType === 'ev';
   const fuelOnlyList = fuelList.filter(r => !isEv(r));

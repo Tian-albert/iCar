@@ -9,9 +9,6 @@ import { StorageAdapter } from '../repositories/storage.adapter';
 import { Car, Category, Maintain } from '../types/models';
 import { listRegisteredPaths } from '../services/custom-icon.service';
 
-/** 本模块管理的文件名前缀 */
-export const ICON_FILE_PREFIX = 'icon-';
-
 const MANAGED_RE = /^icon-\d+\.(png|jpg|jpeg)$/i;
 
 /** 取路径中的文件名（同时兼容 / 与 \） */

@@ -185,13 +185,17 @@
 }
 
 /* 离屏画布：仅用于导出分享图。
-   移出可视区但保留渲染；尺寸用 rpx 保证不撑破页面，
-   实际绘制尺寸由 canvas.width/height 按 dpr 决定，与 CSS 尺寸无关。 */
+   far off-screen 但保留渲染；尺寸用 rpx 保证不撑破页面，
+   实际绘制尺寸由 canvas.width/height 按 dpr 决定，与 CSS 尺寸无关。
+
+   额外加 opacity: 0：position: fixed 一旦遇到带 transform/filter 的祖先，
+   会改以该祖先为包含块、落到可视区内；只靠 left 负值不够稳。 */
 .share-canvas {
   position: fixed;
-  left: -200vw;
+  left: -9999px;
   top: 0;
   width: 750rpx;
   height: 1200rpx;
+  opacity: 0;
   pointer-events: none;
 }

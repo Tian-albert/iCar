@@ -248,8 +248,9 @@ Page({
         totalDrivenText: formatCompact(snap.metric.totalDrivenMileage),
         pendingCount: snap.pendingCount,
         stale: snap.stale ? { carName: snap.stale.carName, days: snap.stale.days } : null,
-        maintain: snap.maintain.map((m, i) => ({
-          key: `${m.carSourceId}-${m.name}-${i}`,
+        maintain: snap.maintain.map(m => ({
+          // 不用下标：列表重新排序时整列 key 会全变，列表复用失效
+          key: `${m.carSourceId}#${m.name}`,
           carSourceId: m.carSourceId,
           carName: m.carName,
           name: m.name,
@@ -265,8 +266,9 @@ Page({
           // 与 segments 一一对应，点图例等同于点扇区
           segIndex: i
         })),
-        recent: snap.recent.map((r, i) => ({
-          key: `${r.carSourceId}-${r.date}-${i}`,
+        recent: snap.recent.map(r => ({
+          // 用流水自身的 sourceId：插入新记录时只有新增那条是新 key
+          key: r.sourceId,
           carSourceId: r.carSourceId,
           carName: r.carName,
           dateText: relativeDate(r.date, now),

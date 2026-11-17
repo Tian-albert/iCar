@@ -121,12 +121,14 @@
   opacity: 0.6;
 }
 
-/* 离屏画布：移出可视区但保留渲染，尺寸由 canvas.width/height 决定 */
+/* 离屏画布：移出可视区但保留渲染，尺寸由 canvas.width/height 决定。
+   opacity: 0 兜底：fixed 遇到带 transform/filter 的祖先会改包含块、跑回可视区。 */
 .crop-canvas {
   position: fixed;
-  left: -200vw;
+  left: -9999px;
   top: 0;
   width: 512rpx;
   height: 512rpx;
+  opacity: 0;
   pointer-events: none;
 }

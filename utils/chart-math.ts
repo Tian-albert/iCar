@@ -148,6 +148,13 @@ export function layoutDonutLabels(opts: DonutLabelOptions): DonutLabelLayout[] {
     }
   }
 
+  // 最后一轮兜底：扇区数多到一屏放不下时，上面三轮仍可能把 y 推到画布外，
+  // 被裁掉的标签等于信息丢失。统一夹回 [minY, maxY] ——
+  // 宁可挤在一起，也不要画到看不见的地方。
+  for (const it of items) {
+    it.y = clamp(it.y, minY, maxY);
+  }
+
   const out: DonutLabelLayout[] = new Array(segments.length);
   for (const it of items) {
     const dir = it.side === 'right' ? 1 : -1;

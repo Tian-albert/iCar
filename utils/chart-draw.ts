@@ -42,6 +42,11 @@ export interface BubbleOptions {
   w: number; // 画布宽
   h: number; // 画布高
   font?: string;
+  /**
+   * 字号缩放，与 chart-render 的 fontScale 同源。
+   * 分享卡片按 2 倍逻辑尺寸绘制，不缩放的话气泡文字会小到读不出。
+   */
+  scale?: number;
 }
 
 export function roundRect(
@@ -64,18 +69,24 @@ export function roundRect(
 /** 在 (x, y) 附近画一个白底气泡，自动钳制在画布内不越界 */
 export function drawBubble(ctx: any, opts: BubbleOptions): void {
   const { text, x, y, w, h } = opts;
-  ctx.font = opts.font || 'bold 11px sans-serif';
+  const scale = opts.scale && opts.scale > 0 ? opts.scale : 1;
+  const font = opts.font || `bold ${Math.round(11 * scale)}px sans-serif`;
+
+  ctx.font = font;
   const tw = ctx.measureText(text).width;
-  const bw = tw + 24;
-  const bh = 28;
-  const bx = Math.max(3, Math.min(w - bw - 3, x - bw / 2));
-  const by = Math.max(3, Math.min(h - bh - 3, y - bh / 2));
+  const padX = 12 * scale;
+  const bh = 28 * scale;
+  const bw = Math.min(w - 6, tw + padX * 2);
+  // 气泡比画布还宽时居中显示，避免 Math.max(3, …) 挤出右侧
+  const bx =
+    bw >= w - 6 ? 3 : Math.max(3, Math.min(w - bw - 3, x - bw / 2));
+  const by = Math.max(3, Math.min(Math.max(3, h - bh - 3), y - bh / 2));
 
   ctx.fillStyle = CHART_THEME.shadow;
-  roundRect(ctx, bx + 1, by + 2, bw, bh, 8);
+  roundRect(ctx, bx + scale, by + 2 * scale, bw, bh, 8 * scale);
   ctx.fill();
 
-  roundRect(ctx, bx, by, bw, bh, 8);
+  roundRect(ctx, bx, by, bw, bh, 8 * scale);
   ctx.fillStyle = CHART_THEME.card;
   ctx.fill();
   ctx.strokeStyle = CHART_THEME.border;
@@ -85,6 +96,6 @@ export function drawBubble(ctx: any, opts: BubbleOptions): void {
   ctx.fillStyle = CHART_THEME.text1;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = opts.font || 'bold 11px sans-serif';
-  ctx.fillText(text, bx + bw / 2, by + bh / 2 + 1);
+  ctx.font = font;
+  ctx.fillText(text, bx + bw / 2, by + bh / 2 + scale);
 }

@@ -11,7 +11,6 @@ import { MAX_EV_CONSUMPTION } from '../domain/fuel.service';
 import {
   ShareCardLayout,
   ShareCardModel,
-  CARD_WIDTH,
   CHART_FONT_SCALE,
   Rect
 } from './share-card';
@@ -374,7 +373,6 @@ export function drawEmptyCard(opts: DrawCardOptions): void {
 export const EMPTY_CARD_HEIGHT = 560;
 
 /** 导出画布的固定宽度 */
-export const SHARE_CARD_WIDTH = CARD_WIDTH;
 
 /**
  * 微信 canvas 单边尺寸上限（经验值 4096px）。

@@ -80,6 +80,8 @@ export interface OverviewCarCost {
 }
 
 export interface OverviewRecentItem {
+  /** 列表 key：用 Cost 的 sourceId，避免插入新记录时整列 key 全变 */
+  sourceId: string;
   carSourceId: string;
   carName: string;
   date: number;
@@ -273,6 +275,7 @@ export function buildOverview(storage: StorageAdapter, now: number): OverviewSna
       if (c.fuelRecordSourceId) section = 'records';
       else if (c.maintainHandleSourceId) section = 'maintain';
       allRecent.push({
+        sourceId: c.sourceId,
         carSourceId: car.sourceId,
         carName: car.name,
         date: c.costDate,

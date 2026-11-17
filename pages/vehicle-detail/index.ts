@@ -76,7 +76,6 @@ Page({
     recordsTotal: 0,
     recentCosts: [] as CostView[],
     maintainProgress: [] as MaintainProgressView[],
-    maintainTotal: 0,
     fabOpen: false,
     /** 概览页跳转时指定要滚动到的区块，消费后立即清空 */
     targetSection: ''
@@ -194,8 +193,7 @@ Page({
       records: allRecords.slice(0, RECENT_RECORD_LIMIT),
       recordsTotal: allRecords.length,
       recentCosts,
-      maintainProgress,
-      maintainTotal: allProgress.length
+      maintainProgress
     }, () => {
       // 必须放在 setData 回调里：setData 是异步渲染，直接调用时目标节点
       // 可能还没创建，pageScrollTo 会静默失败，用户停在首屏。
@@ -229,9 +227,6 @@ Page({
       confirmText: '知道了',
       confirmColor: '#3B6FF6'
     });
-  },
-  onOpenStatistics() {
-    wx.navigateTo({ url: `/pages/statistics/index?id=${this.data.carId}` });
   },
   onOpenStatisticsYear() {
     wx.navigateTo({ url: `/pages/statistics/index?id=${this.data.carId}&range=year` });

@@ -11,14 +11,5 @@ export const COLOR_PRIMARY = '#3B6FF6';
 /** --color-dark-card（沉浸式深色页导航栏） */
 export const COLOR_DARK_CARD = '#1E2536';
 
-/** --color-bg（页面背景） */
-export const COLOR_BG = '#F5F6F8';
-
-/** --color-card（卡片 / 白色） */
-export const COLOR_CARD = '#FFFFFF';
-
-/** --color-text-3（tabBar 未选中） */
-export const COLOR_TEXT_3 = '#6B7486';
-
 /** 表单组件（switch / slider）的统一强调色 */
 export const COMPONENT_ACTIVE_COLOR = COLOR_PRIMARY;

@@ -5,6 +5,7 @@ import { listCosts, listCategories } from '../../services/cost.service';
 import { listRefuels } from '../../services/refuel.service';
 import { rebuildConsumptionsGrouped } from '../../domain/fuel.service';
 import { buildStats, StatsRange } from '../../domain/stats.service';
+import { minOf } from '../../utils/number';
 import {
   buildShareCardModel,
   computeShareCardLayout,
@@ -53,7 +54,6 @@ Page({
     // 电耗（R-07）
     isEvCar: false,
     isHybridCar: false,
-    hasCharge: false,
     chargeTotalCost: '--',
     chargeAvgConsumption: '--',
     chargeCostPerKm: '--',
@@ -130,12 +130,13 @@ Page({
     const segs = rebuildConsumptionsGrouped([...refuels].sort((a, b) => a.fuelDate - b.fuelDate));
 
     const nowYear = new Date().getFullYear();
-    const allYears = [
+    // 用 minOf 而不是 Math.min(...allYears)：记录上万条时把年份展开成实参会栈溢出；
+    // 同时也省掉了一次纯为取最小值而构造的中间数组
+    const minYear = Math.min(
       nowYear,
-      ...costs.map(c => new Date(c.costDate).getFullYear()),
-      ...refuels.map(r => new Date(r.fuelDate).getFullYear())
-    ];
-    const minYear = Math.min(...allYears);
+      minOf(costs.map(c => new Date(c.costDate).getFullYear()), nowYear),
+      minOf(refuels.map(r => new Date(r.fuelDate).getFullYear()), nowYear)
+    );
     const years: number[] = [];
     for (let y = nowYear; y >= minYear; y--) years.push(y);
 
@@ -151,7 +152,6 @@ Page({
       carName: car.name,
       isEvCar,
       isHybridCar,
-      hasCharge: snap.electricity.mileage > 0 || snap.electricity.totalCost > 0,
       chargeTotalCost: snap.electricity.totalCost.toFixed(2),
       chargeAvgConsumption: snap.electricity.avgConsumption.toFixed(2),
       chargeCostPerKm: snap.electricity.costPerKm.toFixed(3),

@@ -19,15 +19,22 @@ const MAX_TITLE_LENGTH = 30;
 
 const SUFFIX = '｜车记本';
 
-/** 按字数收口标题：保留亮点主体，必要时截断并补省略号 */
+/**
+ * 按字数收口标题：保留亮点主体，必要时截断并补省略号。
+ *
+ * 一律按**码点**计数与截断：车名里的 emoji（🚗 等）是代理对，
+ * 用 `length` / `slice` 按 UTF-16 处理会把它算成 2 个字，
+ * 还可能切出半个字符，标题尾部显示成乱码。
+ */
 function composeTitle(highlight: string): string {
   if (!highlight) return DEFAULT_SHARE_TITLE;
-  const full = `${highlight}${SUFFIX}`;
-  if (full.length <= MAX_TITLE_LENGTH) return full;
+  const chars = Array.from(highlight);
+  const suffix = Array.from(SUFFIX);
+  if (chars.length + suffix.length <= MAX_TITLE_LENGTH) return `${highlight}${SUFFIX}`;
 
-  const budget = MAX_TITLE_LENGTH - SUFFIX.length - 1; // 1 位留给省略号
-  if (budget <= 0) return SUFFIX.slice(1);
-  return `${highlight.slice(0, budget)}…${SUFFIX}`;
+  const budget = MAX_TITLE_LENGTH - suffix.length - 1; // 1 位留给省略号
+  if (budget <= 0) return suffix.slice(1).join('');
+  return `${chars.slice(0, budget).join('')}…${SUFFIX}`;
 }
 
 export interface ShareContext {

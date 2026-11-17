@@ -41,16 +41,22 @@ Page({
     dragId: ''
   },
   onLoad() {
-    // 行高换算（rpx → px），用于拖动时计算跨越了几行
+    this.refreshRowHeight();
+  },
+  onShow() {
+    // 折叠屏展开 / 分屏后窗口宽度会变，行高换算必须重新算，
+    // 否则拖动时「跨了几行」会算错
+    this.refreshRowHeight();
+    this.load();
+  },
+  /** 行高换算（rpx → px），用于拖动时计算跨越了几行 */
+  refreshRowHeight() {
     try {
-      const info = wx.getSystemInfoSync();
-      (this as any).rowHeightPx = (ROW_HEIGHT_RPX / 750) * info.windowWidth;
+      const info: any = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+      (this as any).rowHeightPx = (ROW_HEIGHT_RPX / 750) * (info.windowWidth || 375);
     } catch (e) {
       (this as any).rowHeightPx = 54;
     }
-  },
-  onShow() {
-    this.load();
   },
   load() {
     const storage = getStorage();

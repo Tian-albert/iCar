@@ -3,6 +3,10 @@
   "packOptions": {
     "ignore": [
       {
+        "value": "dist",
+        "type": "folder"
+      },
+      {
         "value": "docs",
         "type": "folder"
       },
@@ -92,7 +96,7 @@
     "condition": false
   },
   "compileType": "miniprogram",
-  "libVersion": "2.30.0",
+  "libVersion": "3.17.5",
   "appid": "wx24f09735bdbec1f7",
   "projectname": "iCar",
   "condition": {},

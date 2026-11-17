@@ -169,8 +169,15 @@ export function updateRefuel(storage: StorageAdapter, sourceId: string, form: Re
     }
   }
 
-  rebuildConsumptionsForCar(storage, form.carSourceId);
-  syncMileages(storage, form.carSourceId);
+  // 用记录自身的车算一遍；若表单把车改了，两辆都要重算，
+  // 否则原车会留着一条已不属于它的区间、新车又少了这段
+  const affected = new Set<string>();
+  if (log.carSourceId) affected.add(log.carSourceId);
+  if (form.carSourceId) affected.add(form.carSourceId);
+  affected.forEach(carId => {
+    rebuildConsumptionsForCar(storage, carId);
+    syncMileages(storage, carId);
+  });
   return log;
 }
 

@@ -44,8 +44,6 @@ export interface MoneyKmPair {
   kmText: string;
   /** 两列统一使用的字号 */
   font: number;
-  /** 是否因宽度不足而降过字号（便于测试与排查） */
-  shrunk: boolean;
 }
 
 /**
@@ -116,13 +114,28 @@ function compactVariants(value: number, unit: string, prefix: string): string[] 
   return out;
 }
 
+/**
+ * 小额金额的写法：千分位 + 最多 2 位小数，去尾 0。
+ *
+ * 不能直接 Math.round：￥128.45 会被显示成 ￥128，与「小额保精度」的规则矛盾。
+ * 记账场景里金额本来就可能带小数（停车 12.50、充电 28.45）。
+ */
+function amountText(n: number): string {
+  const v = roundTo(n, 2);
+  const whole = Math.trunc(v);
+  const cents = v - whole;
+  const base = thousands(whole);
+  if (cents < 0.005) return base;
+  // 0.45 → '.45'；0.5 → '.5'
+  return base + trimZero(cents.toFixed(2)).replace(/^0/, '');
+}
+
 /** 金额候选串（含 ￥） */
 export function moneyVariants(n: number): string[] {
   if (!isFinite(n) || n < 0) return ['￥--'];
-  const v = Math.round(n);
-  if (v < COMPACT_THRESHOLD) return ['￥' + thousands(v)];
-  if (v < YI) return compactVariants(v / WAN, '万', '￥');
-  return compactVariants(v / YI, '亿', '￥');
+  if (n < COMPACT_THRESHOLD) return ['￥' + amountText(n)];
+  if (n < YI) return compactVariants(n / WAN, '万', '￥');
+  return compactVariants(n / YI, '亿', '￥');
 }
 
 /** 里程候选串（含 km，单位永不丢弃） */
@@ -179,8 +192,7 @@ export function formatMoneyKmPair(
   return {
     moneyText: money.text,
     kmText: km.text,
-    font,
-    shrunk: font < FONT_STEPS[0]
+    font
   };
 }
 

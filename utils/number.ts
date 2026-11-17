@@ -20,6 +20,36 @@ export function isValidAmount(n: number): boolean {
   return isFinite(n) && n >= 0;
 }
 
+/**
+ * 求最大值，忽略非有限值；空数组或全是脏值返回 fallback。
+ *
+ * 为什么不用 `Math.max(...list)`：
+ * - 记录上万条时，展开成实参会让调用栈溢出（RangeError），图表直接白屏
+ * - 只要有一个 `NaN`，结果就是 `NaN`，Y 轴与所有点坐标会一起变成 NaN
+ */
+export function maxOf(list: number[], fallback = 0): number {
+  let out = fallback;
+  for (const v of list) {
+    if (!isFinite(v)) continue;
+    if (v > out) out = v;
+  }
+  return out;
+}
+
+/** 求最小值，忽略非有限值；空数组或全是脏值返回 fallback */
+export function minOf(list: number[], fallback = 0): number {
+  let started = false;
+  let out = fallback;
+  for (const v of list) {
+    if (!isFinite(v)) continue;
+    if (!started || v < out) {
+      out = v;
+      started = true;
+    }
+  }
+  return out;
+}
+
 /** 金额输入非法时的统一提示（两处加油表单共用） */
 export const AMOUNT_INPUT_ERROR = '实付金额无效，留空按应付金额';
 

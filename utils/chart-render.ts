@@ -7,9 +7,9 @@
 // 因此既能在组件里用 canvas 节点，也能在页面离屏画布上用，还可在 node 里用假 ctx 单测。
 import { CHART_THEME, drawBubble } from './chart-draw';
 import { layoutDonutLabels } from './chart-math';
+import { maxOf } from './number';
 import { MAX_FUEL_CONSUMPTION } from '../domain/fuel.service';
 
-export const LABEL_FONT = '10px sans-serif';
 export const LABEL_LINE_HEIGHT = 14;
 
 /**
@@ -90,7 +90,9 @@ export function computeLineLayout(
   const padT = 24 * scale;
   const padB = 24 * scale;
 
-  const maxValue = points.length ? Math.max(...points.map(p => p.value)) : 0;
+  // 用 maxOf 而不是 Math.max(...)：记录上万条时展开会栈溢出，
+  // 且只要有一个 NaN 就会让 yMax 变 NaN，整条折线静默消失
+  const maxValue = maxOf(points.map(p => p.value));
   const baseYMax = opts.yMax || 15;
   const ceiling = opts.ceiling && opts.ceiling > 0 ? opts.ceiling : MAX_FUEL_CONSUMPTION;
   const yMax = Math.min(ceiling, Math.max(baseYMax, Math.ceil(maxValue / 5) * 5));
@@ -126,7 +128,7 @@ export function computeBarLayout(
   const padB = 24 * scale;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
-  const maxVal = bars.length ? Math.max(...bars.map(b => b.value)) : 0;
+  const maxVal = maxOf(bars.map(b => b.value));
   const slot = bars.length ? plotW / bars.length : 0;
   const barW = slot * 0.5;
   return { padL, padR, padT, padB, plotW, plotH, slot, barW, maxVal };
@@ -283,7 +285,8 @@ export function renderDonut(opts: DonutRenderOptions): void {
       x: cx + ox + Math.cos(mid) * r,
       y: cy + oy + Math.sin(mid) * r,
       w,
-      h
+      h,
+      scale
     });
   }
 }
@@ -377,7 +380,8 @@ export function renderLine(opts: LineRenderOptions): void {
     if (ty > h - padB - 2) ty = py - 9 * scale;
 
     ctx.fillStyle = CHART_THEME.primary;
-    ctx.fillText(p.value.toFixed(2), px, ty);
+    // 脏数据（NaN/undefined）不该让整个 draw() 抛错中断，显示占位符即可
+    ctx.fillText(Number.isFinite(p.value) ? p.value.toFixed(2) : '--', px, ty);
   });
 
   // X 轴标签（最多 6 个）
@@ -465,7 +469,7 @@ export function renderBars(opts: BarRenderOptions): void {
     ctx.fillStyle = isActive ? CHART_THEME.primaryDark : CHART_THEME.text3;
     ctx.font = fontOf(10, scale, isActive ? 'bold' : 'normal');
     ctx.textAlign = 'center';
-    ctx.fillText(String(Math.round(b.value)), cx, y - 4 * scale);
+    ctx.fillText(Number.isFinite(b.value) ? String(Math.round(b.value)) : '--', cx, y - 4 * scale);
 
     ctx.fillText(b.label, cx, h - 6 * scale);
   });
@@ -475,11 +479,12 @@ export function renderBars(opts: BarRenderOptions): void {
     const cx = padL + slot * active + slot / 2;
     const y = padT + plotH - (b.value / maxVal) * plotH;
     drawBubble(ctx, {
-      text: `${b.label} · ${Math.round(b.value)}`,
+      text: `${b.label} · ${Number.isFinite(b.value) ? Math.round(b.value) : '--'}`,
       x: cx,
-      y: y - 20,
+      y: y - 20 * scale,
       w,
-      h
+      h,
+      scale
     });
   }
 }
