@@ -46,8 +46,15 @@
       <view class="row-label">反馈与建议</view>
       <view class="row-arrow">›</view>
     </view>
+    <view hover-class="hover-dim" class="row" bindtap="onOpenChangelog">
+      <view class="row-label">更新日志</view>
+      <!-- NEW 小标贴箭头，与「关于」的版本号同一槽位；看过后消失，行高由 min-height 保持 -->
+      <view wx:if="{{changelogNew}}" class="row-badge">NEW</view>
+      <view class="row-arrow">›</view>
+    </view>
     <view hover-class="hover-dim" class="row" bindtap="onOpenAbout">
       <view class="row-label">关于</view>
+      <view class="row-value">v1.2.1</view>
       <view class="row-arrow">›</view>
     </view>
   </view>

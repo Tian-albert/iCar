@@ -1,0 +1,27 @@
+<page-meta page-style="{{pageStyle}}" />
+<view class="page">
+  <view
+    wx:for="{{log}}"
+    wx:key="ver"
+    class="cl-item {{index === 0 ? 'latest' : ''}}">
+    <view class="cl-dot"></view>
+    <view class="cl-head">
+      <view class="cl-ver">{{item.ver}}</view>
+      <view class="cl-date">{{item.date}}</view>
+      <!-- 最新版本在最前，首个条目即为当前最新 -->
+      <view wx:if="{{index === 0}}" class="cl-tag">最新</view>
+    </view>
+    <view class="cl-body">
+      <block wx:for="{{item.sections}}" wx:for-item="sec" wx:key="title">
+        <view class="cl-sec">{{sec.title}}</view>
+        <view
+          wx:for="{{sec.items}}"
+          wx:for-item="line"
+          wx:key="*this"
+          class="cl-li">{{line}}</view>
+      </block>
+    </view>
+  </view>
+
+  <view class="cl-foot">持续更新中，感谢每一条反馈</view>
+</view>

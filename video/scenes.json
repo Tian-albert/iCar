@@ -1,0 +1,51 @@
+[
+  {
+    "title": "无会员 · 无广告 · 纯本地",
+    "voiceover": "记账软件要么会员要么广告，我干脆自己写了一个。",
+    "source": "assets/scene1_hook.png",
+    "kind": "screen",
+    "pad": 0.3
+  },
+  {
+    "title": "打开就是全车况",
+    "voiceover": "这是车记本，打开就是全车况——保养还剩多少公里、今年花了多少钱，一眼看清。",
+    "source": "assets/scene2_overview.png",
+    "kind": "screen",
+    "pad": 0.3
+  },
+  {
+    "title": "记一笔，十秒",
+    "voiceover": "记一笔只要十秒。加满两次油，油耗自动算出来，不用你填。",
+    "source": "assets/scene3_record.png",
+    "kind": "screen",
+    "pad": 0.3
+  },
+  {
+    "title": "统计页",
+    "voiceover": "统计页更狠：每公里花多少钱、钱都花在哪，饼图一点就联动。",
+    "source": "assets/scene4_stats.png",
+    "kind": "screen",
+    "pad": 0.3
+  },
+  {
+    "title": "三套皮肤随便换",
+    "voiceover": "不喜欢白色？三套皮肤随便换，深色模式晚上看不刺眼。",
+    "source": "assets/scene5_theme.png",
+    "kind": "screen",
+    "pad": 0.3
+  },
+  {
+    "title": "数据只在你手机里",
+    "voiceover": "最关键的是：数据全在你手机里，不联网、不上传，导出备份随你带走。",
+    "source": "assets/scene6_privacy.png",
+    "kind": "screen",
+    "pad": 0.3
+  },
+  {
+    "title": "完全免费",
+    "voiceover": "完全免费，微信搜「车记本」就能用。觉得不错，转给你开车的朋友。",
+    "source": "assets/qr_code.png",
+    "kind": "tail",
+    "pad": 0.4
+  }
+]

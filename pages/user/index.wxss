@@ -37,6 +37,20 @@
   font-size: 26rpx;
   color: var(--color-text-3);
 }
+/* NEW 小标：贴箭头，与「关于」的版本号同槽位；主色胶囊表达「值得点一下」 */
+.row-badge {
+  margin-left: auto;
+  margin-right: 8rpx;
+  padding: 3rpx 14rpx;
+  border-radius: 999rpx;
+  /* 20rpx 并入 22rpx（DESIGN.md §10 角标档） */
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  line-height: 1.5;
+  flex-shrink: 0;
+}
 
 /*
  * 「把车记本推荐给朋友」

@@ -8,12 +8,15 @@ import { FEEDBACK_EMAIL } from '../../utils/app-config';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { clearAllData } from '../../services/clear-data.service';
 import { SKIN_LABEL, SKIN_ORDER, applyChartTheme, applyPageSkin, getSkin, setSkin } from '../../utils/skin';
+import { hasUnseenChangelog } from '../../services/changelog.service';
 
 Page({
   data: {
     activeColor: COMPONENT_ACTIVE_COLOR,
     remindEnabled: true,
     skinName: SKIN_LABEL.a,
+    /** 是否有用户没看过的更新日志版本（控制入口 NEW 小标） */
+    changelogNew: false,
     feedbackEmail: FEEDBACK_EMAIL
   },
   onShow() {
@@ -37,7 +40,8 @@ Page({
     const user = getUser(storage);
     this.setData({
       remindEnabled: user?.remindEnabled ?? true,
-      skinName: SKIN_LABEL[getSkin()]
+      skinName: SKIN_LABEL[getSkin()],
+      changelogNew: hasUnseenChangelog(storage)
     });
   },
   onRemindChange(e: WechatMiniprogram.SwitchChange) {
@@ -78,6 +82,9 @@ Page({
   },
   onOpenRecycleBin() {
     wx.navigateTo({ url: '/pages/recycle-bin/index' });
+  },
+  onOpenChangelog() {
+    wx.navigateTo({ url: '/pages/changelog/index' });
   },
   onOpenFaq() {
     wx.navigateTo({ url: '/pages/faq/index' });

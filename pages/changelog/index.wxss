@@ -1,0 +1,121 @@
+/* 更新日志：时间轴结构
+   尺寸换算自 docs/prototype/changelog.html（px × 2 = rpx） */
+.page {
+  min-height: 100vh;
+  padding: 24rpx;
+  /* 二级页约定：无底栏，只留呼吸留白 + 安全区 */
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.cl-item {
+  position: relative;
+  /* 52/56 收敛到 48（间距阶梯）：52rpx 是历史审计里的问题值 */
+  padding: 0 0 48rpx 48rpx;
+}
+/* 时间轴：贯穿的细线，最后一段不画，视觉收尾干净 */
+.cl-item::before {
+  content: '';
+  position: absolute;
+  left: 14rpx;
+  top: 44rpx;
+  bottom: -4rpx;
+  width: 3rpx;
+  background: var(--color-divider);
+}
+.cl-item:last-child::before {
+  display: none;
+}
+.cl-item:last-child {
+  padding-bottom: 8rpx;
+}
+
+/* 状态点：最新 = 实心主色，历史 = 空心 */
+.cl-dot {
+  position: absolute;
+  left: 4rpx;
+  top: 10rpx;
+  width: 22rpx;
+  height: 22rpx;
+  border-radius: 50%;
+  background: var(--color-card);
+  border: 4rpx solid var(--color-divider);
+  box-sizing: border-box;
+}
+.cl-item.latest .cl-dot {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
+.cl-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+}
+.cl-ver {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text-1);
+}
+.cl-date {
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
+.cl-tag {
+  margin-left: auto;
+  padding: 2rpx 16rpx;
+  border-radius: 999rpx;
+  /* 20rpx 并入 22rpx（DESIGN.md §10 角标档） */
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  line-height: 1.6;
+}
+
+.cl-body {
+  margin-top: 16rpx;
+  background: var(--color-card);
+  border-radius: 24rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
+}
+
+.cl-sec {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--color-text-3);
+  letter-spacing: 2rpx;
+  margin-bottom: 12rpx;
+}
+.cl-li {
+  position: relative;
+  padding-left: 28rpx;
+  /* 26rpx 不在字号阶梯（22/24/28/32/36/40），正文取 28 */
+  font-size: 28rpx;
+  line-height: 1.55;
+  color: var(--color-text-2);
+}
+.cl-li + .cl-li {
+  margin-top: 16rpx;
+}
+/* 条目前的小圆点，比列表符号更轻。
+   用 text-3 而不是 text-4：后者受「仅限深色卡」的白名单约束（tests/contrast.test.ts），
+   装饰元素也不为它开白名单 */
+.cl-li::before {
+  content: '';
+  position: absolute;
+  left: 4rpx;
+  top: 16rpx;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: var(--color-text-3);
+}
+
+.cl-foot {
+  margin-top: 16rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
