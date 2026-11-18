@@ -146,6 +146,12 @@ export function buildPageStyle(skin: SkinKey): string {
  *
  * 不同步的话，深色皮肤会出现「内容全黑、顶部导航栏还是白的」的割裂感。
  * frontColor 只接受 #ffffff / #000000，所以按键值而不是精确色值判断。
+ *
+ * **只能在 onShow 调用，不能放进 onLoad**：
+ * onLoad 发生在路由完成之前，此时调 setNavigationBarColor / setBackgroundColor
+ * 会与路由动画竞争，基础库 3.17.5 实测直接抛
+ * 「Page route 错误(system error): routeDone with a webviewId not found」
+ * 并连带 screenHeight 的 SDK 内部崩溃。
  */
 function applyNativeChrome(skin: SkinKey): void {
   const api: any = typeof wx !== 'undefined' ? wx : null;
@@ -154,39 +160,50 @@ function applyNativeChrome(skin: SkinKey): void {
   const isDark = skin === 'c';
   const bg = isDark ? '#0E1116' : skin === 'b' ? '#F7F5F0' : '#FFFFFF';
 
-  if (typeof api.setNavigationBarColor === 'function') {
-    api.setNavigationBarColor({
-      frontColor: isDark ? '#ffffff' : '#000000',
-      backgroundColor: bg,
-      fail: () => {
-        // 自定义导航栏的页面会失败，忽略即可
-      }
-    });
-  }
-  if (typeof api.setBackgroundColor === 'function') {
-    // 下拉回弹露出的窗口底色
-    api.setBackgroundColor({
-      backgroundColor: bg,
-      backgroundColorTop: bg,
-      backgroundColorBottom: bg,
-      fail: () => {}
-    });
+  // 兜底 try/catch：这两个 API 的失败面比文档写的大（机型/基础库差异），
+  // 皮肤是装饰性功能，绝不能让它炸掉页面生命周期。
+  try {
+    if (typeof api.setNavigationBarColor === 'function') {
+      api.setNavigationBarColor({
+        frontColor: isDark ? '#ffffff' : '#000000',
+        backgroundColor: bg,
+        fail: () => {
+          // 自定义导航栏的页面会失败，忽略即可
+        }
+      });
+    }
+    if (typeof api.setBackgroundColor === 'function') {
+      // 下拉回弹露出的窗口底色
+      api.setBackgroundColor({
+        backgroundColor: bg,
+        backgroundColorTop: bg,
+        backgroundColorBottom: bg,
+        fail: () => {}
+      });
+    }
+  } catch (e) {
+    // 静默：外壳颜色同步失败只影响观感，不影响功能
   }
 }
 
 /**
  * 把当前皮肤写进页面的 `pageStyle`。
  * 每个页面都有 `<page-meta page-style="{{pageStyle}}" />`，这里只负责喂值。
+ *
+ * 不含原生外壳调用（见 applyNativeChrome 的注释）——
+ * 这样它既能安全地在 onLoad 里调（纯 setData），也能在 onShow 里调。
  */
 export function applyPageSkin(page: any): void {
   if (!page || typeof page.setData !== 'function') return;
-  const skin = getSkin();
-  applyNativeChrome(skin);
-
-  const style = buildPageStyle(skin);
-  // 同值不重复 setData，避免 onShow 每次触发一次无谓渲染
-  if (page.data && page.data.pageStyle === style) return;
-  page.setData({ pageStyle: style });
+  try {
+    const skin = getSkin();
+    const style = buildPageStyle(skin);
+    // 同值不重复 setData，避免 onShow 每次触发一次无谓渲染
+    if (page.data && page.data.pageStyle === style) return;
+    page.setData({ pageStyle: style });
+  } catch (e) {
+    // 皮肤失败时页面仍按 app.wxss 的默认色渲染，不能影响正常使用
+  }
 }
 
 /** 图表主题跟随皮肤（Canvas 不读 CSS 变量，只能显式同步） */
@@ -225,17 +242,24 @@ export function installSkinPatch(): void {
     const userOnShow = options && options.onShow;
 
     /**
-     * onLoad 也注入一次：它早于首次渲染，
-     * 否则深色皮肤下进入新页面会先闪一帧浅色底。
+     * onLoad 只注入 pageStyle（纯 setData，路由完成前调用安全），
+     * 让首帧就拿到皮肤，避免深色皮肤进新页先闪一帧浅色。
+     * 原生外壳（导航栏/窗口底色）必须在 onShow 才能碰，见 applyNativeChrome 注释。
      */
     options.onLoad = function (this: any, ...args: any[]) {
-      applySkinToPage(this);
+      applyPageSkin(this);
       if (typeof userOnLoad === 'function') userOnLoad.apply(this, args);
     };
 
     options.onShow = function (this: any, ...args: any[]) {
-      // 切肤后返回上一页，onShow 负责把新令牌补上
-      applySkinToPage(this);
+      // 切肤后返回上一页，onShow 负责把新令牌与原生外壳补上
+      try {
+        applyChartTheme(getSkin());
+        applyNativeChrome(getSkin());
+      } catch (e) {
+        // 同上：装饰性功能失败不能影响页面
+      }
+      applyPageSkin(this);
       if (typeof userOnShow === 'function') userOnShow.apply(this, args);
     };
 

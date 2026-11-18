@@ -139,10 +139,26 @@ describe('全站页面都挂了 page-meta', () => {
     });
   }
 
-  it('onLoad 也注入皮肤（否则深色皮肤进新页会先闪一帧浅色）', () => {
+  it('onLoad 只注入 pageStyle，原生外壳调用只在 onShow（防路由竞争）', () => {
     const ts: string = fsx.readFileSync('utils/skin.ts', 'utf-8');
     expect(ts).toContain('options.onLoad = function');
     expect(ts).toContain('options.onShow = function');
+    // onLoad 里绝不能出现 setNavigationBarColor / setBackgroundColor：
+    // 基础库 3.17.5 实测在路由完成前调用它们会炸掉路由（routeDone webviewId not found）
+    const onLoadBlock = ts.slice(ts.indexOf('options.onLoad = function'), ts.indexOf('options.onShow = function'));
+    expect(onLoadBlock).not.toContain('applyNativeChrome');
+    expect(onLoadBlock).not.toContain('setNavigationBarColor');
+    // onShow 里要同步外壳
+    const onShowBlock = ts.slice(ts.indexOf('options.onShow = function'));
+    expect(onShowBlock).toContain('applyNativeChrome');
+  });
+
+  it('皮肤相关生命周期函数都有 try/catch 兜底', () => {
+    const ts: string = fsx.readFileSync('utils/skin.ts', 'utf-8');
+    const onShowBlock = ts.slice(ts.indexOf('options.onShow = function'));
+    expect(onShowBlock).toContain('try {');
+    // applyPageSkin / applyNativeChrome 自身也有兜底
+    expect(ts).toContain('catch (e)');
   });
 
   it('拿不到 Page 时不标记已安装，否则真机永远不再重试', () => {
