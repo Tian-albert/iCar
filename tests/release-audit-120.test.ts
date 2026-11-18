@@ -165,15 +165,15 @@ describe('图标集不再包含旧 Android 无法显示的字符', () => {
 
 describe('版本号 1.2.0 四处一致', () => {
   it('package.json / 关于页 / 我的页 / 导出清单', () => {
-    expect(JSON.parse(read('package.json')).version).toBe('1.2.0');
-    expect(read('pages/about/index.ts')).toContain("version: '1.2.0'");
-    expect(read('pages/user/index.wxml')).toContain('v1.2.0');
-    expect(read('services/io.service.ts')).toContain("appVersion: '1.2.0'");
+    expect(JSON.parse(read('package.json')).version).toBe('1.2.1');
+    expect(read('pages/about/index.ts')).toContain("version: '1.2.1'");
+    expect(read('pages/user/index.wxml')).toContain('v1.2.1');
+    expect(read('services/io.service.ts')).toContain("appVersion: '1.2.1'");
   });
 
   it('测试数据同步到 1.2.0', () => {
     for (const f of ['test-data/icar-test-fuel.json', 'test-data/icar-test-ev.json']) {
-      expect(read(f)).toContain('"appVersion": "1.2.0"');
+      expect(read(f)).toContain('"appVersion": "1.2.1"');
     }
   });
 });
