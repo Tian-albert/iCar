@@ -24,6 +24,25 @@
     "pages/recycle-bin/index",
     "pages/vehicle-detail/index"
   ],
+  "lazyCodeLoading": "requiredComponents",
+  "subPackages": [
+    {
+      "root": "skills",
+      "independent": true,
+      "pages": []
+    }
+  ],
+  "agent": {
+    "instruction": "AGENTS.md",
+    "pageMetadata": "agent/page-meta.json",
+    "skills": [
+      {
+        "name": "icar",
+        "description": "车记本的车辆记账与保养助手：查询某辆车的支出、每公里成本、油耗电耗与保养剩余量，并记录日常支出",
+        "path": "skills/icar"
+      }
+    ]
+  },
   "window": {
     "navigationBarBackgroundColor": "#F5F6F8",
     "navigationBarTextStyle": "black",

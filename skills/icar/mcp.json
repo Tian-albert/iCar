@@ -1,0 +1,128 @@
+{
+  "apis": [
+    {
+      "name": "queryStats",
+      "description": "查询用户某一辆车的养车花费与能耗统计。返回总支出、每公里成本、平均油耗或电耗、有效里程。适用于「今年养车花了多少」「每公里多少钱」「油耗怎么样」这类问题。只读，不修改任何数据。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string",
+            "description": "车辆名称，如「我的 CRV」。用户没说哪辆车时不要传，默认取置顶车或第一辆车"
+          },
+          "rangeType": {
+            "type": "string",
+            "enum": ["year", "month", "all"],
+            "description": "统计维度：year 今年（默认）、month 本月、all 全部时间"
+          },
+          "year": {
+            "type": "number",
+            "description": "指定年份，如 2026。不传则取当前年份"
+          },
+          "month": {
+            "type": "number",
+            "description": "指定月份 1-12，仅在 rangeType 为 month 时有效"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": { "type": "string" },
+          "energyType": { "type": "string" },
+          "rangeLabel": { "type": "string" },
+          "totalExpense": { "type": "string" },
+          "perKm": { "type": "string" },
+          "perKmExFuel": { "type": "string" },
+          "avgConsumption": { "type": "string" },
+          "consumptionUnit": { "type": "string" },
+          "mileageIncreased": { "type": "string" },
+          "linkText": { "type": "string" },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
+    },
+    {
+      "name": "queryMaintain",
+      "description": "查询某辆车保养项的剩余里程与剩余天数，返回需要关注的项（默认只返回已超期或临近到期的）。适用于「下次保养什么时候」「有没有该保养的」「机油还剩多少公里」。只读，不修改任何数据。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string",
+            "description": "车辆名称。用户没说哪辆车时不要传，默认取置顶车"
+          },
+          "onlyUrgent": {
+            "type": "boolean",
+            "description": "是否只返回超期/临近的项，默认 true。用户问「所有保养项」时传 false"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": { "type": "string" },
+          "energyType": { "type": "string" },
+          "overdueCount": { "type": "string" },
+          "urgentCount": { "type": "string" },
+          "items": { "type": "string" },
+          "linkText": { "type": "string" },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
+    },
+    {
+      "name": "addCost",
+      "description": "帮用户记一笔支出并写入本地存储，例如「记一笔停车费 15 块」「昨天高速费 80」。金额必填且必须大于 0；缺少金额时不要调用本接口，先向用户追问。写入成功前不要告诉用户已经记好。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "金额，单位元，必须大于 0。用户说的「十五块」要转成 15"
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "支出类别名，如 停车 / 高速 / 保险 / 洗车。不确定时不要编造，省略即可"
+          },
+          "carName": {
+            "type": "string",
+            "description": "车辆名称。用户没说哪辆车时不要传"
+          },
+          "dateText": {
+            "type": "string",
+            "description": "发生日期，格式 YYYY-MM-DD。用户说「昨天」时换算成具体日期；不传默认今天"
+          },
+          "remark": {
+            "type": "string",
+            "description": "备注，如「机场停车」。可省略"
+          }
+        },
+        "required": ["amount"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": { "type": "string" },
+          "categoryName": { "type": "string" },
+          "amount": { "type": "string" },
+          "dateText": { "type": "string" },
+          "linkText": { "type": "string" },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
+    }
+  ]
+}

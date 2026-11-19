@@ -1,0 +1,82 @@
+{
+  "pages": [
+    {
+      "path": "pages/reminder/index",
+      "name": "概览",
+      "description": "养车总览：车辆数、本年总支出、总里程、待保养项、今年花费环形图、最近记录、每车出行成本"
+    },
+    {
+      "path": "pages/index/index",
+      "name": "我的车辆",
+      "description": "车辆列表与主车卡片，可查看每辆车的本月支出、油耗、服役天数，并从这里开始记一笔"
+    },
+    {
+      "path": "pages/entry/index",
+      "name": "记一笔",
+      "description": "记录加油、充电、保养、维修或日常支出，需要选择记录类型",
+      "query": {
+        "type": "object",
+        "properties": {
+          "carId": {
+            "type": "string",
+            "description": "车辆 sourceId，指明给哪辆车记账"
+          },
+          "tab": {
+            "type": "string",
+            "description": "记录类型：fuel 加油/充电、maintain 保养、repair 维修、cost 支出"
+          }
+        },
+        "required": ["carId"]
+      }
+    },
+    {
+      "path": "pages/statistics/index",
+      "name": "统计",
+      "description": "按年/月/全部查看支出、每公里成本、油耗或电耗趋势、行程与费用，并可生成分享图",
+      "query": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "车辆 sourceId"
+          },
+          "range": {
+            "type": "string",
+            "description": "统计维度：year 年（默认）、all 全部"
+          }
+        },
+        "required": ["id"]
+      }
+    },
+    {
+      "path": "pages/maintain-manage/index",
+      "name": "保养管理",
+      "description": "管理保养项：查看每项的剩余里程与天数、周期，添加或删除保养项"
+    },
+    {
+      "path": "pages/vehicle-detail/index",
+      "name": "车辆详情",
+      "description": "单辆车的完整档案：最近油耗、年度统计、近期支出、保养进度、加油记录",
+      "query": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "车辆 sourceId"
+          }
+        },
+        "required": ["id"]
+      }
+    },
+    {
+      "path": "pages/records/index",
+      "name": "记录",
+      "description": "按类型查看全部记录：加油、充电、保养、维修、支出，可筛选与编辑"
+    },
+    {
+      "path": "pages/data-transfer/index",
+      "name": "数据导入导出",
+      "description": "导出本地备份文件到聊天，或从备份文件恢复数据，用于换机迁移与防止数据丢失"
+    }
+  ]
+}

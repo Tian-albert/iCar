@@ -7,7 +7,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "sync:skill": "node scripts/sync-skill-lib.js",
+    "check:skill": "node scripts/sync-skill-lib.js --check"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

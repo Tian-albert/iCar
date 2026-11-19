@@ -1,0 +1,191 @@
+// iCar 数据模型类型定义（对齐设计报告 4.2 / 7.1）
+// 所有实体使用跨端稳定主键 sourceId，通用字段 createdAt/updatedAt/deleted。
+
+export type SourcePlatform = 'mp' | 'app' | 'web';
+export type EnergyType = 'fuel' | 'ev' | 'hybrid';
+export type MileageSource = 'total' | 'ev' | 'hev';
+export type CycleUnit = 'km' | 'day' | 'month' | 'year' | '';
+export type PresetType = 'maintain' | 'fix' | 'ev' | 'refuel' | '';
+export type MemberLevel = 'free' | 'pro';
+
+export interface BaseEntity {
+  sourceId: string;
+  sourcePlatform: SourcePlatform;
+  createdAt: number;
+  updatedAt: number;
+  deleted: boolean;
+  /** 软删时间（R-03）：回收站保留 30 天后物理清理 */
+  deletedAt?: number;
+  /** 删除批次（R-02/R-03）：同批记录一起撤销，车辆删除时名下记录共用一批 */
+  deleteBatch?: string;
+}
+
+export interface Car extends BaseEntity {
+  name: string;
+  type: 'car' | 'motorcycle' | 'other';
+  icon: string;
+  customIconAssetId: string;
+  initDate: number;
+  /** 购车/建档时里程 (km)，保养剩余量"无保养记录"时的里程基线 */
+  initMileages: number;
+  /** 当前总里程 (km) */
+  mileages: number;
+  evMileages: number;
+  hevMileages: number;
+  batteryCapacity: number;
+  energyType: EnergyType;
+  energyTrackingEnabled: boolean;
+  /** 保养提醒阈值：剩余里程 ≤ 该值 (km) 视为"快要保养" */
+  maintainSoonMileage: number;
+  /** 保养提醒阈值：剩余天数 ≤ 该值 (天) 视为"快要保养" */
+  maintainSoonDays: number;
+}
+
+export interface Category extends BaseEntity {
+  name: string;
+  icon: string;
+  isPreset: boolean;
+  presetType: PresetType;
+  /** 是否在"记支出"类别选择中显示（用户可在类别管理里开关） */
+  visible: boolean;
+  /** 组内排序号（预设与自定义各自从 0 递增，用户可上移/下移调整） */
+  sortOrder: number;
+}
+
+export interface Maintain extends BaseEntity {
+  carSourceId: string;
+  name: string;
+  icon: string;
+  cycleMileages: number;
+  cycleDays: number;
+  cycleMonths: number;
+  cycleUnit: CycleUnit;
+  cycleValue: number;
+  mileageSource: MileageSource;
+  sortOrder: number;
+}
+
+export interface MaintainHandle extends BaseEntity {
+  carSourceId: string;
+  makeDate: number;
+  makeMileages: number;
+  makeEVMileages: number;
+  makeHEVMileages: number;
+  remark: string;
+  costSourceId: string;
+}
+
+export interface MaintainLog extends BaseEntity {
+  carSourceId: string;
+  maintainSourceId: string;
+  handleSourceId: string;
+  makeDate: number;
+  makeMileages: number;
+  totalMileages: number;
+  makeEVMileages: number;
+  makeHEVMileages: number;
+  mileageSource: MileageSource;
+  remark: string;
+}
+
+export interface Cost extends BaseEntity {
+  carSourceId: string;
+  categorySourceId: string;
+  amount: number;
+  costDate: number;
+  remark: string;
+  maintainHandleSourceId: string;
+  repairSourceId: string;
+  fuelRecordSourceId: string;
+}
+
+export interface RefuelLog extends BaseEntity {
+  carSourceId: string;
+  energyType: EnergyType;
+  fuelDate: number;
+  makeMileages: number;
+  makeEVMileages: number;
+  makeHEVMileages: number;
+  unitPrice: number;
+  volume: number;
+  shouldPayAmount: number;
+  actualPayAmount: number;
+  isFull: boolean;
+  isLowFuel: boolean;
+  lastRecorded: boolean;
+  chargeBeforePercent: number;
+  chargeAfterPercent: number;
+  remark: string;
+  costSourceId: string;
+}
+
+export interface RepairRecord extends BaseEntity {
+  carSourceId: string;
+  content: string;
+  mileage: number;
+  repairDate: number;
+  amount: number;
+  images: string[];
+  remark: string;
+  costSourceId: string;
+}
+
+export interface FuelConsumption extends BaseEntity {
+  carSourceId: string;
+  energyType: EnergyType;
+  startFuelRecordSourceId: string;
+  endFuelRecordSourceId: string;
+  startDate: number;
+  endDate: number;
+  fuelDate: number;
+  mileage: number;
+  fuelAmount: number;
+  fuelConsumption: number;
+  cost: number;
+  costPerKm: number;
+}
+
+/**
+ * 界面皮肤：同一套布局下的三套色板。
+ * 切换只替换 CSS 变量，不动任何 WXML/WXSS 结构。
+ */
+export type SkinKey = 'a' | 'b' | 'c';
+
+export interface User extends BaseEntity {
+  openid: string;
+  nickname: string;
+  avatarUrl: string;
+  remindEnabled: boolean;
+  /** 界面皮肤（默认 'a' 极简线稿） */
+  skin: SkinKey;
+  reminderSentCount: number;
+  memberLevel: MemberLevel;
+  memberExpireAt: number;
+  appLockEnabled: boolean;
+  appLockPin: string;
+  lastPulledAt: number;
+  /** 置顶车辆 sourceId（'' 表示未置顶） */
+  pinnedCarId: string;
+  /**
+   * 支出预设是否已初始化过。
+   *
+   * 预设只在首次安装（或升级到本版本后的第一次启动）创建一次，之后完全交给用户管理：
+   * 用户删掉的不会被重建，改过名的也不会再冒出原名。
+   * 系统预设（加油/充电/保养/维修）不受此标记约束，始终确保存在。
+   */
+  categoriesSeeded: boolean;
+}
+
+/** 导出数据全集（对应 manifest.json 的 data 字段） */
+export interface DataBundle {
+  cars: Car[];
+  categories: Category[];
+  maintains: Maintain[];
+  maintainHandles: MaintainHandle[];
+  maintainLogs: MaintainLog[];
+  costs: Cost[];
+  repairRecords: RepairRecord[];
+  fuelRecords: RefuelLog[];
+  fuelConsumptions: FuelConsumption[];
+  user?: User;
+}

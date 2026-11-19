@@ -14,6 +14,6 @@
     "types": ["miniprogram-api-typings"],
     "outDir": "./dist"
   },
-  "include": ["typings/**/*", "types/**/*", "domain/**/*", "repositories/**/*", "services/**/*", "store/**/*", "utils/**/*", "components/**/*", "custom-tab-bar/**/*", "app.ts", "pages/**/*"],
+  "include": ["typings/**/*", "types/**/*", "domain/**/*", "repositories/**/*", "services/**/*", "store/**/*", "utils/**/*", "components/**/*", "custom-tab-bar/**/*", "skills/**/*", "app.ts", "pages/**/*"],
   "exclude": ["node_modules", "dist", "tests"]
 }
