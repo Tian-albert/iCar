@@ -30,7 +30,7 @@ function daysAgo(n: number): number {
 
 /**
  * 相对当前月份偏移 offset 个月的第 day 天（day 越界自动收敛到月末；当月不越过今天）。
- * 保证「这个月 / 上个月」的查询永远有数据，无论评测在哪一天跑。
+ * 保证「这个月 / 上个月 / 去年」的查询永远有数据，无论评测在哪一天跑。
  */
 function atMonth(offset: number, day: number): number {
   const now = new Date();
@@ -66,7 +66,16 @@ export function seedDemoDataIfNeeded(storage: StorageAdapter, envVersion: string
   return true;
 }
 
-/** 通过真实服务链路造数据：3 辆车 + 保养（一红一橙）+ 加油/充电（有区间）+ 10 笔支出 */
+/**
+ * 通过真实服务链路造数据。
+ *
+ * 数值不是随手编的，按「真实车主一年」的量级设计，否则评测里会出现
+ * 「每公里 6 元」这种一眼假的结论：
+ *   · 三辆车合计年里程 ≈ 1.1 万公里，年支出 ≈ 1.2 万元 → 每公里 ≈ 1.1 元；
+ *   · 燃油车 10 次加满，跨度 6,500 km → 油耗 ≈ 8 L/100km（正常区间）；
+ *   · 纯电车 4 次充满，跨度 1,700 km → 电耗 ≈ 15 kWh/100km；
+ *   · 去年（2025）留了 3 笔支出，让「跟去年比」有真实基线，而不是 0。
+ */
 function seedDemoData(storage: StorageAdapter): void {
   const categories = storage
     .list<{ sourceId: string; name: string; deleted?: boolean }>('categories')
@@ -80,150 +89,120 @@ function seedDemoData(storage: StorageAdapter): void {
   // ---------- 车辆：燃油 + 纯电 + 混动 ----------
   const crv = createCar(storage, {
     name: '我的 CRV',
-    mileages: 12600,
+    mileages: 15600,
     initMileages: 0,
-    initDate: daysAgo(400),
+    initDate: daysAgo(760),
     energyType: 'fuel',
     icon: '🚗'
   });
   const p7 = createCar(storage, {
     name: '小鹏 P7',
-    mileages: 15550,
-    initMileages: 8000,
-    initDate: daysAgo(380),
+    mileages: 21500,
+    initMileages: 5000,
+    initDate: daysAgo(730),
     energyType: 'ev',
     batteryCapacity: 80,
     icon: '🚙'
   });
   const tang = createCar(storage, {
     name: '唐 DM-i',
-    mileages: 9800,
+    mileages: 12300,
     initMileages: 0,
-    initDate: daysAgo(360),
+    initDate: daysAgo(700),
     energyType: 'hybrid',
     batteryCapacity: 22,
     icon: '🚐'
   });
 
-  // ---------- 加油 / 充电（走 saveRefuel：联动支出 + 区间重算 + 里程回写） ----------
-  // CRV：两次连续加满 + 一条油量低，产出两段有效油耗区间
-  saveRefuel(storage, {
-    carSourceId: crv.sourceId,
-    fuelDate: daysAgo(60),
-    makeMileages: 11450,
-    unitPrice: 7.85,
-    volume: 40,
-    actualPayAmount: null,
-    isFull: true,
-    isLowFuel: false,
-    remark: '中石化 92 号'
-  });
-  saveRefuel(storage, {
-    carSourceId: crv.sourceId,
-    fuelDate: daysAgo(45),
-    makeMileages: 11920,
-    unitPrice: 7.85,
-    volume: 42,
-    actualPayAmount: null,
-    isFull: true,
-    isLowFuel: false,
-    remark: ''
-  });
-  saveRefuel(storage, {
-    carSourceId: crv.sourceId,
-    fuelDate: daysAgo(30),
-    makeMileages: 12280,
-    unitPrice: 7.85,
-    volume: 38,
-    actualPayAmount: null,
-    isFull: false,
-    isLowFuel: true,
-    remark: '跑到亮灯才加'
-  });
-  saveRefuel(storage, {
-    carSourceId: crv.sourceId,
-    fuelDate: daysAgo(10),
-    makeMileages: 12600,
-    unitPrice: 7.85,
-    volume: 40,
-    actualPayAmount: null,
-    isFull: true,
-    isLowFuel: false,
-    remark: ''
+  // ---------- 加油：燃油车 10 次（跨 6,500 km，8 次加满串成有效区间） ----------
+  const crvRefuels: Array<[number, number, boolean, boolean]> = [
+    // [几天前, 里程, 是否加满, 是否油量低]
+    [300, 9100, true, false],
+    [270, 9800, true, false],
+    [240, 10500, true, false],
+    [210, 11200, true, false],
+    [180, 11900, false, true], // 未加满但油量低 → 仍可作区间起点
+    [150, 12600, true, false],
+    [120, 13300, true, false],
+    [90, 14000, true, false],
+    [60, 14700, true, false],
+    [8, 15600, true, false]
+  ];
+  crvRefuels.forEach(([days, mileage, isFull, isLowFuel]) => {
+    saveRefuel(storage, {
+      carSourceId: crv.sourceId,
+      fuelDate: daysAgo(days),
+      makeMileages: mileage,
+      unitPrice: 7.62,
+      volume: 55,
+      actualPayAmount: null,
+      isFull,
+      isLowFuel,
+      remark: isLowFuel ? '跑到亮灯才加' : ''
+    });
   });
 
-  // P7：两次连续充满，产出电耗区间
-  saveRefuel(storage, {
-    carSourceId: p7.sourceId,
-    fuelDate: daysAgo(50),
-    makeMileages: 15200,
-    unitPrice: 1.2,
-    volume: 45,
-    actualPayAmount: null,
-    isFull: true,
-    isLowFuel: false,
-    energyType: 'ev',
-    chargeBeforePercent: 25,
-    chargeAfterPercent: 100,
-    remark: '家充桩'
+  // ---------- 充电：纯电车 4 次充满（跨 1,700 km，电耗 ≈ 15 kWh/100km） ----------
+  const p7Charges: Array<[number, number]> = [
+    [120, 19800],
+    [85, 20400],
+    [40, 21000],
+    [10, 21500]
+  ];
+  p7Charges.forEach(([days, mileage]) => {
+    saveRefuel(storage, {
+      carSourceId: p7.sourceId,
+      fuelDate: daysAgo(days),
+      makeMileages: mileage,
+      unitPrice: 1.15,
+      volume: 65,
+      actualPayAmount: null,
+      isFull: true,
+      isLowFuel: false,
+      energyType: 'ev',
+      chargeBeforePercent: 20,
+      chargeAfterPercent: 100,
+      remark: '家充桩'
+    });
+  });
+
+  // ---------- 混动车：加油 4 次 + 充电 1 次（同一辆车两种能量并存） ----------
+  const tangRefuels: Array<[number, number]> = [
+    [150, 9300],
+    [110, 10300],
+    [70, 11300],
+    [30, 12300]
+  ];
+  tangRefuels.forEach(([days, mileage]) => {
+    saveRefuel(storage, {
+      carSourceId: tang.sourceId,
+      fuelDate: daysAgo(days),
+      makeMileages: mileage,
+      unitPrice: 7.62,
+      volume: 40,
+      actualPayAmount: null,
+      isFull: true,
+      isLowFuel: false,
+      energyType: 'fuel',
+      remark: ''
+    });
   });
   saveRefuel(storage, {
-    carSourceId: p7.sourceId,
+    carSourceId: tang.sourceId,
     fuelDate: daysAgo(20),
-    makeMileages: 15550,
-    unitPrice: 1.2,
-    volume: 48,
-    actualPayAmount: null,
-    isFull: true,
-    isLowFuel: false,
-    energyType: 'ev',
-    chargeBeforePercent: 20,
-    chargeAfterPercent: 100,
-    remark: ''
-  });
-
-  // 唐：混动车，加油 + 充电并存（走 energyType 显式指定）
-  saveRefuel(storage, {
-    carSourceId: tang.sourceId,
-    fuelDate: daysAgo(40),
-    makeMileages: 9500,
-    unitPrice: 7.8,
-    volume: 30,
-    actualPayAmount: null,
-    isFull: true,
-    isLowFuel: false,
-    energyType: 'fuel',
-    remark: ''
-  });
-  saveRefuel(storage, {
-    carSourceId: tang.sourceId,
-    fuelDate: daysAgo(25),
-    makeMileages: 9800,
-    unitPrice: 7.8,
-    volume: 28,
-    actualPayAmount: null,
-    isFull: true,
-    isLowFuel: false,
-    energyType: 'fuel',
-    remark: ''
-  });
-  saveRefuel(storage, {
-    carSourceId: tang.sourceId,
-    fuelDate: daysAgo(15),
-    makeMileages: 9800,
-    unitPrice: 1.1,
+    makeMileages: 12300,
+    unitPrice: 1.15,
     volume: 15,
     actualPayAmount: null,
     isFull: true,
     isLowFuel: false,
     energyType: 'ev',
-    chargeBeforePercent: 40,
+    chargeBeforePercent: 30,
     chargeAfterPercent: 100,
     remark: ''
   });
 
-  // ---------- 保养执行（先建项，再记录执行，形成剩余量） ----------
-  // 机油：12600 - 7300 = 5300 用量 → 剩余 -300（超期）；空气滤芯：剩 450（临近）
+  // ---------- 保养：主车一红一橙，另两辆各一项正常（全车汇总才有内容） ----------
   const oilItem = addMaintain(storage, crv.sourceId, {
     name: '机油机滤',
     cycleMileages: 5000,
@@ -236,39 +215,73 @@ function seedDemoData(storage: StorageAdapter): void {
     timeUnit: '',
     timeValue: 0
   });
+  // 机油：15,600 - 10,300 = 5,300 用量 → 剩余 -300（超期）
   saveMaintainHandle(storage, {
     carSourceId: crv.sourceId,
     maintainSourceIds: [oilItem.sourceId],
-    makeDate: daysAgo(120),
-    makeMileages: 7300,
+    makeDate: daysAgo(200),
+    makeMileages: 10300,
     amount: 480,
     remark: ''
   });
+  // 空气滤芯：15,600 - 6,050 = 9,550 用量 → 剩余 450（临近）
   saveMaintainHandle(storage, {
     carSourceId: crv.sourceId,
     maintainSourceIds: [airItem.sourceId],
-    makeDate: daysAgo(330),
-    makeMileages: 3050,
+    makeDate: daysAgo(420),
+    makeMileages: 6050,
     amount: 680,
     remark: ''
   });
 
-  // ---------- 日常支出：4 个预设类别 × 3 个月段 ----------
+  const p7Filter = addMaintain(storage, p7.sourceId, {
+    name: '空调滤芯',
+    cycleMileages: 20000,
+    timeUnit: '',
+    timeValue: 0
+  });
+  // P7：21,500 - 3,400 = 18,100 用量 → 剩余 1,900（正常，不入「待处理」）
+  saveMaintainHandle(storage, {
+    carSourceId: p7.sourceId,
+    maintainSourceIds: [p7Filter.sourceId],
+    makeDate: daysAgo(500),
+    makeMileages: 3400,
+    amount: 260,
+    remark: ''
+  });
+
+  addMaintain(storage, tang.sourceId, {
+    name: '刹车油',
+    cycleMileages: 40000,
+    timeUnit: '',
+    timeValue: 0
+  });
+
+  // ---------- 日常支出：4 个预设类别，覆盖本月 / 上月 / 更早 / 去年 ----------
   const parking = catByName('停车');
   const toll = catByName('高速');
   const insurance = catByName('保险');
   const wash = catByName('洗车');
 
+  // 本月
   saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: parking, amount: 15, costDate: atMonth(0, 3), remark: '商场地下车库' });
   saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: toll, amount: 68, costDate: atMonth(0, 9), remark: '去机场' });
-  saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: wash, amount: 45, costDate: atMonth(0, 14), remark: '' });
+  saveCost(storage, { carSourceId: p7.sourceId, categorySourceId: wash, amount: 45, costDate: atMonth(0, 14), remark: '' });
   saveCost(storage, { carSourceId: p7.sourceId, categorySourceId: parking, amount: 12, costDate: atMonth(0, 6), remark: '公司楼下车库' });
 
+  // 上月
   saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: parking, amount: 22, costDate: atMonth(-1, 5), remark: '' });
   saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: toll, amount: 80, costDate: atMonth(-1, 12), remark: '回老家' });
   saveCost(storage, { carSourceId: p7.sourceId, categorySourceId: wash, amount: 30, costDate: atMonth(-1, 18), remark: '' });
   saveCost(storage, { carSourceId: tang.sourceId, categorySourceId: parking, amount: 10, costDate: atMonth(-1, 25), remark: '' });
 
+  // 更早（今年内）
+  saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: parking, amount: 18, costDate: atMonth(-2, 8), remark: '' });
+  saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: toll, amount: 95, costDate: atMonth(-3, 8), remark: '自驾游' });
   saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: insurance, amount: 4800, costDate: atMonth(-5, 20), remark: '交强险 + 商业险' });
-  saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: parking, amount: 12, costDate: atMonth(-3, 8), remark: '' });
+
+  // 去年（2025）：让「跟去年比」有真实基线——之前没有去年数据，AI 把 0 编成了 ¥680
+  saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: insurance, amount: 4500, costDate: atMonth(-12, 18), remark: '去年保费' });
+  saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: toll, amount: 60, costDate: atMonth(-13, 20), remark: '' });
+  saveCost(storage, { carSourceId: crv.sourceId, categorySourceId: parking, amount: 10, costDate: atMonth(-13, 6), remark: '' });
 }

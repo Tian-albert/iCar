@@ -141,6 +141,64 @@ describe('演示数据规格（评测集依赖这些非空能力）', () => {
     expect(fuelCosts.length).toBeGreaterThanOrEqual(9);
   });
 
+  it('三辆车都配了保养项（全车汇总才有内容）', () => {
+    const cars = storage.list<Car>('cars');
+    for (const car of cars) {
+      const items = storage.list<Maintain>('maintains').filter(m => m.carSourceId === car.sourceId);
+      expect(items.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('去年（2025）有支出，让「跟去年比」有真实基线', () => {
+    const lastYear = new Date().getFullYear() - 1;
+    const costs = storage
+      .list<any>('costs')
+      .filter(c => !c.deleted && new Date(c.costDate).getFullYear() === lastYear);
+    expect(costs.length).toBeGreaterThanOrEqual(3);
+    const sum = costs.reduce((s, c) => s + c.amount, 0);
+    expect(sum).toBeGreaterThan(1000);
+  });
+
+  it('每公里成本落在真实区间（0.5~3 元），否则评测结论一眼就假', () => {
+    const year = new Date().getFullYear();
+    const costs = storage
+      .list<any>('costs')
+      .filter(c => !c.deleted && new Date(c.costDate).getFullYear() === year);
+    const total = costs.reduce((s, c) => s + c.amount, 0);
+
+    // 有效里程 = 每辆车加油/充电记录的最大里程 − 最小里程
+    const cars = storage.list<Car>('cars');
+    const mileage = cars.reduce((sum, car) => {
+      const ms = storage
+        .list<RefuelLog>('fuelRecords')
+        .filter(r => r.carSourceId === car.sourceId)
+        .map(r => r.makeMileages);
+      return sum + (ms.length > 1 ? Math.max(...ms) - Math.min(...ms) : 0);
+    }, 0);
+
+    expect(mileage).toBeGreaterThan(5000);
+    const perKm = total / mileage;
+    expect(perKm).toBeGreaterThan(0.5);
+    expect(perKm).toBeLessThan(3);
+  });
+
+  it('油耗 / 电耗落在真实区间', () => {
+    const crv = storage.list<Car>('cars').find(c => c.name === '我的 CRV')!;
+    const p7 = storage.list<Car>('cars').find(c => c.name === '小鹏 P7')!;
+    const segs = storage.list<any>('fuelConsumptions');
+
+    const fuelSegs = segs.filter(s => s.carSourceId === crv.sourceId && s.energyType === 'fuel');
+    const avgFuel =
+      fuelSegs.reduce((s, x) => s + x.fuelAmount, 0) / fuelSegs.reduce((s, x) => s + x.mileage, 0);
+    expect(avgFuel * 100).toBeGreaterThan(5);
+    expect(avgFuel * 100).toBeLessThan(14);
+
+    const evSegs = segs.filter(s => s.carSourceId === p7.sourceId && s.energyType === 'ev');
+    const avgEv = evSegs.reduce((s, x) => s + x.fuelAmount, 0) / evSegs.reduce((s, x) => s + x.mileage, 0);
+    expect(avgEv * 100).toBeGreaterThan(9);
+    expect(avgEv * 100).toBeLessThan(25);
+  });
+
   it('meta 记录 demoSeededAt 且保留 schemaVersion', () => {
     const meta = storage.getMeta<{ schemaVersion?: number; demoSeededAt?: number }>();
     expect(meta.demoSeededAt).toBeGreaterThan(0);
