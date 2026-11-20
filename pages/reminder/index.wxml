@@ -1,9 +1,11 @@
 <page-meta page-style="{{pageStyle}}" />
 <view class="page">
   <block wx:if="{{hasCar}}">
-    <!-- 数据总览 -->
+    <!-- 数据总览：点进「数据总览页」（全车按年/按月汇总） -->
     <view class="sec-title">数据总览</view>
-    <view class="metrics">
+    <view hover-class="hover-dim" class="metrics metrics-link" bindtap="onOpenSummary">
+      <!-- 右上角小箭头：暗示整块可点，不改动卡片里的三个指标 -->
+      <view class="overview-arrow">›</view>
       <view class="m-cell">
         <view class="m-val">{{carCount}}</view>
         <view class="m-lbl">车辆数</view>

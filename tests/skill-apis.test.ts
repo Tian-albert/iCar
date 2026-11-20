@@ -565,8 +565,8 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
     const mcp = JSON.parse(fsx.readFileSync('skills/icar/mcp.json', 'utf-8'));
     const pathOf = (name: string) => mcp.apis.find((a: any) => a.name === name)._meta.ui.pagePath;
     // 「我有几辆车」→ 我的车辆列表；「今年花了多少」→ 概览
-    expect(pathOf('queryCars')).toBe('pages/index/index');
-    expect(pathOf('queryStats')).toBe('pages/reminder/index');
+    expect(pathOf('queryCars')).toBe('pages/summary/index');
+    expect(pathOf('queryStats')).toBe('pages/summary/index');
     expect(pathOf('queryMaintain')).toBe('pages/reminder/index');
     // 单车写操作落到这辆车的详情是合理的
     expect(pathOf('addCost')).toBe('pages/vehicle-detail/index');
@@ -598,10 +598,15 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
     addSecondCar(); // 多车才会触发全车作用域
     const { queryCars, queryStats, queryMaintain } = loadApis();
 
-    for (const res of [await queryCars({}), await queryStats({ rangeType: 'all' }), await queryMaintain({})]) {
-      const { query } = res.handoff({ result: res } as any);
-      expect(query).toBe('');
-    }
+    const cars = await queryCars({});
+    expect(cars.handoff({ result: cars } as any).query).toBe('rangeType=all');
+
+    const stats = await queryStats({ rangeType: 'all' });
+    expect(stats.handoff({ result: stats } as any).query).toBe('rangeType=all');
+
+    // 保养汇总仍落概览（保养提醒区块在那里），不带业务 query
+    const maintain = await queryMaintain({});
+    expect(maintain.handoff({ result: maintain } as any).query).toBe('');
   });
 
   it('单车查询的 handoff 带编码后的车 id（含冒号，不编码会解析错）', async () => {

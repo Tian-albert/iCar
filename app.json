@@ -14,6 +14,7 @@
     "pages/maintain-item-form/index",
     "pages/maintain-threshold/index",
     "pages/statistics/index",
+    "pages/summary/index",
     "pages/records/index",
     "pages/data-transfer/index",
     "pages/about/index",

@@ -64,6 +64,12 @@ const PAGE_CASES: PageCase[] = [
     options: d => ({ id: d.carId, range: 'year' })
   },
   {
+    // 非 tabBar 页：AI 接力落点，必须能用 query 还原区间
+    name: 'summary（数据总览）',
+    path: 'pages/summary/index',
+    options: () => ({ rangeType: 'month', year: 2026, month: 3 })
+  },
+  {
     name: 'vehicle-detail',
     path: 'pages/vehicle-detail/index',
     options: d => ({ id: d.carId, section: 'maintain' })

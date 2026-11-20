@@ -389,3 +389,16 @@
   align-self: center;
   margin: 0 12rpx;
 }
+
+/* 数据总览卡：整块可点，右上角小箭头提示「还能进下一层」 */
+.metrics-link {
+  position: relative;
+}
+.overview-arrow {
+  position: absolute;
+  top: 16rpx;
+  right: 20rpx;
+  font-size: 30rpx;
+  line-height: 1;
+  color: var(--color-text-3);
+}

@@ -19,6 +19,27 @@ function rangeLabel(range) {
         return `${range.year} 年`;
     return `${range.year} 年 ${range.month} 月`;
 }
+/**
+ * 数据总览页的 query。
+ *
+ * 页面靠它还原「用户问的是哪个区间」——不带参数就只能显示默认的本年，
+ * 于是出现「问某月却显示全年」。参数值都不含特殊字符，无需 encode。
+ */
+function summaryQuery(range) {
+    if (range.type === 'all')
+        return 'rangeType=all';
+    if (range.type === 'year')
+        return `rangeType=year&year=${range.year}`;
+    return `rangeType=month&year=${range.year}&month=${range.month}`;
+}
+/** 单车统计页的 query（页面 own 的参数名是 range/year/month） */
+function carStatsQuery(range) {
+    if (range.type === 'all')
+        return 'range=all';
+    if (range.type === 'year')
+        return `range=year&year=${range.year}`;
+    return `range=month&year=${range.year}&month=${range.month}`;
+}
 /** 单辆车的快照（口径与统计页完全一致） */
 function snapshotOf(car, range) {
     const costs = (0, store_1.readCosts)().filter(c => c.carSourceId === car.sourceId);
@@ -108,16 +129,17 @@ async function queryStats(args = {}) {
                 perKmExFuel: perKmExFuel.toFixed(3),
                 mileageIncreased: String(mileage),
                 breakdown: breakdownText,
-                // 概览是 tabBar 页：正文蓝链跳不过去，入口交给 handoff
-                pagePath: '',
-                linkText: '查看概览'
+                // 数据总览是普通页，正文蓝链与接力都能带参数
+                pagePath: `pages/summary/index?${summaryQuery(range)}`,
+                linkText: '查看数据总览'
             },
             /**
-             * 页面接力：全车汇总落到**概览页**（它才是「全部车辆」的视图），
-             * 而不是某辆车的统计页——那会让用户以为系统默认了这辆车。
+             * 页面接力：全车汇总落到**数据总览页**（普通页），并把区间参数带过去。
+             * 落到概览（tabBar）会被 switchTab 丢掉 query，页面永远显示「今年」——
+             * 这正是上一轮「问某月却显示全年」的根因。
              */
             handoff: () => ({
-                query: '',
+                query: summaryQuery(range),
                 payload: {
                     scope: 'all',
                     totalExpense: total.toFixed(2),
@@ -205,12 +227,12 @@ async function queryStats(args = {}) {
                 amount: c.amount.toFixed(2),
                 percent: String(c.percent)
             })),
-            pagePath: `pages/statistics/index?id=${car.sourceId}&range=year`,
+            pagePath: `pages/statistics/index?id=${car.sourceId}&${carStatsQuery(range)}`,
             linkText: '查看统计详情'
         },
         /** 页面接力：把对话流程整段接到这辆车的统计页 */
         handoff: () => ({
-            query: `id=${encodeURIComponent(car.sourceId)}&range=year`,
+            query: `id=${encodeURIComponent(car.sourceId)}&${carStatsQuery(range)}`,
             payload: {
                 scope: 'car',
                 carName: car.name,

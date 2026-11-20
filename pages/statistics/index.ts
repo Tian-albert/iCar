@@ -4,7 +4,7 @@ import { getCar } from '../../services/car.service';
 import { listCosts, listCategories } from '../../services/cost.service';
 import { listRefuels } from '../../services/refuel.service';
 import { rebuildConsumptionsGrouped } from '../../domain/fuel.service';
-import { buildStats, StatsRange } from '../../domain/stats.service';
+import { buildStats, StatsRange, TREND_GRANULARITY_LABEL } from '../../domain/stats.service';
 import { minOf } from '../../utils/number';
 import {
   buildShareCardModel,
@@ -86,6 +86,8 @@ Page({
     trend: [] as Array<{ label: string; value: number }>,
     monthlyMileage: [] as Array<{ label: string; value: number }>,
     monthlyCost: [] as Array<{ label: string; value: number }>,
+    /** 图表粒度中文名：年→月、月→日、全部→年 */
+    granLabel: '月',
     /** 分享进行中，防止重复点击 */
     sharing: false
   },
@@ -96,10 +98,11 @@ Page({
     this.setData({
       // handoff 的 query 由开发者 encode，平台不会自动 decode，这里必须自己解
       carId: options.id ? decodeURIComponent(options.id) : '',
-      // 从车辆详情「今年统计」进入时默认展示年维度
-      rangeType: options.range === 'year' ? 'year' : 'all',
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
+      // 从车辆详情「今年统计」进入时默认展示年维度；
+      // 从「数据总览」的各车明细进来时会把当时的区间一起带过来（含月）
+      rangeType: options.range === 'year' ? 'year' : options.range === 'month' ? 'month' : 'all',
+      year: Number(options.year) || now.getFullYear(),
+      month: Number(options.month) || now.getMonth() + 1,
       fromAgent: !!handoff
     });
   },
@@ -203,8 +206,10 @@ Page({
         label: `${new Date(t.date).getMonth() + 1}/${new Date(t.date).getDate()}`,
         value: t.value
       })),
-      monthlyMileage: snap.monthlyMileage.map(m => ({ label: m.label, value: m.value })),
-      monthlyCost: snap.monthlyCost.map(m => ({ label: m.label, value: m.value }))
+      // 图表粒度跟随区间：年→月、月→日、全部→年
+      monthlyMileage: snap.mileageTrend,
+      monthlyCost: snap.costTrend,
+      granLabel: TREND_GRANULARITY_LABEL[snap.trendGranularity]
     });
   },
   onRangeChange(e: WechatMiniprogram.TouchEvent) {
@@ -350,8 +355,9 @@ Page({
         label: `${new Date(t.date).getMonth() + 1}/${new Date(t.date).getDate()}`,
         value: t.value
       })),
-      monthlyMileage: snap.monthlyMileage.map(m => ({ label: m.label, value: m.value })),
-      monthlyCost: snap.monthlyCost.map(m => ({ label: m.label, value: m.value }))
+      // 分享图是静态出图，固定按月即可（页面上的图表才跟随区间切粒度）
+      monthlyMileage: snap.monthlyMileage,
+      monthlyCost: snap.monthlyCost
     };
     return buildShareCardModel(input, mode, style);
   },

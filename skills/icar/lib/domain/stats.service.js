@@ -1,11 +1,32 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CHART_COLORS = void 0;
+exports.CHART_COLORS = exports.TREND_GRANULARITY_LABEL = void 0;
+exports.trendGranularityOf = trendGranularityOf;
 exports.resolveRange = resolveRange;
+exports.groupByGranularity = groupByGranularity;
 exports.buildStats = buildStats;
 const number_1 = require("../utils/number");
 const date_1 = require("../utils/date");
 const fuel_service_1 = require("./fuel.service");
+/** 粒度的中文名（页面角标与图表标题共用，避免各页各写一套） */
+exports.TREND_GRANULARITY_LABEL = {
+    day: '日',
+    month: '月',
+    year: '年'
+};
+/**
+ * 区间 → 图表粒度。
+ *
+ * 看一年时按月看才有趋势；看一个月时必须按日，否则整月只有一个柱子；
+ * 看全部时必须按年，否则不同年份的同月会被合并成一个点。
+ */
+function trendGranularityOf(range) {
+    if (range.type === 'month')
+        return 'day';
+    if (range.type === 'year')
+        return 'month';
+    return 'year';
+}
 /**
  * 分类支出 / 按车花费的配色（设计报告 6.1）。
  *
@@ -60,6 +81,34 @@ function groupByMonth(list, dateOf, valueOf) {
     for (const x of list) {
         const ts = dateOf(x);
         const label = crossYear ? (0, date_1.monthLabelWithYear)(ts) : (0, date_1.monthLabel)(ts);
+        const hit = map.get(label);
+        if (hit) {
+            hit.value += valueOf(x);
+            if (ts < hit.firstTs)
+                hit.firstTs = ts;
+        }
+        else {
+            map.set(label, { value: valueOf(x), firstTs: ts });
+        }
+    }
+    return [...map.entries()]
+        .sort((a, b) => a[1].firstTs - b[1].firstTs)
+        .map(([label, agg]) => ({ label, value: (0, number_1.round2)(agg.value) }));
+}
+/**
+ * 按粒度聚合 value 序列（day / month / year）。
+ *
+ * day 的标签是「日」数字（3），month 复用 groupByMonth（跨年时带年份），
+ * year 的标签是四位年份。无数据的桶不补零（BR-23）。
+ */
+function groupByGranularity(list, dateOf, valueOf, granularity) {
+    if (granularity === 'month')
+        return groupByMonth(list, dateOf, valueOf);
+    const map = new Map();
+    for (const x of list) {
+        const ts = dateOf(x);
+        const d = new Date(ts);
+        const label = granularity === 'day' ? String(d.getDate()) : String(d.getFullYear());
         const hit = map.get(label);
         if (hit) {
             hit.value += valueOf(x);
@@ -148,9 +197,12 @@ function buildStats(range, costs, refuels, consumptions, categories, car) {
         named[0].percent = (0, number_1.round2)(named[0].percent + diff);
     }
     const categoriesOut = named.map((x, i) => (Object.assign(Object.assign({}, x), { color: exports.CHART_COLORS[i % exports.CHART_COLORS.length] })));
-    // ---------- 月度聚合（BR-23） ----------
+    // ---------- 趋势聚合（粒度跟随区间，BR-23） ----------
+    const trendGranularity = trendGranularityOf(range);
     const monthlyMileage = groupByMonth(primarySegs, c => c.endDate, c => c.mileage);
     const monthlyCost = groupByMonth(costList, c => c.costDate, c => c.amount);
+    const mileageTrend = groupByGranularity(primarySegs, c => c.endDate, c => c.mileage, trendGranularity);
+    const costTrend = groupByGranularity(costList, c => c.costDate, c => c.amount, trendGranularity);
     return {
         mileage: { latest, increased, fuelMileage, evMileage },
         fuel: { totalCost: totalFuelCost, avgConsumption: (0, number_1.round2)(avgConsumption), costPerKm: (0, number_1.round3)(fuelCostPerKm) },
@@ -165,6 +217,9 @@ function buildStats(range, costs, refuels, consumptions, categories, car) {
         categories: categoriesOut,
         consumptionTrend: primarySegs.map(c => ({ date: c.endDate, value: (0, number_1.round2)(c.fuelConsumption), mileage: c.mileage })),
         monthlyMileage,
-        monthlyCost
+        monthlyCost,
+        trendGranularity,
+        mileageTrend,
+        costTrend
     };
 }

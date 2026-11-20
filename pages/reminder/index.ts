@@ -419,6 +419,11 @@ Page({
     this.setData({ donutActive: index }, () => this.drawDonut());
   },
 
+  /** 点「数据总览」卡片 → 全车汇总页（默认本年） */
+  onOpenSummary() {
+    wx.navigateTo({ url: '/pages/summary/index?rangeType=year' });
+  },
+
   /** 点某条保养项 → 该车详情的「保养进度」 */
   onTapMaintain(e: WechatMiniprogram.TouchEvent) {
     const id = e.currentTarget.dataset.car as string;
