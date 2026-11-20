@@ -11,6 +11,7 @@
     "pages/repair-form/index",
     "pages/maintain-form/index",
     "pages/maintain-manage/index",
+    "pages/maintain-all/index",
     "pages/maintain-item-form/index",
     "pages/maintain-threshold/index",
     "pages/statistics/index",

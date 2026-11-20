@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "数据总览",
-  "usingComponents": {}
+  "usingComponents": {
+    "donut-chart": "/components/donut-chart/index"
+  }
 }

@@ -402,3 +402,57 @@
   line-height: 1;
   color: var(--color-text-3);
 }
+
+/* 保养状态环图卡：整卡可点，右上角箭头与「数据总览」卡一致 */
+.mnt-card {
+  position: relative;
+}
+.mnt-arrow {
+  position: absolute;
+  top: 20rpx;
+  right: 24rpx;
+  font-size: 30rpx;
+  line-height: 1;
+  color: var(--color-text-3);
+}
+.mnt-donut {
+  width: 100%;
+  height: 360rpx;
+}
+.mnt-legend {
+  padding: 0 8rpx;
+}
+.mnt-legend-row {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 0;
+}
+.mnt-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  margin-right: 14rpx;
+}
+.mnt-legend-name {
+  flex: 1;
+  font-size: 26rpx;
+  color: var(--color-text-2);
+}
+.mnt-legend-val {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--color-text-3);
+}
+.mnt-legend-val.bad {
+  color: var(--color-danger);
+}
+.mnt-legend-val.warn {
+  color: var(--color-warning);
+}
+.mnt-more {
+  margin-top: 8rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid var(--color-line);
+  font-size: 24rpx;
+  color: var(--color-primary);
+}

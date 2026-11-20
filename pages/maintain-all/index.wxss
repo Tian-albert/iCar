@@ -1,0 +1,183 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx 28rpx calc(40rpx + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+}
+
+/* ---------- 筛选片 ---------- */
+.chips {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+.chip {
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  background: var(--color-fill);
+  font-size: 26rpx;
+  color: var(--color-text-2);
+}
+.chip-active {
+  background: var(--color-primary);
+  color: var(--color-on-dark);
+  font-weight: 600;
+}
+
+/* ---------- 按车分组 ---------- */
+.group {
+  margin-bottom: 32rpx;
+}
+.group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 4rpx 16rpx;
+}
+.group-title {
+  display: flex;
+  align-items: baseline;
+}
+.group-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.group-meta {
+  margin-left: 12rpx;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
+.group-more {
+  font-size: 24rpx;
+  color: var(--color-primary);
+}
+.card {
+  background: var(--color-card);
+  border-radius: 24rpx;
+  padding: 8rpx 24rpx;
+}
+
+/* ---------- 保养项 ---------- */
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid var(--color-line);
+}
+.item:last-child {
+  border-bottom: none;
+}
+/* 「全部」视图里正常项压暗，视线先落在红橙上 */
+.item-dim {
+  opacity: 0.55;
+}
+.dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  margin-top: 12rpx;
+  flex-shrink: 0;
+}
+.item-main {
+  flex: 1;
+  min-width: 0;
+}
+.item-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+.item-name {
+  font-size: 26rpx;
+  color: var(--color-text-1);
+}
+.item-remain {
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.track {
+  height: 8rpx;
+  border-radius: 4rpx;
+  background: var(--color-fill);
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  border-radius: 4rpx;
+}
+.item-sub {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
+
+/*
+ * 状态配色：超期红、临近橙、正常灰。
+ * 点、文字、进度条分开声明——合成一条会把文字也染上背景色。
+ */
+.dot.level-bad {
+  background: var(--color-danger);
+}
+.dot.level-warn {
+  background: var(--color-warning);
+}
+.dot.level-ok {
+  background: var(--color-text-3);
+}
+.fill.level-bad {
+  background: var(--color-danger);
+}
+.fill.level-warn {
+  background: var(--color-warning);
+}
+.fill.level-ok {
+  background: var(--color-text-3);
+}
+.item-remain.level-bad {
+  color: var(--color-danger);
+}
+.item-remain.level-warn {
+  color: var(--color-warning);
+}
+.item-remain.level-ok {
+  color: var(--color-text-3);
+}
+
+.empty-line {
+  padding: 28rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-3);
+}
+
+/* ---------- 空态 / 全清 ---------- */
+.empty-state {
+  padding: 160rpx 40rpx;
+  text-align: center;
+}
+.empty-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text-1);
+}
+.empty-desc {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--color-text-3);
+}
+.all-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 40rpx 0;
+  font-size: 26rpx;
+  color: var(--color-text-3);
+}
+.all-clear-icon {
+  color: var(--color-success);
+  font-size: 30rpx;
+}

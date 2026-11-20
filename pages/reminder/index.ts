@@ -11,6 +11,9 @@ import {
   toIntegerPercents,
   OverviewSnapshot
 } from '../../services/overview.service';
+import { listCars } from '../../services/car.service';
+import { getMaintainProgressBatch } from '../../services/maintain-record.service';
+import { isRemainOverdue } from '../../domain/maintain.service';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { renderDonut, computeDonutLayout, DonutSegment } from '../../utils/chart-render';
 import { hitDonutSegment, toCanvasPoint } from '../../utils/chart-math';
@@ -155,7 +158,13 @@ Page({
     stale: null as { carName: string; days: number } | null,
     /** 保养到期提醒总开关：关闭时隐藏整个保养提醒区块 */
     remindEnabled: true,
-    maintain: [] as MaintainView[],
+    /** 保养状态环图：超期 / 临近 / 正常 的项数占比 */
+    mntSegments: [] as Array<{ name: string; amount: string; percent: number; color: string }>,
+    mntTotalText: '',
+    mntBad: 0,
+    mntWarn: 0,
+    mntOk: 0,
+    mntTotal: 0,
     carCosts: [] as CarCostView[],
     recent: [] as RecentView[],
     drivingCosts: [] as DrivingCostView[],
@@ -255,15 +264,7 @@ Page({
         pendingCount: snap.pendingCount,
         stale: snap.stale ? { carName: snap.stale.carName, days: snap.stale.days } : null,
         remindEnabled: snap.remindEnabled,
-        maintain: snap.maintain.map(m => ({
-          // 不用下标：列表重新排序时整列 key 会全变，列表复用失效
-          key: `${m.carSourceId}#${m.name}`,
-          carSourceId: m.carSourceId,
-          carName: m.carName,
-          name: m.name,
-          remainText: m.remainText,
-          level: m.level
-        })),
+        ...this.buildMaintainRing(storage, now),
         carCosts: yearCars.map((c, i) => ({
           carSourceId: c.carSourceId,
           carName: c.carName,
@@ -422,6 +423,64 @@ Page({
   /** 点「数据总览」卡片 → 全车汇总页（默认本年） */
   onOpenSummary() {
     wx.navigateTo({ url: '/pages/summary/index?rangeType=year' });
+  },
+
+  /**
+   * 保养状态环图数据：超期 / 临近 / 正常 三种状态的项数占比。
+   *
+   * 不在页面上逐条列保养项——多车时列不下，而且用户要的是「有没有要处理的」。
+   * 明细交给「全车保养」页（pages/maintain-all）。
+   */
+  buildMaintainRing(storage: ReturnType<typeof getStorage>, now: number) {
+    const cars = listCars(storage);
+    const batch = getMaintainProgressBatch(
+      storage,
+      cars.map(c => c.sourceId),
+      now
+    );
+
+    let bad = 0;
+    let warn = 0;
+    let ok = 0;
+    for (const id of Object.keys(batch)) {
+      for (const it of batch[id]) {
+        if (isRemainOverdue(it.remainMileage, it.remainDays)) bad++;
+        else if (it.urgent) warn++;
+        else ok++;
+      }
+    }
+    const total = bad + warn + ok;
+
+    // 百分比合计必须正好 100：最后一段吃掉四舍五入的误差
+    const raw = [bad, warn, ok];
+    const percents = raw.map(n => (total > 0 ? Math.round((n / total) * 100) : 0));
+    const diff = total > 0 ? 100 - percents.reduce((s, n) => s + n, 0) : 0;
+    if (total > 0) percents[percents.length - 1] += diff;
+
+    const defs = [
+      { name: '已超期', count: bad, color: '#F5474F' },
+      { name: '临近到期', count: warn, color: '#E8912A' },
+      { name: '正常', count: ok, color: '#B6BCC8' }
+    ];
+
+    const segments = defs
+      .map((d, i) => ({ name: d.name, amount: `${d.count} 项`, percent: percents[i], color: d.color }))
+      // 0 项的段不画，否则环上会出现一条看不见却占角度的缝
+      .filter((s, i) => defs[i].count > 0);
+
+    return {
+      mntSegments: segments,
+      mntTotalText: total > 0 ? `${bad} / ${total}` : '0 / 0',
+      mntBad: bad,
+      mntWarn: warn,
+      mntOk: ok,
+      mntTotal: total
+    };
+  },
+
+  /** 保养卡整块可点 → 全车保养页（所有车的临期与超期） */
+  onOpenMaintainAll() {
+    wx.navigateTo({ url: '/pages/maintain-all/index' });
   },
 
   /** 点某条保养项 → 该车详情的「保养进度」 */

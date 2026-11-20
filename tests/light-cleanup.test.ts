@@ -320,11 +320,17 @@ describe('概览页列表 key：用稳定 id 而不是下标', () => {
     expect(after).toContain(before[0]);
   });
 
-  it('保养提醒的 key 不含下标', () => {
-    const src: string = fsx.readFileSync('pages/reminder/index.ts', 'utf-8');
-    expect(src).not.toMatch(/key: `\$\{m\.carSourceId\}-\$\{m\.name\}-\$\{i\}`/);
-    expect(src).toContain('`${m.carSourceId}#${m.name}`');
-    expect(src).toContain('key: r.sourceId');
+  it('概览不再逐条列保养项（改为状态环图 + 全车保养页），列表 key 仍用稳定 id', () => {
+    const reminder: string = fsx.readFileSync('pages/reminder/index.ts', 'utf-8');
+    // 保养明细已移到 pages/maintain-all，概览只留环图数据
+    expect(reminder).not.toMatch(/key: `\$\{m\.carSourceId\}#\$\{m\.name\}`/);
+    expect(reminder).toContain('buildMaintainRing');
+    // 最近记录仍是稳定 id
+    expect(reminder).toContain('key: r.sourceId');
+
+    // 新页的保养项 key 用保养项自身的 sourceId（不是下标）
+    const all: string = fsx.readFileSync('pages/maintain-all/index.ts', 'utf-8');
+    expect(all).toContain('key: it.maintain.sourceId');
   });
 });
 

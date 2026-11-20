@@ -34,7 +34,7 @@
       </view>
     </view>
 
-    <!-- 指标二：钱（不带算式，简单点） -->
+    <!-- 指标二：钱 -->
     <view class="metric-card">
       <view class="metric-col">
         <view class="metric-value">{{totalText}}</view>
@@ -50,7 +50,7 @@
       </view>
     </view>
 
-    <!-- 费用走势：只画有数据的柱子，横轴按真实位置 -->
+    <!-- 费用走势：只画有数据的柱子；点击柱子显示该天/月/年的金额 -->
     <view class="sec-title">
       费用走势
       <text class="sec-unit">按 {{granularityLabel}}</text>
@@ -59,11 +59,16 @@
       <view wx:if="{{emptyChart}}" class="chart-empty">这个区间还没有支出记录</view>
       <block wx:else>
         <view class="bars">
+          <!-- 气泡钉在被点柱子的正上方，带小三角指向柱子；不占图表外的空间 -->
+          <view wx:if="{{activeBarText}}" class="bar-tip" style="left:{{activeTipLeft}}">{{activeBarText}}</view>
           <view
             wx:for="{{bars}}"
             wx:key="left"
-            class="bar"
+            hover-class="hover-dim"
+            class="bar {{activeBar === index ? 'bar-active' : ''}}"
             style="left:{{item.left}};width:{{item.width}};height:{{item.height}}"
+            data-idx="{{index}}"
+            bindtap="onTapBar"
           ></view>
         </view>
         <view class="axis">
@@ -72,15 +77,33 @@
       </block>
     </view>
 
-    <!-- 分类支出 -->
-    <view wx:if="{{catRows.length}}" class="sec-title">分类支出</view>
-    <view wx:if="{{catRows.length}}" class="card">
-      <view wx:for="{{catRows}}" wx:key="name" class="cat-row">
-        <text class="cat-name">{{item.name}}</text>
-        <view class="cat-track">
-          <view class="cat-fill" style="width:{{item.width}};background:{{item.color}}"></view>
+    <!-- 分类支出：环图 + 比例条联动（与统计页同一组件） -->
+    <view wx:if="{{donutSegments.length}}" class="sec-title">分类支出</view>
+    <view wx:if="{{donutSegments.length}}" class="card">
+      <view class="donut-wrap">
+        <donut-chart
+          class="donut-chart"
+          segments="{{donutSegments}}"
+          total="{{donutTotal}}"
+          activeIndex="{{activeCat}}"
+          bind:change="onDonutChange"
+        />
+      </view>
+      <view class="cat-list">
+        <view
+          wx:for="{{catRows}}"
+          wx:key="name"
+          hover-class="hover-dim"
+          class="cat-row {{activeCat === index ? 'cat-row-active' : ''}}"
+          data-idx="{{index}}"
+          bindtap="onTapCatRow"
+        >
+          <text class="cat-name">{{item.name}}</text>
+          <view class="cat-track">
+            <view class="cat-fill" style="width:{{item.width}};background:{{item.color}}"></view>
+          </view>
+          <text class="cat-amount">{{item.amountText}}</text>
         </view>
-        <text class="cat-amount">{{item.amountText}}</text>
       </view>
     </view>
 

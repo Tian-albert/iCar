@@ -1,0 +1,69 @@
+<page-meta page-style="{{pageStyle}}" />
+<view class="page">
+  <!-- 筛选：默认只看需要处理的 -->
+  <view class="chips">
+    <view
+      hover-class="hover-dim"
+      class="chip {{filter === 'pending' ? 'chip-active' : ''}}"
+      data-filter="pending"
+      bindtap="onFilterChange"
+      >待处理 {{pendingTotal}}</view
+    >
+    <view
+      hover-class="hover-dim"
+      class="chip {{filter === 'all' ? 'chip-active' : ''}}"
+      data-filter="all"
+      bindtap="onFilterChange"
+      >全部 {{allTotal}}</view
+    >
+  </view>
+
+  <block wx:for="{{groups}}" wx:key="carSourceId">
+    <!-- 筛选「待处理」时，没有待办的车整体收起（避免一屏都是「都正常」） -->
+    <view wx:if="{{filter === 'all' || item.hasPending}}" class="group">
+      <view hover-class="hover-dim" class="group-head" data-id="{{item.carSourceId}}" bindtap="onTapCar">
+        <view class="group-title">
+          <text class="group-name">{{item.carName}}</text>
+          <text class="group-meta">{{item.carMeta}}</text>
+        </view>
+        <text class="group-more">车辆详情 ›</text>
+      </view>
+
+      <view class="card">
+        <view wx:if="{{item.items.length === 0}}" class="empty-line">还没有配置保养项</view>
+        <block wx:else>
+          <view
+            wx:for="{{item.items}}"
+            wx:for-item="mnt"
+            wx:key="key"
+            hover-class="hover-dim"
+            class="item {{filter === 'pending' && mnt.level === 'ok' ? 'item-dim' : ''}}"
+            data-id="{{item.carSourceId}}"
+            bindtap="onTapCar"
+          >
+            <view class="dot level-{{mnt.level}}"></view>
+            <view class="item-main">
+              <view class="item-top">
+                <text class="item-name">{{mnt.name}}</text>
+                <text class="item-remain level-{{mnt.level}}">{{mnt.remainText}}</text>
+              </view>
+              <view class="track">
+                <view class="fill level-{{mnt.level}}" style="width:{{mnt.width}}"></view>
+              </view>
+              <view class="item-sub">周期 {{mnt.cycleText}}</view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </block>
+
+  <view wx:if="{{loaded && allTotal === 0}}" class="empty-state">
+    <view class="empty-title">还没有保养项</view>
+    <view class="empty-desc">到车辆详情页为每辆车添加保养项后，这里会汇总所有车的临期与超期提醒。</view>
+  </view>
+  <view wx:if="{{loaded && allTotal > 0 && pendingTotal === 0}}" class="all-clear">
+    <text class="all-clear-icon">✓</text>
+    <text>所有保养项都在周期内</text>
+  </view>
+</view>

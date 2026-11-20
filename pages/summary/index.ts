@@ -12,11 +12,12 @@ import { listRefuels } from '../../services/refuel.service';
 import { buildOverview } from '../../services/overview.service';
 import { rebuildConsumptionsGrouped } from '../../domain/fuel.service';
 import { GRANULARITY_LABEL, buildSummary, SummarySnapshot } from '../../domain/summary.service';
-import { StatsRange, TrendGranularity } from '../../domain/stats.service';
-import { Car, Category, Cost, FuelConsumption, RefuelLog } from '../../types/models';
+import { StatsRange, TrendGranularity, TrendPoint } from '../../domain/stats.service';
+import { Cost, FuelConsumption, RefuelLog } from '../../types/models';
 import { formatCompact } from '../../utils/num-format';
 import { applyPageSkin } from '../../utils/skin';
 import { takeAgentHandoff } from '../../utils/agent-handoff';
+import { DonutSegment } from '../../utils/chart-render';
 
 interface BarView {
   label: string;
@@ -26,7 +27,12 @@ interface BarView {
   left: string;
   /** 宽度百分比 */
   width: string;
-  value: string;
+  /** 柱子自己的时间标签（当天 / 当月 / 当年，随粒度） */
+  dateText: string;
+  /** 该桶金额 */
+  valueText: string;
+  /** 气泡水平定位：柱中心百分比；页面用它把气泡钉在柱子正上方 */
+  tipLeft: string;
 }
 
 interface AxisTick {
@@ -63,6 +69,16 @@ Page({
     granularityLabel: '月',
     bars: [] as BarView[],
     axis: [] as AxisTick[],
+    /** 当前点中的柱子下标；-1 = 无 */
+    activeBar: -1,
+    /** 点中柱子后显示的时间与金额（气泡跟柱子走，不占图表外的空间） */
+    activeBarText: '',
+    /** 气泡的水平定位：钉在被点柱子的正上方（百分比） */
+    activeTipLeft: '50%',
+    donutSegments: [] as DonutSegment[],
+    donutTotal: '',
+    /** 环图选中扇区：-1 = 无；比例条与它联动 */
+    activeCat: -1,
     catRows: [] as Array<{ name: string; amountText: string; percent: string; color: string; width: string }>,
     carRows: [] as CarRowView[],
     emptyChart: false,
@@ -137,7 +153,15 @@ Page({
     const overview = buildOverview(storage, Date.now());
 
     const granularity: TrendGranularity = snap.trendGranularity;
-    const bars = this.buildBars(snap.costTrend.map(p => ({ label: p.label, value: p.value })), granularity, range);
+    const bars = this.buildBars(snap.costTrend, granularity, range);
+
+    // 分类环图：与统计页同一组件；比例条用 activeCat 联动高亮
+    const donutSegments: DonutSegment[] = snap.categories.map(c => ({
+      name: c.name,
+      amount: formatCompact(c.amount),
+      percent: c.percent,
+      color: c.color
+    }));
 
     this.setData({
       hasCar: true,
@@ -150,7 +174,12 @@ Page({
       granularityLabel: GRANULARITY_LABEL[granularity],
       bars: bars.bars,
       axis: bars.axis,
-      emptyChart: bars.bars.length === 0,
+      activeBar: -1,
+      activeBarText: '',
+      activeTipLeft: '50%',
+      donutSegments,
+      donutTotal: formatCompact(snap.expense.total),
+      activeCat: -1,
       catRows: snap.categories.map(c => ({
         name: c.name,
         amountText: `¥${c.amount.toFixed(2)}`,
@@ -184,8 +213,9 @@ Page({
    *
    * 「只画有数据的桶，横轴按真实位置」——月视图下 31 根柱子每根不到 9rpx，
    * 全画会糊成一片；按真实位置定位则能看出「哪几天花了钱、中间空了多久」。
+   * 每根柱子带 dateText（当天/当月/当年，随粒度），点击时展示。
    */
-  buildBars(points: Array<{ label: string; value: number }>, granularity: TrendGranularity, range: StatsRange) {
+  buildBars(points: TrendPoint[], granularity: TrendGranularity, range: StatsRange) {
     if (!points.length) return { bars: [] as BarView[], axis: [] as AxisTick[] };
 
     const max = points.reduce((m, p) => Math.max(m, p.value), 0) || 1;
@@ -205,13 +235,18 @@ Page({
     const slotWidth = 100 / slotCount;
     const bars: BarView[] = points.map(p => {
       const slot = slotOf(p.label);
+      // 柱中心的百分比：气泡钉在这里（柱子 left + 半宽）
+      const left = slot * slotWidth;
+      const width = slotWidth * 0.72;
       return {
         label: p.label,
         height: `${Math.max(3, Math.round((p.value / max) * 100))}%`,
-        left: `${(slot * slotWidth).toFixed(2)}%`,
+        left: `${left.toFixed(2)}%`,
         // 留一点间隙，柱子才不会连成一整块
-        width: `${(slotWidth * 0.72).toFixed(2)}%`,
-        value: `¥${p.value.toFixed(2)}`
+        width: `${width.toFixed(2)}%`,
+        dateText: this.barDateText(p.label, granularity, range),
+        valueText: `¥${p.value.toFixed(2)}`,
+        tipLeft: `${(left + width / 2).toFixed(2)}%`
       };
     });
 
@@ -231,6 +266,47 @@ Page({
     }
 
     return { bars, axis };
+  },
+
+  /** 柱子对应的时间全称：点中时展示用 */
+  barDateText(label: string, granularity: TrendGranularity, range: StatsRange): string {
+    if (granularity === 'day') {
+      const base = range.type === 'month' ? `${range.year} 年 ${range.month} 月` : '';
+      return `${base} ${Number(label)} 日`;
+    }
+    if (granularity === 'month') {
+      // 跨年时 label 形如 2026-03 / 3月
+      const m = Number((label.match(/(\d+)(?!.*\d)/) || [])[1]) || 1;
+      const y = range.type === 'year' ? range.year : new Date().getFullYear();
+      return `${y} 年 ${m} 月`;
+    }
+    return `${label} 年`;
+  },
+
+  /** 点柱子：气泡钉在该柱正上方；再点同一根取消 */
+  onTapBar(e: WechatMiniprogram.TouchEvent) {
+    const idx = Number(e.currentTarget.dataset.idx);
+    if (idx === this.data.activeBar) {
+      this.setData({ activeBar: -1, activeBarText: '', activeTipLeft: '50%' });
+      return;
+    }
+    const bar = this.data.bars[idx];
+    if (!bar) return;
+    this.setData({
+      activeBar: idx,
+      activeBarText: `${bar.dateText} · ${bar.valueText}`,
+      activeTipLeft: bar.tipLeft
+    });
+  },
+
+  /** 环图点扇区 → 比例条同步高亮；点比例条反向驱动扇区（与统计页图例同款联动） */
+  onDonutChange(e: WechatMiniprogram.CustomEvent<{ index: number }>) {
+    this.setData({ activeCat: e.detail.index });
+  },
+
+  onTapCatRow(e: WechatMiniprogram.TouchEvent) {
+    const idx = Number(e.currentTarget.dataset.idx);
+    this.setData({ activeCat: idx === this.data.activeCat ? -1 : idx });
   },
 
   onRangeChange(e: WechatMiniprogram.TouchEvent) {

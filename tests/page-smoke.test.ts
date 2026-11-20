@@ -105,6 +105,11 @@ const PAGE_CASES: PageCase[] = [
     options: d => ({ id: d.carId })
   },
   {
+    name: 'maintain-all（全车保养）',
+    path: 'pages/maintain-all/index',
+    options: () => ({})
+  },
+  {
     name: 'maintain-threshold',
     path: 'pages/maintain-threshold/index',
     options: d => ({ id: d.carId })

@@ -85,7 +85,7 @@
     },
     {
       "name": "queryMaintain",
-      "_meta": { "ui": { "pagePath": "pages/reminder/index" } },
+      "_meta": { "ui": { "pagePath": "pages/maintain-all/index" } },
       "description": "查询保养项剩余里程与剩余天数。**用户没说哪辆车且有多辆车时，汇总所有车辆的待保养项**（「有几项要保养」问的是全部）；说了车名则只查那一辆。默认只返回已超期或临近到期的项。只读。",
       "inputSchema": {
         "type": "object",
