@@ -15,6 +15,14 @@
         "type": "folder"
       },
       {
+        "value": "typings",
+        "type": "folder"
+      },
+      {
+        "value": ".vscode",
+        "type": "folder"
+      },
+      {
         "value": "scripts",
         "type": "folder"
       },
