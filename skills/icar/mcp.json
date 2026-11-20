@@ -2,7 +2,7 @@
   "apis": [
     {
       "name": "queryCars",
-      "_meta": { "ui": { "pagePath": "pages/vehicle-detail/index" } },
+      "_meta": { "ui": { "pagePath": "pages/index/index" } },
       "description": "列出用户已有的车辆及每辆车的能量类型（燃油/纯电/混动）、当前里程、是否置顶。适用于「我有几辆车」「我的车叫什么」；多车用户要记账或查统计前，可先用它确认车名再传 carName。只读。",
       "inputSchema": {
         "type": "object",
@@ -24,7 +24,7 @@
     },
     {
       "name": "queryStats",
-      "_meta": { "ui": { "pagePath": "pages/statistics/index" } },
+      "_meta": { "ui": { "pagePath": "pages/reminder/index" } },
       "description": "查询养车花费与能耗统计。**用户没说哪辆车且有多辆车时，返回全部车辆合计与每车明细**（「今年养车花了多少」问的是全部，不是某一辆）；说了车名则只返回那一辆。含总支出、每公里成本、油耗/电耗、有效里程。只读。",
       "inputSchema": {
         "type": "object",
@@ -85,7 +85,7 @@
     },
     {
       "name": "queryMaintain",
-      "_meta": { "ui": { "pagePath": "pages/vehicle-detail/index" } },
+      "_meta": { "ui": { "pagePath": "pages/reminder/index" } },
       "description": "查询保养项剩余里程与剩余天数。**用户没说哪辆车且有多辆车时，汇总所有车辆的待保养项**（「有几项要保养」问的是全部）；说了车名则只查那一辆。默认只返回已超期或临近到期的项。只读。",
       "inputSchema": {
         "type": "object",

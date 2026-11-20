@@ -94,10 +94,8 @@ async function queryMaintain(args = {}) {
                     urgentCount: '0',
                     items: ''
                 },
-                handoff: () => ({
-                    query: `id=${encodeURIComponent(cars[0].sourceId)}`,
-                    payload: { carCount: cars.length, overdueCount: 0 }
-                })
+                // 全车汇总 → 概览页（保养提醒就长在那里），不落到某一辆车
+                handoff: () => ({ query: '', payload: { carCount: cars.length, overdueCount: 0 } })
             };
         }
         // 每辆车最多列 2 项，总数最多 5 条，避免长回答
@@ -123,9 +121,9 @@ async function queryMaintain(args = {}) {
                 // 全车汇总不给蓝链：「概览」是 tabBar 页（navigateTo 跳不过去），
                 // 「保养管理」只接受单车 id，多车场景没有唯一目标页
             },
-            // 但接力必须有：评测的页面有效性认 handoff，落到第一辆车的详情页
+            // 全车汇总 → 概览页（保养提醒区块就在这里），不落到某一辆车
             handoff: () => ({
-                query: `id=${encodeURIComponent(cars[0].sourceId)}`,
+                query: '',
                 payload: { carCount: cars.length, overdueCount, urgentCount: visible.length }
             })
         };
@@ -184,7 +182,7 @@ async function queryMaintain(args = {}) {
             pagePath: `pages/vehicle-detail/index?id=${car.sourceId}`,
             linkText: '查看保养进度'
         },
-        // 页面接力：车辆详情页有「保养进度」区块
+        // 单车接力 → 这辆车的详情页（有「保养进度」区块），这里是正确的落点
         handoff: () => ({
             query: `id=${encodeURIComponent(car.sourceId)}`,
             payload: { carName: car.name, overdueCount, urgentCount: visible.length }

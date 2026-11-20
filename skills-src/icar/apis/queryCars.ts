@@ -16,7 +16,9 @@ export async function queryCars(): Promise<AgentApiResult> {
         }
       ],
       // 无车时不带链接：唯一能引导的「车辆」页是 tabBar 页，navigateTo 跳不过去会静默失败
-      structuredContent: { count: '0', items: '' }
+      structuredContent: { count: '0', items: '' },
+      // 空库也接力到车辆页——那正是「去添加车辆」的目标
+      handoff: () => ({ query: '', payload: { carCount: 0 } })
     };
   }
 
@@ -49,12 +51,19 @@ export async function queryCars(): Promise<AgentApiResult> {
       items,
       // 链到车辆详情（非 tabBar 页）而不是「车辆」列表页：
       // tabBar 页只能 switchTab，page-link 走 navigateTo 会静默失败
-      pagePath: `pages/vehicle-detail/index?id=${rows[0].sourceId}`,
-      linkText: '查看车辆详情'
+      // 不放 page-link：「车辆」是 tabBar 页，正文蓝链走 navigateTo 会静默失败；
+      // 进入入口由下面的 handoff 承担
+      pagePath: '',
+      linkText: '查看我的车辆'
     },
-    // 页面接力（评测的「页面有效性」认这个，不认 page-link）
+    /**
+     * 页面接力落到「我的车辆」列表页（tabBar 页），而不是某一辆车的详情。
+     *
+     * 问「我有几辆车」的人要看的是**列表**，把他带进某辆车的详情是错位——
+     * 而且会让人误以为系统默认了这辆车。tabBar 页不带业务 query，只投 payload。
+     */
     handoff: () => ({
-      query: `id=${encodeURIComponent(rows[0].sourceId)}`,
+      query: '',
       payload: { carCount: rows.length, names: rows.map(r => r.name).join('、') }
     })
   };

@@ -70,17 +70,32 @@ async function queryStats(args = {}) {
         // 按支出降序，最多列 5 辆，避免长回答
         const ranked = rows.slice().sort((a, b) => b.snap.expense.total - a.snap.expense.total);
         const shown = ranked.slice(0, 5);
+        /**
+         * 明细里带上每辆车自己的油耗/电耗：
+         * 「我的车平均油耗是多少」在**多车**场景下必须分开给（L 与 kWh 不能相加），
+         * 否则模型只能挑一辆车回答，就成了「掏出某一辆车的数据」。
+         */
         const breakdownText = shown
-            .map(r => `${r.car.name} ¥${r.snap.expense.total.toFixed(2)}（${r.snap.expense.perKm.toFixed(3)}/km）`)
+            .map(r => {
+            const isEv = r.car.energyType === 'ev';
+            const segMileage = isEv ? r.snap.electricity.mileage : r.snap.mileage.fuelMileage;
+            const cons = isEv ? r.snap.electricity.avgConsumption : r.snap.fuel.avgConsumption;
+            const consText = segMileage > 0
+                ? `，${isEv ? '电耗' : '油耗'} ${cons.toFixed(2)} ${isEv ? 'kWh' : 'L'}/100km`
+                : '';
+            return `${r.car.name} ¥${r.snap.expense.total.toFixed(2)}（${r.snap.expense.perKm.toFixed(3)}/km${consText}）`;
+        })
             .join('、');
         const restCount = ranked.length - shown.length;
+        // 每公里成本必须把算式摊开：合计支出 ÷ 合计里程 = 每公里，不能只甩一个结果
         const perKmPart = mileage > 0
-            ? `，每公里 ¥${perKm.toFixed(3)}（不含能耗 ¥${perKmExFuel.toFixed(3)}）`
-            : '（区间内没有里程记录，暂时算不出每公里成本）';
+            ? `合计支出 ¥${total.toFixed(2)} ÷ 有效里程 ${mileage} km = 每公里 ¥${perKm.toFixed(3)}` +
+                `（不含能耗 ¥${perKmExFuel.toFixed(3)}）`
+            : `合计支出 ¥${total.toFixed(2)}；区间内没有里程记录，暂时算不出每公里成本`;
         const text = nameMissNote +
-            `${cars.length} 辆车 ${label}合计支出 ¥${total.toFixed(2)}${perKmPart}；其中 ${breakdownText}` +
-            `${restCount > 0 ? ` 等 ${ranked.length} 辆` : ''}。` +
-            `需要看某一辆的油耗/电耗明细，告诉我车名即可。`;
+            `${cars.length} 辆车 ${label}：${perKmPart}。` +
+            `各车明细：${breakdownText}${restCount > 0 ? ` 等 ${ranked.length} 辆` : ''}。` +
+            `需要看某一辆的完整统计，告诉我车名即可。`;
         return {
             isError: false,
             content: [{ type: 'text', text }],
@@ -93,16 +108,16 @@ async function queryStats(args = {}) {
                 perKmExFuel: perKmExFuel.toFixed(3),
                 mileageIncreased: String(mileage),
                 breakdown: breakdownText,
-                pagePath: 'pages/statistics/index',
-                linkText: '查看统计详情'
+                // 概览是 tabBar 页：正文蓝链跳不过去，入口交给 handoff
+                pagePath: '',
+                linkText: '查看概览'
             },
             /**
-             * 页面接力。评测的「页面有效性」判定的是 handoff，不是 page-link：
-             * 只给蓝链而不接力会被判「未触发页面接力」。
-             * 全车汇总没有对应页面，这里接力到支出最高那辆车的统计页（至少能渲染出真实数据）。
+             * 页面接力：全车汇总落到**概览页**（它才是「全部车辆」的视图），
+             * 而不是某辆车的统计页——那会让用户以为系统默认了这辆车。
              */
             handoff: () => ({
-                query: `id=${encodeURIComponent(ranked[0].car.sourceId)}&range=year`,
+                query: '',
                 payload: {
                     scope: 'all',
                     totalExpense: total.toFixed(2),
@@ -159,9 +174,10 @@ async function queryStats(args = {}) {
     const categoryText = topCategories.length
         ? `；分类上 ${topCategories.map(c => `${c.name} ¥${c.amount.toFixed(2)}`).join('、')}`
         : '';
-    // 里程为 0 时不要输出「每公里 ¥0.000」——那是误导，不是省钱
+    // 每公里成本摊开算式；里程为 0 时不要输出「每公里 ¥0.000」——那是误导，不是省钱
     const perKmPart = snap.mileage.increased > 0
-        ? `每公里 ¥${perKm}，不含${energyCostLabel} ¥${perKmExFuel}；`
+        ? `支出 ¥${total} ÷ 有效里程 ${snap.mileage.increased} km = 每公里 ¥${perKm}` +
+            `（不含${energyCostLabel} ¥${perKmExFuel}）；`
         : '区间内没有里程记录，暂时算不出每公里成本；';
     const text = `${car.name}（${(0, store_1.energyLabel)(car)}）${label}${costPart}` +
         perKmPart +

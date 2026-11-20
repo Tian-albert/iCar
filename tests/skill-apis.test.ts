@@ -561,7 +561,19 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
     }
   });
 
-  it('每个接口的返回值都带 handoff，且能生成合法 query', async () => {
+  it('读类接口的接力页必须是聚合视图，不能是某一辆车的详情', () => {
+    const mcp = JSON.parse(fsx.readFileSync('skills/icar/mcp.json', 'utf-8'));
+    const pathOf = (name: string) => mcp.apis.find((a: any) => a.name === name)._meta.ui.pagePath;
+    // 「我有几辆车」→ 我的车辆列表；「今年花了多少」→ 概览
+    expect(pathOf('queryCars')).toBe('pages/index/index');
+    expect(pathOf('queryStats')).toBe('pages/reminder/index');
+    expect(pathOf('queryMaintain')).toBe('pages/reminder/index');
+    // 单车写操作落到这辆车的详情是合理的
+    expect(pathOf('addCost')).toBe('pages/vehicle-detail/index');
+    expect(pathOf('addRefuel')).toBe('pages/vehicle-detail/index');
+  });
+
+  it('每个接口的返回值都带 handoff，且 payload 有效', async () => {
     const { queryCars, queryStats, queryMaintain, addCost, addRefuel } = loadApis();
 
     const results = [
@@ -576,14 +588,25 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
       expect(res.isError).toBe(false);
       expect(typeof res.handoff).toBe('function');
       const { query, payload } = res.handoff({ result: res } as any);
-      expect(query).toContain('id=');
+      // 列表页/概览页是 tabBar 页，不带业务 query；单车页才带 id
+      expect(typeof query).toBe('string');
       expect(payload).toBeTruthy();
     }
   });
 
-  it('handoff 的 query 里车 id 做了编码（含冒号，不编码会解析错）', async () => {
+  it('全车类查询接力到列表页/概览页，而不是某一辆车的详情页', async () => {
+    addSecondCar(); // 多车才会触发全车作用域
+    const { queryCars, queryStats, queryMaintain } = loadApis();
+
+    for (const res of [await queryCars({}), await queryStats({ rangeType: 'all' }), await queryMaintain({})]) {
+      const { query } = res.handoff({ result: res } as any);
+      expect(query).toBe('');
+    }
+  });
+
+  it('单车查询的 handoff 带编码后的车 id（含冒号，不编码会解析错）', async () => {
     const { queryStats } = loadApis();
-    const res = await queryStats({ rangeType: 'all' });
+    const res = await queryStats({ carName: '我的 CRV', rangeType: 'all' });
     const { query } = res.handoff({ result: res } as any);
     expect(query).toContain('mp%3Acars%3A');
   });
