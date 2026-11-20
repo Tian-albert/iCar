@@ -148,6 +148,11 @@ async function addCost(args = {}) {
             dateText: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
             pagePath: `pages/vehicle-detail/index?id=${car.sourceId}`,
             linkText: '查看这辆车的记录'
-        }
+        },
+        // 页面接力：记完账直接带用户进这辆车的详情看记录
+        handoff: () => ({
+            query: `id=${encodeURIComponent(car.sourceId)}`,
+            payload: { carName: car.name, amount: saved.amount.toFixed(2), categoryName: category.name }
+        })
     };
 }

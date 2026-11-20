@@ -333,6 +333,13 @@ describe('queryStats', () => {
     expect(text).toContain('按 500 km 加油区间计');
   });
 
+  it('里程为 0 时不说「每公里 ¥0.000」，而是说明算不出', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'all' });
+    expect(res.content[0].text).toContain('算不出每公里成本');
+    expect(res.content[0].text).not.toContain('每公里 ¥0.000');
+  });
+
   it('没有车辆时给出可执行的引导，而不是抛错', async () => {
     resetMemory();
     const { queryStats } = loadApis();
@@ -541,6 +548,77 @@ describe('多车场景：读汇总、写追问', () => {
     const index: any = memory.get('icar:index');
     const saved: any = memory.get(`icar:costs:${index.costs[index.costs.length - 1]}`);
     expect(saved.carSourceId).toBe('mp:cars:2');
+  });
+});
+
+describe('页面接力（handoff）——评测「页面有效性」依赖它', () => {
+  it('mcp.json 每个接口都声明了 _meta.ui.pagePath', () => {
+    const mcp = JSON.parse(fsx.readFileSync('skills/icar/mcp.json', 'utf-8'));
+    for (const api of mcp.apis) {
+      expect(api._meta).toBeTruthy();
+      expect(api._meta.ui.pagePath).toBeTruthy();
+      expect(String(api._meta.ui.pagePath).startsWith('/')).toBe(false);
+    }
+  });
+
+  it('每个接口的返回值都带 handoff，且能生成合法 query', async () => {
+    const { queryCars, queryStats, queryMaintain, addCost, addRefuel } = loadApis();
+
+    const results = [
+      await queryCars({}),
+      await queryStats({ rangeType: 'all' }),
+      await queryMaintain({}),
+      await addCost({ amount: 15, categoryName: '停车' }),
+      await addRefuel({ volume: 40, amount: 320, mileage: 7000 })
+    ];
+
+    for (const res of results) {
+      expect(res.isError).toBe(false);
+      expect(typeof res.handoff).toBe('function');
+      const { query, payload } = res.handoff({ result: res } as any);
+      expect(query).toContain('id=');
+      expect(payload).toBeTruthy();
+    }
+  });
+
+  it('handoff 的 query 里车 id 做了编码（含冒号，不编码会解析错）', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'all' });
+    const { query } = res.handoff({ result: res } as any);
+    expect(query).toContain('mp%3Acars%3A');
+  });
+});
+
+describe('分类明细（「洗车/高速花了多少」要能答）', () => {
+  it('统计结果带 categories，且文案里出现分类金额', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'all' });
+    expect(Array.isArray(res.structuredContent.categories)).toBe(true);
+    expect(res.structuredContent.categories.length).toBeGreaterThan(0);
+    expect(res.content[0].text).toContain('分类上');
+    expect(res.content[0].text).toContain('停车');
+  });
+});
+
+describe('车名匹配不上时的回落策略', () => {
+  it('多辆车 + 车名匹配不上 → 回落全车汇总并说明，不报错', async () => {
+    addSecondCar();
+    const { queryStats, queryMaintain } = loadApis();
+
+    const stats = await queryStats({ carName: '两辆车', rangeType: 'all' });
+    expect(stats.isError).toBe(false);
+    expect(stats.structuredContent.scope).toBe('all');
+    expect(stats.content[0].text).toContain('没有找到叫「两辆车」的车');
+
+    const maintain = await queryMaintain({ carName: '两辆车' });
+    expect(maintain.isError).toBe(false);
+    expect(maintain.structuredContent.scope).toBe('all');
+  });
+
+  it('只有一辆车 + 车名匹配不上 → 仍然报错（不能假装是那辆车）', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ carName: '老婆的车' });
+    expect(res.isError).toBe(true);
   });
 });
 

@@ -23,6 +23,7 @@ import {
 import { formatDate } from '../../utils/date';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { safeBack } from '../../utils/safe-back';
+import { takeAgentHandoff } from '../../utils/agent-handoff';
 
 /**
  * 分享选项：风格 × 模式共六种。
@@ -90,12 +91,16 @@ Page({
   },
   onLoad(options: Record<string, string>) {
     const now = new Date();
+    // 从小微卡片接力进来时取走 payload（读完即删，避免 globalData 增长）
+    const handoff = takeAgentHandoff(this);
     this.setData({
-      carId: options.id,
+      // handoff 的 query 由开发者 encode，平台不会自动 decode，这里必须自己解
+      carId: options.id ? decodeURIComponent(options.id) : '',
       // 从车辆详情「今年统计」进入时默认展示年维度
       rangeType: options.range === 'year' ? 'year' : 'all',
       year: now.getFullYear(),
-      month: now.getMonth() + 1
+      month: now.getMonth() + 1,
+      fromAgent: !!handoff
     });
   },
   onShow() {

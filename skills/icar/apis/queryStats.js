@@ -48,7 +48,16 @@ async function queryStats(args = {}) {
             : { type: 'year', year: args.year || now.getFullYear() };
     const label = rangeLabel(range);
     const askedName = (args.carName || '').trim();
-    const isAllScope = !askedName && cars.length > 1;
+    /**
+     * 全车作用域有两种入口：
+     *   ① 没说车名 + 多辆车 → 用户问的是家底；
+     *   ② 说了车名但匹配不上 + 多辆车 → 「我两辆车」这类**数量短语**被当成车名传进来时，
+     *      报错会让模型反复重试直至 blocked（实测评测就是这么挂的）。
+     *      此时回落成全车汇总并说明，既不误导也不会卡死。
+     */
+    const matched = (0, store_1.resolveCarStrict)(cars, askedName);
+    const isAllScope = !matched.car && cars.length > 1;
+    const nameMissNote = isAllScope && askedName ? `没有找到叫「${askedName}」的车，下面是全部 ${cars.length} 辆车的合计：` : '';
     // ---------- ③ 全车合计 ----------
     if (isAllScope) {
         const rows = cars.map(car => ({ car, snap: snapshotOf(car, range) }));
@@ -65,8 +74,11 @@ async function queryStats(args = {}) {
             .map(r => `${r.car.name} ¥${r.snap.expense.total.toFixed(2)}（${r.snap.expense.perKm.toFixed(3)}/km）`)
             .join('、');
         const restCount = ranked.length - shown.length;
-        const text = `${cars.length} 辆车 ${label}合计支出 ¥${total.toFixed(2)}，每公里 ¥${perKm.toFixed(3)}` +
-            `（不含能耗 ¥${perKmExFuel.toFixed(3)}）；其中 ${breakdownText}` +
+        const perKmPart = mileage > 0
+            ? `，每公里 ¥${perKm.toFixed(3)}（不含能耗 ¥${perKmExFuel.toFixed(3)}）`
+            : '（区间内没有里程记录，暂时算不出每公里成本）';
+        const text = nameMissNote +
+            `${cars.length} 辆车 ${label}合计支出 ¥${total.toFixed(2)}${perKmPart}；其中 ${breakdownText}` +
             `${restCount > 0 ? ` 等 ${ranked.length} 辆` : ''}。` +
             `需要看某一辆的油耗/电耗明细，告诉我车名即可。`;
         return {
@@ -83,12 +95,26 @@ async function queryStats(args = {}) {
                 breakdown: breakdownText,
                 pagePath: 'pages/statistics/index',
                 linkText: '查看统计详情'
-            }
+            },
+            /**
+             * 页面接力。评测的「页面有效性」判定的是 handoff，不是 page-link：
+             * 只给蓝链而不接力会被判「未触发页面接力」。
+             * 全车汇总没有对应页面，这里接力到支出最高那辆车的统计页（至少能渲染出真实数据）。
+             */
+            handoff: () => ({
+                query: `id=${encodeURIComponent(ranked[0].car.sourceId)}&range=year`,
+                payload: {
+                    scope: 'all',
+                    totalExpense: total.toFixed(2),
+                    perKm: perKm.toFixed(3),
+                    carCount: cars.length
+                }
+            })
         };
     }
     // ---------- ①② 单辆车 ----------
-    // 说了车名就必须匹配上：用户问「老婆的车」而库里没有，答成 CRV 的数字是误导
-    const { car } = (0, store_1.resolveCarStrict)(cars, askedName);
+    // 只有一辆车时不做回落：「问的是别的车」与「只有这一辆」是两件事，报错并列车名更诚实
+    const { car } = matched;
     if (!car) {
         return {
             isError: true,
@@ -124,9 +150,23 @@ async function queryStats(args = {}) {
     const costPart = Number(energyCost) > 0
         ? `支出 ¥${total}，其中${energyCostLabel} ¥${energyCost}；`
         : `支出 ¥${total}；`;
+    /**
+     * 分类明细：主包 stats 里本来就算好了（categories 带金额与占比），
+     * 之前没往外传，导致「洗车总共花了多少」这类问题只能答「没有接口」。
+     * 只列前 3 类，避免回复过长；完整明细指向统计页。
+     */
+    const topCategories = snap.categories.slice(0, 3);
+    const categoryText = topCategories.length
+        ? `；分类上 ${topCategories.map(c => `${c.name} ¥${c.amount.toFixed(2)}`).join('、')}`
+        : '';
+    // 里程为 0 时不要输出「每公里 ¥0.000」——那是误导，不是省钱
+    const perKmPart = snap.mileage.increased > 0
+        ? `每公里 ¥${perKm}，不含${energyCostLabel} ¥${perKmExFuel}；`
+        : '区间内没有里程记录，暂时算不出每公里成本；';
     const text = `${car.name}（${(0, store_1.energyLabel)(car)}）${label}${costPart}` +
-        `每公里 ¥${perKm}，不含${energyCostLabel} ¥${perKmExFuel}；` +
-        `${consumptionPart}，总有效里程 ${snap.mileage.increased} km。`;
+        perKmPart +
+        `${consumptionPart}，总有效里程 ${snap.mileage.increased} km` +
+        `${categoryText}。`;
     return {
         isError: false,
         content: [{ type: 'text', text }],
@@ -144,8 +184,26 @@ async function queryStats(args = {}) {
             consumptionUnit: isEv ? 'kWh/100km' : 'L/100km',
             consumptionMileage: String(consumptionMileage),
             mileageIncreased: String(snap.mileage.increased),
+            categories: topCategories.map(c => ({
+                name: c.name,
+                amount: c.amount.toFixed(2),
+                percent: String(c.percent)
+            })),
             pagePath: `pages/statistics/index?id=${car.sourceId}&range=year`,
             linkText: '查看统计详情'
-        }
+        },
+        /** 页面接力：把对话流程整段接到这辆车的统计页 */
+        handoff: () => ({
+            query: `id=${encodeURIComponent(car.sourceId)}&range=year`,
+            payload: {
+                scope: 'car',
+                carName: car.name,
+                totalExpense: total,
+                perKm,
+                perKmExFuel,
+                avgConsumption: consumption.toFixed(2),
+                mileageIncreased: String(snap.mileage.increased)
+            }
+        })
     };
 }

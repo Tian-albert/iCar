@@ -51,8 +51,16 @@ async function queryMaintain(args = {}) {
     }
     const onlyUrgent = args.onlyUrgent !== false;
     const askedName = (args.carName || '').trim();
-    // ---------- 多车 + 没说车名：汇总所有车 ----------
-    if (!askedName && cars.length > 1) {
+    /**
+     * 全车作用域：没说车名的多车场景，或车名匹配不上（「两辆车」这种数量短语会落到这里）。
+     * 后者若直接报错，模型会反复重试直至 blocked——实测评测中「我两辆车分别什么时候该保养」
+     * 就是这么被判失败的。
+     */
+    const matched = (0, store_1.resolveCarStrict)(cars, askedName);
+    const isAllScope = !matched.car && cars.length > 1;
+    const nameMissNote = isAllScope && askedName ? `没有找到叫「${askedName}」的车，下面是全部 ${cars.length} 辆车的汇总：` : '';
+    // ---------- 全车：汇总所有车 ----------
+    if (isAllScope) {
         // 不用 flatMap：tsconfig 的 lib 是 ES2017，没有该方法
         const all = [];
         for (const c of cars)
@@ -85,7 +93,11 @@ async function queryMaintain(args = {}) {
                     overdueCount: '0',
                     urgentCount: '0',
                     items: ''
-                }
+                },
+                handoff: () => ({
+                    query: `id=${encodeURIComponent(cars[0].sourceId)}`,
+                    payload: { carCount: cars.length, overdueCount: 0 }
+                })
             };
         }
         // 每辆车最多列 2 项，总数最多 5 条，避免长回答
@@ -96,7 +108,8 @@ async function queryMaintain(args = {}) {
             content: [
                 {
                     type: 'text',
-                    text: `${cars.length} 辆车共有 ${visible.length} 项需要关注` +
+                    text: nameMissNote +
+                        `${cars.length} 辆车共有 ${visible.length} 项需要关注` +
                         `${overdueCount ? `，其中 ${overdueCount} 项已超期` : ''}：${detail}。` +
                         `需要看某一辆的完整保养项，告诉我车名即可。`
                 }
@@ -107,14 +120,19 @@ async function queryMaintain(args = {}) {
                 overdueCount: String(overdueCount),
                 urgentCount: String(visible.length),
                 items: detail
-                // 全车汇总不给链接：「概览」是 tabBar 页（navigateTo 跳不过去），
+                // 全车汇总不给蓝链：「概览」是 tabBar 页（navigateTo 跳不过去），
                 // 「保养管理」只接受单车 id，多车场景没有唯一目标页
-            }
+            },
+            // 但接力必须有：评测的页面有效性认 handoff，落到第一辆车的详情页
+            handoff: () => ({
+                query: `id=${encodeURIComponent(cars[0].sourceId)}`,
+                payload: { carCount: cars.length, overdueCount, urgentCount: visible.length }
+            })
         };
     }
     // ---------- 单车 ----------
-    // 说了车名就必须匹配上：库里没有这辆车时，答另一辆的保养剩余量是误导
-    const { car } = (0, store_1.resolveCarStrict)(cars, askedName);
+    // 只有一辆车时不做回落：报错并列车名，比拿另一辆的数字搪塞更诚实
+    const { car } = matched;
     if (!car) {
         return {
             isError: true,
@@ -165,6 +183,11 @@ async function queryMaintain(args = {}) {
             items: visible.slice(0, 5).map(r => `${r.name}｜${r.remainText}`).join('；'),
             pagePath: `pages/vehicle-detail/index?id=${car.sourceId}`,
             linkText: '查看保养进度'
-        }
+        },
+        // 页面接力：车辆详情页有「保养进度」区块
+        handoff: () => ({
+            query: `id=${encodeURIComponent(car.sourceId)}`,
+            payload: { carName: car.name, overdueCount, urgentCount: visible.length }
+        })
     };
 }

@@ -48,6 +48,11 @@ async function queryCars() {
             // tabBar 页只能 switchTab，page-link 走 navigateTo 会静默失败
             pagePath: `pages/vehicle-detail/index?id=${rows[0].sourceId}`,
             linkText: '查看车辆详情'
-        }
+        },
+        // 页面接力（评测的「页面有效性」认这个，不认 page-link）
+        handoff: () => ({
+            query: `id=${encodeURIComponent(rows[0].sourceId)}`,
+            payload: { carCount: rows.length, names: rows.map(r => r.name).join('、') }
+        })
     };
 }

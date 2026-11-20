@@ -10,6 +10,7 @@ import { displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDateTime, formatDate } from '../../utils/date';
 import { FuelConsumption, RefuelLog } from '../../types/models';
 import { safeBack } from '../../utils/safe-back';
+import { takeAgentHandoff } from '../../utils/agent-handoff';
 
 /** 详情页最多展示的加油/充电记录条数（其余进「查看全部」） */
 const RECENT_RECORD_LIMIT = 3;
@@ -84,10 +85,14 @@ Page({
     targetSection: ''
   },
   onLoad(options: Record<string, string>) {
+    // 从小微卡片接力进来时取走 payload（读完即删）
+    const handoff = takeAgentHandoff(this);
     this.setData({
-      carId: options.id,
+      // handoff 的 query 由开发者 encode，平台不会自动 decode，这里必须自己解
+      carId: options.id ? decodeURIComponent(options.id) : '',
       // 概览页跳转时带 section，进入后滚动到对应区块
-      targetSection: options.section || ''
+      targetSection: options.section || '',
+      fromAgent: !!handoff
     });
   },
   onShow() {

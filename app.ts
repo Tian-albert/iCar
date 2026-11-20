@@ -9,6 +9,16 @@ installSkinPatch();
 
 App<IAppOption>({
   onLaunch() {
+    // 页面接力：用户在小微里点小程序卡片进入时触发。
+    // 按 pageId 精确投递，目标页在 onLoad 里用 takeAgentHandoff 取走。
+    if (typeof wx.onAgentHandoff === 'function') {
+      wx.onAgentHandoff(({ pageId, path, query, payload }) => {
+        const g: any = (this as any).globalData;
+        g.agentHandoffs = g.agentHandoffs || {};
+        g.agentHandoffs[pageId] = { path, query, payload };
+      });
+    }
+
     // 初始化存储：schema 迁移 + 预设类别种子 + 索引对账
     const storage = getStorage();
 

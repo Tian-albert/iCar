@@ -282,6 +282,15 @@ async function addRefuel(args = {}) {
             consumptionMileage: latest ? String(latest.mileage) : '',
             pagePath: `pages/vehicle-detail/index?id=${car.sourceId}`,
             linkText: '查看加油记录'
-        }
+        },
+        // 页面接力：进这辆车的详情看加油记录与油耗
+        handoff: () => ({
+            query: `id=${encodeURIComponent(car.sourceId)}`,
+            payload: {
+                carName: car.name,
+                amount: actualPay.toFixed(2),
+                consumption: latest ? latest.fuelConsumption.toFixed(2) : ''
+            }
+        })
     };
 }
