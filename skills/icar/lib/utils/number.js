@@ -1,0 +1,75 @@
+"use strict";
+/** 金额与数值工具（对齐设计报告 7.3/7.6 的 round2） */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AMOUNT_INPUT_ERROR = void 0;
+exports.round2 = round2;
+exports.round3 = round3;
+exports.clamp01 = clamp01;
+exports.isValidAmount = isValidAmount;
+exports.maxOf = maxOf;
+exports.minOf = minOf;
+exports.parseAmountInput = parseAmountInput;
+/** 四舍五入到 2 位小数，规避浮点误差 */
+function round2(n) {
+    return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+/** 四舍五入到 3 位小数（用于"元/km"等小数值指标，如 1.317） */
+function round3(n) {
+    return Math.round((n + Number.EPSILON) * 1000) / 1000;
+}
+/** 收敛到 [0, 1] */
+function clamp01(n) {
+    return Math.min(1, Math.max(0, n));
+}
+/** 金额合法性：有限数且非负（表单输入与 service 兜底共用同一口径） */
+function isValidAmount(n) {
+    return isFinite(n) && n >= 0;
+}
+/**
+ * 求最大值，忽略非有限值；空数组或全是脏值返回 fallback。
+ *
+ * 为什么不用 `Math.max(...list)`：
+ * - 记录上万条时，展开成实参会让调用栈溢出（RangeError），图表直接白屏
+ * - 只要有一个 `NaN`，结果就是 `NaN`，Y 轴与所有点坐标会一起变成 NaN
+ */
+function maxOf(list, fallback = 0) {
+    let out = fallback;
+    for (const v of list) {
+        if (!isFinite(v))
+            continue;
+        if (v > out)
+            out = v;
+    }
+    return out;
+}
+/** 求最小值，忽略非有限值；空数组或全是脏值返回 fallback */
+function minOf(list, fallback = 0) {
+    let started = false;
+    let out = fallback;
+    for (const v of list) {
+        if (!isFinite(v))
+            continue;
+        if (!started || v < out) {
+            out = v;
+            started = true;
+        }
+    }
+    return out;
+}
+/** 金额输入非法时的统一提示（两处加油表单共用） */
+exports.AMOUNT_INPUT_ERROR = '实付金额无效，留空按应付金额';
+/**
+ * 解析「可留空」的金额输入（如加油的实付金额）。
+ * - 空串：ok=true, value=null，由调用方回退默认值（应付金额）
+ * - 非数字 / 负数 / Infinity：ok=false，调用方应提示并中止保存
+ * - 其余：四舍五入到 2 位
+ */
+function parseAmountInput(raw) {
+    const text = (raw || '').trim();
+    if (!text)
+        return { ok: true, value: null };
+    const n = Number(text);
+    if (!isValidAmount(n))
+        return { ok: false, value: null };
+    return { ok: true, value: round2(n) };
+}

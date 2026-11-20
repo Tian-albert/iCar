@@ -11,6 +11,14 @@
         "type": "folder"
       },
       {
+        "value": "skills-src",
+        "type": "folder"
+      },
+      {
+        "value": "scripts",
+        "type": "folder"
+      },
+      {
         "value": "tests",
         "type": "folder"
       },

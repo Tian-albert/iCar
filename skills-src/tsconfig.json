@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "CommonJS",
+    "lib": ["ES2017"],
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noImplicitAny": true,
+    "types": ["miniprogram-api-typings"],
+    // 输出根：skills-src/icar/** → skills/icar/**（保持相对路径）
+    "rootDir": "./",
+    "outDir": "../skills",
+    "sourceMap": false
+  },
+  "include": ["icar/**/*.ts", "../typings/ai-agent.d.ts"]
+}

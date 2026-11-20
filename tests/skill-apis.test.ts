@@ -181,7 +181,8 @@ function seed(): void {
   });
 }
 
-// 模块内引用了全局 wx，必须在打桩之后再 require
+// 模块内引用了全局 wx，必须在打桩之后再 require。
+// 加载的是编译产物（skills/icar 下的 .js）—— 与小程序实际执行的文件一致。
 function loadApis() {
   return {
     queryStats: require('../skills/icar/apis/queryStats').queryStats,

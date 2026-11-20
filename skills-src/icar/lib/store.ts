@@ -19,7 +19,7 @@ import {
   MaintainLog,
   RefuelLog,
   User
-} from './types/models';
+} from '../lib/types/models';
 
 const KEY_INDEX = 'icar:index';
 const KEY_USER = 'icar:user';

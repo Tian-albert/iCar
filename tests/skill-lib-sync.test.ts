@@ -32,10 +32,10 @@ const MIRRORED = [
   'domain/maintain.service.ts'
 ];
 
-describe('SKILL 数据层镜像一致性', () => {
+describe('SKILL 数据层镜像一致性（skills-src，TS 源）', () => {
   it.each(MIRRORED)('%s 与主包逐字节一致', rel => {
     const source = read(rel);
-    const copy = read(`skills/icar/lib/${rel}`);
+    const copy = read(`skills-src/icar/lib/${rel}`);
     expect(copy).toBe(source);
   });
 
@@ -43,12 +43,49 @@ describe('SKILL 数据层镜像一致性', () => {
     const dirs = ['types', 'utils', 'domain'];
     const actual: string[] = [];
     for (const d of dirs) {
-      const dir = pathx.join('skills/icar/lib', d);
+      const dir = pathx.join('skills-src/icar/lib', d);
       for (const name of fsx.readdirSync(dir)) {
         actual.push(`${d}/${name}`);
       }
     }
     expect(actual.sort()).toEqual(MIRRORED.slice().sort());
+  });
+});
+
+describe('编译产物（skills/icar 下必须是纯 JS）', () => {
+  const RUNTIME_JS = [
+    'skills/icar/index.js',
+    'skills/icar/apis/queryStats.js',
+    'skills/icar/apis/queryMaintain.js',
+    'skills/icar/apis/addCost.js',
+    'skills/icar/lib/store.js'
+  ];
+
+  it('运行时文件全部存在，且没有任何 .ts 残留（真机会把 .ts 当 JS 加载并报 Invalid token）', () => {
+    for (const f of RUNTIME_JS) {
+      expect(fsx.existsSync(f)).toBe(true);
+    }
+    const tsFiles = walkTs('skills');
+    expect(tsFiles).toEqual([]);
+  });
+
+  function walkTs(dir: string): string[] {
+    const out: string[] = [];
+    if (!fsx.existsSync(dir)) return out;
+    for (const e of fsx.readdirSync(dir, { withFileTypes: true })) {
+      const full = `${dir}/${e.name}`;
+      if (e.isDirectory()) out.push(...walkTs(full));
+      else if (e.name.endsWith('.ts')) out.push(full);
+    }
+    return out;
+  }
+
+  it('产物头部是合法 CommonJS（不是 TS 原文）', () => {
+    for (const f of RUNTIME_JS) {
+      const src = read(f);
+      expect(src).toContain('"use strict"');
+      expect(src).not.toMatch(/^\s*import\s|\binterface\s+\w+\s*\{/);
+    }
   });
 });
 
@@ -75,7 +112,8 @@ describe('官方体积限额', () => {
 
 describe('契约对齐：mcp.json ↔ index.ts ↔ app.json', () => {
   const mcp = JSON.parse(read('skills/icar/mcp.json'));
-  const indexSrc = read('skills/icar/index.ts');
+  // TS 源在 skills-src；产物在 skills（契约测试校验源码，产物另由冒烟脚本守护）
+  const indexSrc = read('skills-src/icar/index.ts');
   const appJson = JSON.parse(read('app.json'));
 
   it('声明的接口名与注册的接口名完全一致', () => {
@@ -134,8 +172,8 @@ describe('契约对齐：mcp.json ↔ index.ts ↔ app.json', () => {
 });
 
 describe('原子接口的边界行为', () => {
-  const addCostSrc = read('skills/icar/apis/addCost.ts');
-  const queryStatsSrc = read('skills/icar/apis/queryStats.ts');
+  const addCostSrc = read('skills-src/icar/apis/addCost.ts');
+  const queryStatsSrc = read('skills-src/icar/apis/queryStats.ts');
 
   it('addCost 金额非法时先追问，不默认成 0 元', () => {
     expect(addCostSrc).toContain('缺少有效金额');

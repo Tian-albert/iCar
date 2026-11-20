@@ -1,0 +1,27 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+// SKILL 注册入口
+//
+// 契约（见官方「接入方式」3.3）：
+// · createSkill 的 path 必须与 app.json 的 agent.skills[].path 完全一致；
+// · registerAPI 的 name 必须与 mcp.json 中 apis[].name 完全一致。
+const addCost_1 = require("./apis/addCost");
+const queryMaintain_1 = require("./apis/queryMaintain");
+const queryStats_1 = require("./apis/queryStats");
+const SKILL_PATH = 'skills/icar';
+const skill = wx.modelContext.createSkill(SKILL_PATH);
+// 中间件：统一兜底。原子接口抛错时不能把裸异常丢给模型，
+// 要转成「可读的失败原因 + 下一步建议」，否则模型只会一直重试同一个接口。
+skill.use(async (ctx, next) => {
+    try {
+        await next();
+    }
+    catch (err) {
+        const message = err && err.message ? err.message : String(err);
+        console.error(`[skill:${ctx.skillPath}] ${ctx.name} 执行失败`, message);
+        throw new Error(`本地数据读取失败：${message}。请提示用户重试，或引导到对应页面手动操作。`);
+    }
+});
+skill.registerAPI('queryStats', queryStats_1.queryStats);
+skill.registerAPI('queryMaintain', queryMaintain_1.queryMaintain);
+skill.registerAPI('addCost', addCost_1.addCost);

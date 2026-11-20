@@ -8,8 +8,9 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "sync:skill": "node scripts/sync-skill-lib.js",
-    "check:skill": "node scripts/sync-skill-lib.js --check"
+    "sync:skill": "node scripts/sync-skill-lib.js && npx tsc -p skills-src/tsconfig.json",
+    "check:skill": "node scripts/sync-skill-lib.js --check",
+    "build:skill": "npx tsc -p skills-src/tsconfig.json && node scripts/smoke-skill-dist.js"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
