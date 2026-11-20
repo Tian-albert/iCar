@@ -212,6 +212,70 @@ describe('queryStats', () => {
     expect(res.structuredContent.linkText).toBeTruthy();
   });
 
+  it('能耗金额与区间里程单独返回（否则「不含能耗」是凭空的差值）', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'all' });
+    // 本用例没有加油/充电记录 → 能耗 0，但字段必须存在
+    expect(res.structuredContent.energyCost).toBe('0.00');
+    expect(res.structuredContent.energyCostLabel).toBe('油费');
+    expect(res.structuredContent.consumptionMileage).toBe('0');
+    // 无有效区间时文案要给原因，而不是「平均油耗 0.00」
+    expect(res.content[0].text).toContain('暂无有效油耗区间');
+  });
+
+  it('有能耗时文案同时给「其中油费」和「不含油费」，两个数能对上账', async () => {
+    resetMemory();
+    seed();
+    // 补一条加油记录与一个有效区间：40L / 500km → 8.00 L/100km
+    put('fuelRecords', {
+      sourceId: 'mp:fuel:1',
+      sourcePlatform: 'mp',
+      carSourceId: CAR_ID,
+      energyType: 'fuel',
+      fuelDate: new Date(2026, 10, 12).getTime(),
+      makeMileages: 5850,
+      makeEVMileages: 0,
+      makeHEVMileages: 0,
+      unitPrice: 8,
+      volume: 40,
+      shouldPayAmount: 320,
+      actualPayAmount: 320,
+      isFull: true,
+      isLowFuel: true,
+      lastRecorded: true,
+      chargeBeforePercent: 0,
+      chargeAfterPercent: 0,
+      remark: '',
+      costSourceId: ''
+    });
+    put('fuelConsumptions', {
+      sourceId: 'mp:seg:1',
+      sourcePlatform: 'mp',
+      carSourceId: CAR_ID,
+      energyType: 'fuel',
+      startDate: new Date(2026, 10, 1).getTime(),
+      endDate: new Date(2026, 10, 12).getTime(),
+      startMileages: 5350,
+      endMileages: 5850,
+      mileage: 500,
+      fuelAmount: 40,
+      fuelConsumption: 8,
+      costPerKm: 0.64
+    });
+
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'all' });
+
+    expect(res.structuredContent.energyCost).toBe('320.00');
+    expect(res.structuredContent.energyCostLabel).toBe('油费');
+    expect(res.structuredContent.avgConsumption).toBe('8.00');
+    expect(res.structuredContent.consumptionMileage).toBe('500');
+
+    const text: string = res.content[0].text;
+    expect(text).toContain('其中油费 ¥320.00');
+    expect(text).toContain('按 500 km 加油区间计');
+  });
+
   it('没有车辆时给出可执行的引导，而不是抛错', async () => {
     resetMemory();
     const { queryStats } = loadApis();

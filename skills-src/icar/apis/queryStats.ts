@@ -72,13 +72,34 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
   const perKm = snap.expense.perKm.toFixed(3);
   const perKmExFuel = snap.expense.perKmExFuel.toFixed(3);
   const energyName = isEv ? '电耗' : '油耗';
+  const energyCostLabel = isEv ? '电费' : '油费';
   const consumption = isEv ? snap.electricity.avgConsumption : snap.fuel.avgConsumption;
+  // 能耗金额：让「不含能耗」不再是凭空的差值，用户能对上账
+  const energyCost = (isEv ? snap.electricity.totalCost : snap.fuel.totalCost).toFixed(2);
+  /**
+   * 能耗的分母是「区间里程」，不是「有效里程 increased」。
+   *
+   * 两者在首尾区间有缺口时并不相等；文案必须用它自己的分母，
+   * 否则用户按「电耗 × 有效里程」反推总电量会对不上账。
+   */
+  const consumptionMileage = isEv ? snap.electricity.mileage : snap.mileage.fuelMileage;
+
+  const consumptionPart =
+    consumptionMileage > 0
+      ? `平均${energyName} ${consumption.toFixed(2)} ${isEv ? 'kWh/100km' : 'L/100km'}` +
+        `（按 ${consumptionMileage} km ${isEv ? '充电' : '加油'}区间计）`
+      : `暂无有效${energyName}区间（需要连续两次${isEv ? '充电' : '加满'}记录）`;
+
+  // 没有能耗记录时不写「其中油费 ¥0.00」这种废话
+  const costPart =
+    Number(energyCost) > 0
+      ? `支出 ¥${total}，其中${energyCostLabel} ¥${energyCost}；`
+      : `支出 ¥${total}；`;
 
   const text =
-    `${car.name}（${energyLabel(car)}）${label}支出 ¥${total}，` +
-    `每公里 ¥${perKm}（不含能耗费用 ¥${perKmExFuel}）；` +
-    `${energyName} ${consumption.toFixed(2)} ${isEv ? 'kWh/100km' : 'L/100km'}，` +
-    `有效里程 ${snap.mileage.increased} km。`;
+    `${car.name}（${energyLabel(car)}）${label}${costPart}` +
+    `每公里 ¥${perKm}，不含${energyCostLabel} ¥${perKmExFuel}；` +
+    `${consumptionPart}，总有效里程 ${snap.mileage.increased} km。`;
 
   return {
     isError: false,
@@ -90,8 +111,11 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
       totalExpense: total,
       perKm,
       perKmExFuel,
+      energyCost,
+      energyCostLabel,
       avgConsumption: consumption.toFixed(2),
       consumptionUnit: isEv ? 'kWh/100km' : 'L/100km',
+      consumptionMileage: String(consumptionMileage),
       mileageIncreased: String(snap.mileage.increased),
       // page-link：让回复正文里出现「#小程序：车记本/查看统计详情」
       pagePath: `/pages/statistics/index?id=${car.sourceId}&range=year`,

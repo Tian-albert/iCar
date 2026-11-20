@@ -34,8 +34,11 @@
           "totalExpense": { "type": "string" },
           "perKm": { "type": "string" },
           "perKmExFuel": { "type": "string" },
+          "energyCost": { "type": "string" },
+          "energyCostLabel": { "type": "string" },
           "avgConsumption": { "type": "string" },
           "consumptionUnit": { "type": "string" },
+          "consumptionMileage": { "type": "string" },
           "mileageIncreased": { "type": "string" },
           "linkText": { "type": "string" },
           "pagePath": {
