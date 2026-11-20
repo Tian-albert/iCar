@@ -72,7 +72,8 @@ describe('percent 的取值范围（宽度百分比的正确性前提）', () =>
   it('stats.service 产出的 percent 是 0~100，而不是 0~1', () => {
     const src: string = fsx.readFileSync('domain/stats.service.ts', 'utf-8');
     // 宽度直接绑 percent%，若这里是 0~1 小数，条会全部缩成 1%
-    expect(src).toMatch(/\(amount \/ totalCost\) \* 100/);
+    // 分类聚合改为按 { amount, count } 累计后，分子是 agg.amount
+    expect(src).toMatch(/\(agg\.amount \/ totalCost\) \* 100/);
   });
 
   it('percent 合计被修正为 100', () => {

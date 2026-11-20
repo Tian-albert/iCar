@@ -153,7 +153,6 @@ dayWithMonth = false) {
  * 入参为软删除过滤后的现存数据。
  */
 function buildStats(range, costs, refuels, consumptions, categories, car) {
-    var _a;
     const { start, end } = resolveRange(range);
     const inRange = (t) => t >= start && t <= end;
     const costList = costs.filter(c => inRange(c.costDate));
@@ -201,18 +200,23 @@ function buildStats(range, costs, refuels, consumptions, categories, car) {
     const exEnergy = totalCost - totalFuelCost - totalChargeCost;
     const expensePerKmExFuel = increased > 0 ? Math.max(0, exEnergy) / increased : 0;
     // ---------- 分类支出（降序 + 最大余数补齐 100%） ----------
+    // 同时记笔数：用户问「今年加油花了多少」时，「12 次 · ¥4,180」比一个金额更像明细
     const byCategory = new Map();
     for (const c of costList) {
-        byCategory.set(c.categorySourceId, ((_a = byCategory.get(c.categorySourceId)) !== null && _a !== void 0 ? _a : 0) + c.amount);
+        const hit = byCategory.get(c.categorySourceId) || { amount: 0, count: 0 };
+        hit.amount += c.amount;
+        hit.count += 1;
+        byCategory.set(c.categorySourceId, hit);
     }
     const named = [...byCategory.entries()]
-        .map(([id, amount]) => {
+        .map(([id, agg]) => {
         var _a, _b;
         return ({
             categorySourceId: id,
             name: (_b = (_a = categories.find(x => x.sourceId === id)) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : '其他',
-            amount: (0, number_1.round2)(amount),
-            percent: totalCost > 0 ? (0, number_1.round2)((amount / totalCost) * 100) : 0,
+            amount: (0, number_1.round2)(agg.amount),
+            percent: totalCost > 0 ? (0, number_1.round2)((agg.amount / totalCost) * 100) : 0,
+            count: agg.count,
             color: ''
         });
     })

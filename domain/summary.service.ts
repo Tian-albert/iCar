@@ -43,7 +43,15 @@ export interface SummarySnapshot {
     energyTotal: number;
     energyPercent: number;
   };
-  categories: Array<{ categorySourceId: string; name: string; amount: number; percent: number; color: string }>;
+  categories: Array<{
+    categorySourceId: string;
+    name: string;
+    amount: number;
+    percent: number;
+    color: string;
+    /** 该分类的笔数 */
+    count: number;
+  }>;
   trendGranularity: TrendGranularity;
   costTrend: TrendPoint[];
   energyTrend: TrendPoint[];
@@ -107,16 +115,21 @@ export function buildSummary(
   const perKmExEnergy = mileageIncreased > 0 ? Math.max(0, total - energyTotal) / mileageIncreased : 0;
 
   // ---------- 分类（全车合并，降序，最大余数补齐 100%） ----------
-  const byCategory = new Map<string, number>();
+  // 记笔数：回复「今年加油花了多少」时说「12 次 · ¥4,180」才算给了明细
+  const byCategory = new Map<string, { amount: number; count: number }>();
   for (const c of costList) {
-    byCategory.set(c.categorySourceId, (byCategory.get(c.categorySourceId) ?? 0) + c.amount);
+    const hit = byCategory.get(c.categorySourceId) || { amount: 0, count: 0 };
+    hit.amount += c.amount;
+    hit.count += 1;
+    byCategory.set(c.categorySourceId, hit);
   }
   const merged = [...byCategory.entries()]
-    .map(([id, amount]) => ({
+    .map(([id, agg]) => ({
       categorySourceId: id,
       name: categories.find(x => x.sourceId === id)?.name ?? '其他',
-      amount: round2(amount),
-      percent: total > 0 ? round2((amount / total) * 100) : 0,
+      amount: round2(agg.amount),
+      percent: total > 0 ? round2((agg.amount / total) * 100) : 0,
+      count: agg.count,
       color: ''
     }))
     .sort((a, b) => b.amount - a.amount);
@@ -126,11 +139,13 @@ export function buildSummary(
   const tail = merged.slice(MAX_CATEGORIES);
   if (tail.length) {
     const restAmount = round2(tail.reduce((s, x) => s + x.amount, 0));
+    const restCount = tail.reduce((s, x) => s + x.count, 0);
     head.push({
       categorySourceId: '__other__',
       name: '其他',
       amount: restAmount,
       percent: total > 0 ? round2((restAmount / total) * 100) : 0,
+      count: restCount,
       color: ''
     });
   }

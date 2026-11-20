@@ -197,7 +197,8 @@ Page({
       activeCat: -1,
       catRows: snap.categories.map(c => ({
         name: c.name,
-        amountText: `¥${c.amount.toFixed(2)}`,
+        // 金额 + 笔数：「¥4,180.00 · 12 次」比光一个金额更像明细
+        amountText: `¥${c.amount.toFixed(2)} · ${c.count} 次`,
         percent: `${c.percent}%`,
         color: c.color,
         // 条宽用占比，最短留 4% 免得看不见

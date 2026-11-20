@@ -814,3 +814,13 @@ describe('queryStats 自定义区间落到数据总览', () => {
     expect(query).toContain('end=2026-10-07');
   });
 });
+
+describe('分类明细带笔数（「今年加油花了多少」要能答出次数）', () => {
+  it('回复文案里出现「N 次 ¥金额」', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'all' });
+    expect(res.content[0].text).toContain('次 ¥');
+    expect(Array.isArray(res.structuredContent.categories)).toBe(true);
+    expect(res.structuredContent.categories[0].count).toBeTruthy();
+  });
+});

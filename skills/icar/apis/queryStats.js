@@ -234,8 +234,9 @@ async function queryStats(args = {}) {
      * 只列前 3 类，避免回复过长；完整明细指向统计页。
      */
     const topCategories = snap.categories.slice(0, 3);
+    // 带上笔数：「加油 12 次 ¥4,180」才是明细，「加油 ¥4,180」只是一句话
     const categoryText = topCategories.length
-        ? `；分类上 ${topCategories.map(c => `${c.name} ¥${c.amount.toFixed(2)}`).join('、')}`
+        ? `；分类上 ${topCategories.map(c => `${c.name} ${c.count} 次 ¥${c.amount.toFixed(2)}`).join('、')}`
         : '';
     // 每公里成本摊开算式；里程为 0 时不要输出「每公里 ¥0.000」——那是误导，不是省钱
     const perKmPart = snap.mileage.increased > 0
@@ -266,7 +267,8 @@ async function queryStats(args = {}) {
             categories: topCategories.map(c => ({
                 name: c.name,
                 amount: c.amount.toFixed(2),
-                percent: String(c.percent)
+                percent: String(c.percent),
+                count: String(c.count)
             })),
             pagePath: `pages/statistics/index?id=${car.sourceId}&${carStatsQuery(range)}`,
             linkText: '查看统计详情'

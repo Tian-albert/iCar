@@ -223,3 +223,28 @@ describe('自定义区间（最近半个月 / 国庆那几天）', () => {
     expect(snap.costTrend.map(p => p.label)).toEqual(['10/2', '10/7']);
   });
 });
+
+describe('分类支出带笔数', () => {
+  it('同一分类多笔会合并金额并累计笔数', () => {
+    const cars = [car('A', '我的 CRV', 'fuel', 11000)];
+    const costs = [
+      cost('p1', 'A', 'cat:park', 15, 2026, 3, 3),
+      cost('p2', 'A', 'cat:park', 18, 2026, 3, 8),
+      cost('p3', 'A', 'cat:fuel', 300, 2026, 3, 10)
+    ];
+    const snap = buildSummary({ type: 'month', year: 2026, month: 3 }, costs as any, [], [], CATEGORIES as any, cars as any);
+    const park = snap.categories.find(c => c.name === '停车')!;
+    expect(park.amount).toBe(33);
+    expect(park.count).toBe(2);
+  });
+
+  it('单车统计也返回笔数（统计页与总览口径一致）', () => {
+    const a = car('A', 'A 车', 'fuel');
+    const costs = [
+      cost('p1', 'A', 'cat:park', 10, 2026, 3, 3),
+      cost('p2', 'A', 'cat:park', 10, 2026, 3, 4)
+    ];
+    const snap = buildStats({ type: 'month', year: 2026, month: 3 }, costs as any, [], [], CATEGORIES as any, a);
+    expect(snap.categories[0].count).toBe(2);
+  });
+});
