@@ -5,7 +5,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // 契约（见官方「接入方式」3.3）：
 // · createSkill 的 path 必须与 app.json 的 agent.skills[].path 完全一致；
 // · registerAPI 的 name 必须与 mcp.json 中 apis[].name 完全一致。
+const addCar_1 = require("./apis/addCar");
 const addCost_1 = require("./apis/addCost");
+const addMaintain_1 = require("./apis/addMaintain");
+const updateCar_1 = require("./apis/updateCar");
 const addRefuel_1 = require("./apis/addRefuel");
 const queryCars_1 = require("./apis/queryCars");
 const queryMaintain_1 = require("./apis/queryMaintain");
@@ -29,3 +32,6 @@ skill.registerAPI('queryStats', queryStats_1.queryStats);
 skill.registerAPI('queryMaintain', queryMaintain_1.queryMaintain);
 skill.registerAPI('addCost', addCost_1.addCost);
 skill.registerAPI('addRefuel', addRefuel_1.addRefuel);
+skill.registerAPI('addMaintain', addMaintain_1.addMaintain);
+skill.registerAPI('addCar', addCar_1.addCar);
+skill.registerAPI('updateCar', updateCar_1.updateCar);

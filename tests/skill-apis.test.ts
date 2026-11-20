@@ -7,7 +7,7 @@
 //
 // 做法：用内存 Map 打桩 wx.getStorageSync / setStorageSync，按主包真实落盘格式
 // （icar:index 索引 + icar:{table}:{id} 明细）铺一份数据，然后直接调用三个接口。
-const fsx = require('fs') as any;
+const fsApi = require('fs') as any;
 
 const memory = new Map<string, unknown>();
 
@@ -128,6 +128,21 @@ function seed(): void {
     deleted: false
   });
 
+  // 保养类支出靠 presetType='maintain' 归类（addMaintain 用），缺了这笔钱会静默丢失
+  put('categories', {
+    sourceId: 'mp:category:maintain',
+    sourcePlatform: 'mp',
+    name: '保养',
+    icon: '🔧',
+    isPreset: true,
+    presetType: 'maintain',
+    visible: true,
+    sortOrder: 3,
+    createdAt: NOW,
+    updatedAt: NOW,
+    deleted: false
+  });
+
   put('costs', {
     sourceId: 'mp:costs:1',
     sourcePlatform: 'mp',
@@ -206,7 +221,10 @@ function loadApis() {
     queryStats: require('../skills/icar/apis/queryStats').queryStats,
     queryMaintain: require('../skills/icar/apis/queryMaintain').queryMaintain,
     addCost: require('../skills/icar/apis/addCost').addCost,
-    addRefuel: require('../skills/icar/apis/addRefuel').addRefuel
+    addRefuel: require('../skills/icar/apis/addRefuel').addRefuel,
+    addMaintain: require('../skills/icar/apis/addMaintain').addMaintain,
+    addCar: require('../skills/icar/apis/addCar').addCar,
+    updateCar: require('../skills/icar/apis/updateCar').updateCar
   };
 }
 
@@ -235,12 +253,12 @@ describe('queryStats', () => {
   });
 
   it('所有 pagePath 都不带前导斜杠，且能在 app.json 里找到对应页面', async () => {
-    const appJson = JSON.parse(fsx.readFileSync('app.json', 'utf-8'));
+    const appJson = JSON.parse(fsApi.readFileSync('app.json', 'utf-8'));
     const pages: string[] = appJson.pages;
     const apiDir = 'skills-src/icar/apis';
-    for (const name of fsx.readdirSync(apiDir)) {
+    for (const name of fsApi.readdirSync(apiDir)) {
       if (!name.endsWith('.ts')) continue;
-      const src: string = fsx.readFileSync(`${apiDir}/${name}`, 'utf-8');
+      const src: string = fsApi.readFileSync(`${apiDir}/${name}`, 'utf-8');
       const re = /pagePath:\s*[`'"]([^`'"]+)[`'"]/g;
       let m: RegExpExecArray | null;
       while ((m = re.exec(src))) {
@@ -252,14 +270,14 @@ describe('queryStats', () => {
   });
 
   it('pagePath 不得指向 tabBar 页面（navigateTo 跳不过去，会静默失败）', async () => {
-    const appJson = JSON.parse(fsx.readFileSync('app.json', 'utf-8'));
+    const appJson = JSON.parse(fsApi.readFileSync('app.json', 'utf-8'));
     const tabPages: string[] = (appJson.tabBar?.list || []).map((t: any) => t.pagePath);
     expect(tabPages.length).toBeGreaterThan(0);
 
     const apiDir = 'skills-src/icar/apis';
-    for (const name of fsx.readdirSync(apiDir)) {
+    for (const name of fsApi.readdirSync(apiDir)) {
       if (!name.endsWith('.ts')) continue;
-      const src: string = fsx.readFileSync(`${apiDir}/${name}`, 'utf-8');
+      const src: string = fsApi.readFileSync(`${apiDir}/${name}`, 'utf-8');
       const re = /pagePath:\s*[`'"]([^`'"]+)[`'"]/g;
       let m: RegExpExecArray | null;
       while ((m = re.exec(src))) {
@@ -553,7 +571,7 @@ describe('多车场景：读汇总、写追问', () => {
 
 describe('页面接力（handoff）——评测「页面有效性」依赖它', () => {
   it('mcp.json 每个接口都声明了 _meta.ui.pagePath', () => {
-    const mcp = JSON.parse(fsx.readFileSync('skills/icar/mcp.json', 'utf-8'));
+    const mcp = JSON.parse(fsApi.readFileSync('skills/icar/mcp.json', 'utf-8'));
     for (const api of mcp.apis) {
       expect(api._meta).toBeTruthy();
       expect(api._meta.ui.pagePath).toBeTruthy();
@@ -562,7 +580,7 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
   });
 
   it('读类接口的接力页必须是聚合视图，不能是某一辆车的详情', () => {
-    const mcp = JSON.parse(fsx.readFileSync('skills/icar/mcp.json', 'utf-8'));
+    const mcp = JSON.parse(fsApi.readFileSync('skills/icar/mcp.json', 'utf-8'));
     const pathOf = (name: string) => mcp.apis.find((a: any) => a.name === name)._meta.ui.pagePath;
     // 「我有几辆车」→ 我的车辆列表；「今年花了多少」→ 概览
     expect(pathOf('queryCars')).toBe('pages/summary/index');
@@ -851,5 +869,125 @@ describe('追问轮也要有页面接力（评测对每轮接口调用都检查 
     const res = await addCost({ amount: 15 });
     expect(res.isError).toBe(true);
     expect(typeof res.handoff).toBe('function');
+  });
+});
+
+describe('addMaintain', () => {
+  it('记一次保养：写入执行记录 + 关联流水 + 支出，并重置周期', async () => {
+    const { addMaintain, queryMaintain, queryStats } = loadApis();
+    const res = await addMaintain({ maintainName: '机油机滤', mileage: 8000, amount: 480 });
+
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.maintainName).toBe('机油机滤');
+    expect(res.structuredContent.amount).toBe('480.00');
+    // 周期 5000：8000 - 8000 = 0 → 剩 5000
+    expect(res.structuredContent.remainText).toContain('5000');
+
+    // 保养后不再超期
+    const mnt = await queryMaintain({});
+    expect(mnt.content[0].text).not.toContain('超期');
+
+    // 金额进支出
+    const stats = await queryStats({ rangeType: 'all' });
+    expect(stats.structuredContent.totalExpense).toBe('980.00');
+  });
+
+  it('保养项不存在时报错并列出可选，绝不凭空造项', async () => {
+    const { addMaintain } = loadApis();
+    const res = await addMaintain({ maintainName: '轮胎', mileage: 8000 });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('机油机滤');
+    expect(res.content[0].text).toContain('空气滤芯');
+  });
+
+  it('没说保养项时先问，并给出 handoff', async () => {
+    const { addMaintain } = loadApis();
+    const res = await addMaintain({ amount: 300 });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('哪一项');
+    expect(typeof res.handoff).toBe('function');
+  });
+
+  it('多车没说车名时追问，不写库', async () => {
+    addSecondCar();
+    const before = ((memory.get('icar:index') as any).maintainHandles || []).length;
+    const { addMaintain } = loadApis();
+    const res = await addMaintain({ maintainName: '机油机滤', amount: 480 });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('哪一辆');
+    expect(((memory.get('icar:index') as any).maintainHandles || []).length).toBe(before);
+  });
+
+  it('里程涨了就回写车辆里程（否则保养剩余量会偏小）', async () => {
+    const { addMaintain } = loadApis();
+    await addMaintain({ maintainName: '机油机滤', mileage: 9000 });
+    const car: any = memory.get(`icar:cars:${CAR_ID}`);
+    expect(car.mileages).toBe(9000);
+  });
+});
+
+describe('addCar / updateCar', () => {
+  it('新增车辆：写入并回写车数', async () => {
+    const { addCar, queryCars } = loadApis();
+    const res = await addCar({ name: '老王的 CRV', energyType: 'fuel', mileages: 12000 });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.carName).toBe('老王的 CRV');
+    expect(res.structuredContent.carCount).toBe('2');
+
+    const cars = await queryCars({});
+    expect(cars.content[0].text).toContain('老王的 CRV');
+  });
+
+  it('新增纯电车：能量类型与图标按类型给', async () => {
+    const { addCar } = loadApis();
+    const res = await addCar({ name: '小鹏 P7', energyType: 'ev', batteryCapacity: 80 });
+    expect(res.structuredContent.energyType).toBe('纯电');
+    const cars: any[] = ((memory.get('icar:index') as any).cars || []).map((id: string) => memory.get(`icar:cars:${id}`));
+    const ev = cars.find(c => c.name === '小鹏 P7');
+    expect(ev.energyType).toBe('ev');
+    expect(ev.batteryCapacity).toBe(80);
+  });
+
+  it('重名时拒绝，不写库', async () => {
+    const { addCar } = loadApis();
+    const before = ((memory.get('icar:index') as any).cars || []).length;
+    const res = await addCar({ name: '我的 CRV' });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('已经有一辆叫');
+    expect(((memory.get('icar:index') as any).cars || []).length).toBe(before);
+  });
+
+  it('改名：校验重名后落库', async () => {
+    const { updateCar, queryCars } = loadApis();
+    const res = await updateCar({ carName: '我的 CRV', newName: '老王的 CRV' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.changed).toContain('名称');
+
+    const cars = await queryCars({});
+    expect(cars.content[0].text).toContain('老王的 CRV');
+    expect(cars.content[0].text).not.toContain('我的 CRV');
+  });
+
+  it('改里程：同步到车辆档案', async () => {
+    const { updateCar } = loadApis();
+    const res = await updateCar({ carName: '我的 CRV', mileages: 20000 });
+    expect(res.isError).toBe(false);
+    const car: any = memory.get(`icar:cars:${CAR_ID}`);
+    expect(car.mileages).toBe(20000);
+  });
+
+  it('什么都没改时拒绝，不空调用', async () => {
+    const { updateCar } = loadApis();
+    const res = await updateCar({ carName: '我的 CRV' });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('没有变化');
+  });
+
+  it('多车没说改哪辆时追问', async () => {
+    addSecondCar();
+    const { updateCar } = loadApis();
+    const res = await updateCar({ mileages: 9999 });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('哪一辆');
   });
 });

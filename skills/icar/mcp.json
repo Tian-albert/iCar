@@ -363,6 +363,208 @@
           }
         }
       }
+    },
+    {
+      "name": "addMaintain",
+      "description": "记录一次保养并重置该项的周期。必须先知道**哪辆车**与**哪一项保养**（如机油机滤）：保养项不存在时不要凭空创建，引导用户到「保养项管理」添加。金额选填，传了会同时记一笔保养支出。",
+      "_meta": {
+        "ui": {
+          "pagePath": "pages/vehicle-detail/index"
+        }
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "maintainName": {
+            "type": "string",
+            "description": "保养项名称，如「机油机滤」「空气滤芯」。必须是这辆车已配置的项"
+          },
+          "carName": {
+            "type": "string",
+            "description": "车辆名称。**用户有多辆车又没说哪辆时不要传**：先问用户是哪辆车再调用"
+          },
+          "mileage": {
+            "type": "number",
+            "description": "保养时的总里程 km。用户没说就留空，沿用车辆当前里程"
+          },
+          "amount": {
+            "type": "number",
+            "description": "本次保养花费（元）。用户没说就不传，不会记 0 元支出"
+          },
+          "dateText": {
+            "type": "string",
+            "description": "保养日期 YYYY-MM-DD，默认今天"
+          },
+          "remark": {
+            "type": "string",
+            "description": "备注，如「4S 店」。可省略"
+          }
+        },
+        "required": [
+          "maintainName"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string"
+          },
+          "maintainName": {
+            "type": "string"
+          },
+          "mileage": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "remainText": {
+            "type": "string"
+          },
+          "cycleText": {
+            "type": "string"
+          },
+          "linkText": {
+            "type": "string"
+          },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
+    },
+    {
+      "name": "addCar",
+      "description": "新增一辆车。用户说「我有一辆 CRV」「帮我加一辆纯电车」时用。车辆是全部统计的基础，没有车什么都查不了。只做最小必填：名称 + 能量类型，里程没说不编。",
+      "_meta": {
+        "ui": {
+          "pagePath": "pages/vehicle-detail/index"
+        }
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "车辆名称，如「我的 CRV」。必填"
+          },
+          "energyType": {
+            "type": "string",
+            "enum": [
+              "fuel",
+              "ev",
+              "hybrid"
+            ],
+            "description": "能量类型：fuel 燃油（默认）、ev 纯电、hybrid 混动"
+          },
+          "mileages": {
+            "type": "number",
+            "description": "当前总里程 km。用户没说就不传，会按 0 记"
+          },
+          "batteryCapacity": {
+            "type": "number",
+            "description": "电池容量 kWh，纯电或混动可传"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string"
+          },
+          "energyType": {
+            "type": "string"
+          },
+          "mileages": {
+            "type": "string"
+          },
+          "carCount": {
+            "type": "string"
+          },
+          "linkText": {
+            "type": "string"
+          },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
+    },
+    {
+      "name": "updateCar",
+      "description": "修改已有车辆的信息：改名、改能量类型、改当前里程、改电池容量。必须先确定是哪辆车；改名要做重名校验。用户没说改什么时不要调用，先问。",
+      "_meta": {
+        "ui": {
+          "pagePath": "pages/vehicle-detail/index"
+        }
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string",
+            "description": "要修改哪辆车（现有名称）。用户有多辆车又没说时不要传，先问"
+          },
+          "newName": {
+            "type": "string",
+            "description": "改名后的新名称。不改名就不传"
+          },
+          "energyType": {
+            "type": "string",
+            "enum": [
+              "fuel",
+              "ev",
+              "hybrid"
+            ],
+            "description": "新的能量类型。不改就不传"
+          },
+          "mileages": {
+            "type": "number",
+            "description": "新的当前总里程 km。不改就不传"
+          },
+          "batteryCapacity": {
+            "type": "number",
+            "description": "新的电池容量 kWh。不改就不传"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string"
+          },
+          "energyType": {
+            "type": "string"
+          },
+          "mileages": {
+            "type": "string"
+          },
+          "batteryCapacity": {
+            "type": "string"
+          },
+          "changed": {
+            "type": "string"
+          },
+          "linkText": {
+            "type": "string"
+          },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
     }
   ]
 }

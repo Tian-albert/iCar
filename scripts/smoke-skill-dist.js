@@ -28,7 +28,7 @@ require(path.join(__dirname, '..', 'skills', 'icar', 'index.js'));
 
 const registered = globalThis.wx.modelContext._registered;
 const names = Object.keys(registered).sort();
-const EXPECTED = ['addCost', 'addRefuel', 'queryCars', 'queryMaintain', 'queryStats'];
+const EXPECTED = ['addCar', 'addCost', 'addMaintain', 'addRefuel', 'queryCars', 'queryMaintain', 'queryStats', 'updateCar'];
 console.log('registered:', names.join(', '));
 if (JSON.stringify(names) !== JSON.stringify(EXPECTED)) {
   console.error('FAIL: 注册的接口名不对，期望', EXPECTED.join(', '));

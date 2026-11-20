@@ -3,7 +3,10 @@
 // 契约（见官方「接入方式」3.3）：
 // · createSkill 的 path 必须与 app.json 的 agent.skills[].path 完全一致；
 // · registerAPI 的 name 必须与 mcp.json 中 apis[].name 完全一致。
+import { addCar } from './apis/addCar';
 import { addCost } from './apis/addCost';
+import { addMaintain } from './apis/addMaintain';
+import { updateCar } from './apis/updateCar';
 import { addRefuel } from './apis/addRefuel';
 import { queryCars } from './apis/queryCars';
 import { queryMaintain } from './apis/queryMaintain';
@@ -30,3 +33,6 @@ skill.registerAPI('queryStats', queryStats);
 skill.registerAPI('queryMaintain', queryMaintain);
 skill.registerAPI('addCost', addCost);
 skill.registerAPI('addRefuel', addRefuel);
+skill.registerAPI('addMaintain', addMaintain);
+skill.registerAPI('addCar', addCar);
+skill.registerAPI('updateCar', updateCar);
