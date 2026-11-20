@@ -567,7 +567,8 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
     // 「我有几辆车」→ 我的车辆列表；「今年花了多少」→ 概览
     expect(pathOf('queryCars')).toBe('pages/summary/index');
     expect(pathOf('queryStats')).toBe('pages/summary/index');
-    expect(pathOf('queryMaintain')).toBe('pages/reminder/index');
+    // 全车保养页：按车分组列临期/超期，比概览锚点更精准
+    expect(pathOf('queryMaintain')).toBe('pages/maintain-all/index');
     // 单车写操作落到这辆车的详情是合理的
     expect(pathOf('addCost')).toBe('pages/vehicle-detail/index');
     expect(pathOf('addRefuel')).toBe('pages/vehicle-detail/index');

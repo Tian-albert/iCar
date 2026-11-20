@@ -21,10 +21,17 @@ Component({
      * 用户点扇区时组件用 `change` 事件把新索引回传，页面据此高亮对应图例行。
      * 双向联动靠这一对「受控属性 + 事件」完成，不依赖页面直接操作组件内部状态。
      */
-    activeIndex: { type: Number, value: -1 }
+    activeIndex: { type: Number, value: -1 },
+    /**
+     * 是否在环外画引线标签。
+     *
+     * 概览页的保养环图只有 200rpx 宽、右侧还要放图例，标签会挤成一片；
+     * 关掉标签后外围留白消失，小尺寸也能画满（图例本身承担了标签作用）。
+     */
+    showLabels: { type: Boolean, value: true }
   },
   observers: {
-    'segments, total'() {
+    'segments, total, showLabels'() {
       // observers 在组件**首次接收属性**时就会触发，早于 ready()。
       // 此时首次渲染尚未完成，调用 setData 会与首帧数据竞争，
       // 渲染层报 "Expected updated data but get first rendering data"。
@@ -47,6 +54,17 @@ Component({
     ready() {
       (this as any)._ready = true;
       this.draw();
+      /*
+       * 条件渲染（wx:if 后才出现）的节点，ready 时布局可能还没完成，
+       * canvas 拿到的宽高是 0 → 画布全白、看起来"环图没渲染"。
+       * 下一帧再画一次，确保用的是真实尺寸。
+       */
+      const again = () => this.draw();
+      if (typeof wx !== 'undefined' && typeof (wx as any).nextTick === 'function') {
+        (wx as any).nextTick(again);
+      } else {
+        setTimeout(again, 0);
+      }
     }
   },
   methods: {
@@ -95,10 +113,11 @@ Component({
 
           const segs = this.data.segments as Segment[];
           if (!segs.length) return;
+          const withLabels = this.data.showLabels !== false;
 
           // 缓存布局供触摸命中复用：必须与绘制用同一份公式，
           // 否则改任一侧就会点击错位（computeDonutLayout 已抽出共享）
-          const geo = computeDonutLayout(w, h, 1);
+          const geo = computeDonutLayout(w, h, 1, withLabels);
           (this as any)._layout = {
             cx: geo.cx,
             cy: geo.cy,
@@ -115,7 +134,8 @@ Component({
             h,
             segments: segs,
             total: this.data.total as string,
-            activeIndex: this.data.activeIndex as number
+            activeIndex: this.data.activeIndex as number,
+            showLabels: withLabels
           });
         });
     }

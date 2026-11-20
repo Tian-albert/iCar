@@ -33,22 +33,30 @@
         <!-- 整卡可点，右上角箭头与「数据总览」卡一致 -->
         <view class="mnt-arrow">›</view>
         <block wx:if="{{mntTotal > 0}}">
-          <donut-chart class="mnt-donut" segments="{{mntSegments}}" total="{{mntTotalText}}" />
-          <view class="mnt-legend">
-            <view class="mnt-legend-row">
-              <view class="mnt-dot" style="background:#F5474F"></view>
-              <text class="mnt-legend-name">已超期</text>
-              <text class="mnt-legend-val bad">{{mntBad}} 项</text>
-            </view>
-            <view class="mnt-legend-row">
-              <view class="mnt-dot" style="background:#E8912A"></view>
-              <text class="mnt-legend-name">临近到期</text>
-              <text class="mnt-legend-val warn">{{mntWarn}} 项</text>
-            </view>
-            <view class="mnt-legend-row">
-              <view class="mnt-dot" style="background:#B6BCC8"></view>
-              <text class="mnt-legend-name">正常</text>
-              <text class="mnt-legend-val">{{mntOk}} 项</text>
+          <!-- 环图在左、图例在右；小尺寸关闭外标签（图例即为标签），否则标签会把环挤没 -->
+          <view class="mnt-hero">
+            <donut-chart
+              class="mnt-donut"
+              segments="{{mntSegments}}"
+              total="{{mntTotalText}}"
+              showLabels="{{false}}"
+            />
+            <view class="mnt-legend">
+              <view class="mnt-legend-row">
+                <view class="mnt-dot" style="background:#F5474F"></view>
+                <text class="mnt-legend-name">已超期</text>
+                <text class="mnt-legend-val bad">{{mntBad}} 项</text>
+              </view>
+              <view class="mnt-legend-row">
+                <view class="mnt-dot" style="background:#E8912A"></view>
+                <text class="mnt-legend-name">临近到期</text>
+                <text class="mnt-legend-val warn">{{mntWarn}} 项</text>
+              </view>
+              <view class="mnt-legend-row">
+                <view class="mnt-dot" style="background:#B6BCC8"></view>
+                <text class="mnt-legend-name">正常</text>
+                <text class="mnt-legend-val">{{mntOk}} 项</text>
+              </view>
             </view>
           </view>
         </block>
