@@ -83,9 +83,21 @@ async function addRefuel(args = {}) {
             content: [{ type: 'text', text: '用户还没有添加车辆，无法记录。请引导先在「车辆」页添加车辆。' }]
         };
     }
-    const car = (0, store_1.pickCar)(cars, args.carName || '');
+    // 写操作不允许静默挑车：加错车会让油耗区间与支出同时错账
+    const { car, reason } = (0, store_1.resolveCarStrict)(cars, args.carName || '');
     if (!car) {
         const names = cars.map(c => c.name).join('、');
+        if (reason === 'ambiguous') {
+            return {
+                isError: true,
+                content: [
+                    {
+                        type: 'text',
+                        text: `用户有 ${cars.length} 辆车（${names}），还没说给哪一辆加。请先问「哪辆车」，拿到车名后再调用本接口，不要替用户选。`
+                    }
+                ]
+            };
+        }
         return {
             isError: true,
             content: [
@@ -251,7 +263,7 @@ async function addRefuel(args = {}) {
             consumption: latest ? latest.fuelConsumption.toFixed(2) : '',
             consumptionUnit: energyType === 'ev' ? 'kWh/100km' : 'L/100km',
             consumptionMileage: latest ? String(latest.mileage) : '',
-            pagePath: `/pages/vehicle-detail/index?id=${car.sourceId}`,
+            pagePath: `pages/vehicle-detail/index?id=${car.sourceId}`,
             linkText: '查看加油记录'
         }
     };

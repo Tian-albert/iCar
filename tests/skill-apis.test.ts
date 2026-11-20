@@ -7,6 +7,8 @@
 //
 // 做法：用内存 Map 打桩 wx.getStorageSync / setStorageSync，按主包真实落盘格式
 // （icar:index 索引 + icar:{table}:{id} 明细）铺一份数据，然后直接调用三个接口。
+const fsx = require('fs') as any;
+
 const memory = new Map<string, unknown>();
 
 function resetMemory(): void {
@@ -225,8 +227,28 @@ describe('queryStats', () => {
   it('返回可点详情入口（page-link 需要 pagePath + linkText 同在一层）', async () => {
     const { queryStats } = loadApis();
     const res = await queryStats({ rangeType: 'all' });
-    expect(res.structuredContent.pagePath).toContain('/pages/statistics/index?id=');
+    // 路径不带前导斜杠，与 app.json 的 pages 写法完全一致——
+    // 平台按 app.json 匹配页面，多一个斜杠可能匹配不上（蓝链点不开的一个可能原因）
+    expect(res.structuredContent.pagePath).toContain('pages/statistics/index?id=');
+    expect(res.structuredContent.pagePath.startsWith('/')).toBe(false);
     expect(res.structuredContent.linkText).toBeTruthy();
+  });
+
+  it('所有 pagePath 都不带前导斜杠，且能在 app.json 里找到对应页面', async () => {
+    const appJson = JSON.parse(fsx.readFileSync('app.json', 'utf-8'));
+    const pages: string[] = appJson.pages;
+    const apiDir = 'skills-src/icar/apis';
+    for (const name of fsx.readdirSync(apiDir)) {
+      if (!name.endsWith('.ts')) continue;
+      const src: string = fsx.readFileSync(`${apiDir}/${name}`, 'utf-8');
+      const re = /pagePath:\s*[`'"]([^`'"]+)[`'"]/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(src))) {
+        const path = m[1].split('?')[0];
+        expect(path.startsWith('/')).toBe(false);
+        expect(pages).toContain(path);
+      }
+    }
   });
 
   it('能耗金额与区间里程单独返回（否则「不含能耗」是凭空的差值）', async () => {
@@ -301,11 +323,11 @@ describe('queryStats', () => {
     expect(res.content[0].text).toContain('添加车辆');
   });
 
-  it('车名对不上时列出可选车辆', async () => {
+  it('车名对不上时报错并列出可选车辆（绝不静默换车）', async () => {
     const { queryStats } = loadApis();
     const res = await queryStats({ carName: '不存在的车' });
-    // 单辆车且名字不匹配 → pickCar 回落到置顶车，仍能正常返回
-    expect(res.isError).toBe(false);
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('我的 CRV');
   });
 });
 
@@ -400,6 +422,100 @@ describe('addCost', () => {
     expect(typeof saved.sourceId).toBe('string');
     expect(saved.sourceId.startsWith('mp:costs:')).toBe(true);
     expect(res.isError).toBe(false);
+  });
+});
+
+/** 追加第二辆车（多车场景用） */
+function addSecondCar(): void {
+  put('cars', {
+    sourceId: 'mp:cars:2',
+    sourcePlatform: 'mp',
+    name: '老婆的车',
+    type: 'car',
+    icon: '🚙',
+    customIconAssetId: '',
+    initDate: new Date(2026, 0, 1).getTime(),
+    initMileages: 0,
+    mileages: 3000,
+    evMileages: 0,
+    hevMileages: 0,
+    batteryCapacity: 0,
+    energyType: 'fuel',
+    energyTrackingEnabled: true,
+    maintainSoonMileage: 500,
+    maintainSoonDays: 15,
+    createdAt: NOW,
+    updatedAt: NOW,
+    deleted: false
+  });
+}
+
+describe('多车场景：读汇总、写追问', () => {
+  it('没说车名时 queryStats 返回全部车辆合计与明细', async () => {
+    addSecondCar();
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'all' });
+
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.scope).toBe('all');
+    expect(res.structuredContent.carCount).toBe('2');
+    expect(res.structuredContent.totalExpense).toBe('500.00');
+    expect(res.content[0].text).toContain('2 辆车');
+    expect(res.content[0].text).toContain('我的 CRV');
+    expect(res.content[0].text).toContain('老婆的车');
+  });
+
+  it('说了车名则只统计那一辆', async () => {
+    addSecondCar();
+    const { queryStats } = loadApis();
+    const res = await queryStats({ carName: '老婆的车', rangeType: 'all' });
+    expect(res.structuredContent.scope).toBe('car');
+    expect(res.structuredContent.carName).toBe('老婆的车');
+    expect(res.structuredContent.totalExpense).toBe('0.00');
+  });
+
+  it('没说车名时 queryMaintain 汇总所有车的待保养项', async () => {
+    addSecondCar();
+    const { queryMaintain } = loadApis();
+    const res = await queryMaintain({});
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.scope).toBe('all');
+    expect(res.structuredContent.carCount).toBe('2');
+  });
+
+  it('多车且没说车名时 addCost 追问，不写库', async () => {
+    addSecondCar();
+    const before = ((memory.get('icar:index') as any).costs || []).length;
+    const { addCost } = loadApis();
+    const res = await addCost({ amount: 15, categoryName: '停车' });
+
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('还没说记到哪一辆');
+    expect(res.content[0].text).toContain('老婆的车');
+    expect(((memory.get('icar:index') as any).costs || []).length).toBe(before);
+  });
+
+  it('多车且没说车名时 addRefuel 追问，不写库', async () => {
+    addSecondCar();
+    const before = ((memory.get('icar:index') as any).fuelRecords || []).length;
+    const { addRefuel } = loadApis();
+    const res = await addRefuel({ volume: 40, amount: 320 });
+
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('还没说给哪一辆加');
+    expect(((memory.get('icar:index') as any).fuelRecords || []).length).toBe(before);
+  });
+
+  it('追问后带上车名可以正常写入对应的车', async () => {
+    addSecondCar();
+    const { addCost } = loadApis();
+    const res = await addCost({ amount: 15, categoryName: '停车', carName: '老婆的车' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.carName).toBe('老婆的车');
+
+    const index: any = memory.get('icar:index');
+    const saved: any = memory.get(`icar:costs:${index.costs[index.costs.length - 1]}`);
+    expect(saved.carSourceId).toBe('mp:cars:2');
   });
 });
 

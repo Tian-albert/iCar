@@ -40,9 +40,21 @@ async function addCost(args = {}) {
             content: [{ type: 'text', text: '用户还没有添加车辆，无法记账。请引导先在「车辆」页添加车辆。' }]
         };
     }
-    const car = (0, store_1.pickCar)(cars, args.carName || '');
+    // 写操作不允许静默挑车：多车用户说错车，钱会记到别人名下且不会报错
+    const { car, reason } = (0, store_1.resolveCarStrict)(cars, args.carName || '');
     if (!car) {
         const names = cars.map(c => c.name).join('、');
+        if (reason === 'ambiguous') {
+            return {
+                isError: true,
+                content: [
+                    {
+                        type: 'text',
+                        text: `用户有 ${cars.length} 辆车（${names}），还没说记到哪一辆。请先问「记到哪辆车」，拿到车名后再调用本接口，不要替用户选。`
+                    }
+                ]
+            };
+        }
         return {
             isError: true,
             content: [
@@ -122,7 +134,7 @@ async function addCost(args = {}) {
             categoryName: category.name,
             amount: saved.amount.toFixed(2),
             dateText: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
-            pagePath: `/pages/vehicle-detail/index?id=${car.sourceId}`,
+            pagePath: `pages/vehicle-detail/index?id=${car.sourceId}`,
             linkText: '查看这辆车的记录'
         }
     };

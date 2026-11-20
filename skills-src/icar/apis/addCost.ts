@@ -6,7 +6,7 @@
 // 3. 失败时 content 里给出下一步，让模型能自我纠正（换车名 / 换类别 / 补金额）。
 import { genId } from '../lib/utils/id';
 import { Cost } from '../lib/types/models';
-import { energyLabel, insert, list, pickCar, readCars, readCategories } from '../lib/store';
+import { energyLabel, insert, list, readCars, readCategories, resolveCarStrict } from '../lib/store';
 
 interface Args {
   /** 金额（元），必填 */
@@ -53,9 +53,21 @@ export async function addCost(args: Args = {}): Promise<AgentApiResult> {
     };
   }
 
-  const car = pickCar(cars, args.carName || '');
+  // 写操作不允许静默挑车：多车用户说错车，钱会记到别人名下且不会报错
+  const { car, reason } = resolveCarStrict(cars, args.carName || '');
   if (!car) {
     const names = cars.map(c => c.name).join('、');
+    if (reason === 'ambiguous') {
+      return {
+        isError: true,
+        content: [
+          {
+            type: 'text',
+            text: `用户有 ${cars.length} 辆车（${names}），还没说记到哪一辆。请先问「记到哪辆车」，拿到车名后再调用本接口，不要替用户选。`
+          }
+        ]
+      };
+    }
     return {
       isError: true,
       content: [
@@ -143,7 +155,7 @@ export async function addCost(args: Args = {}): Promise<AgentApiResult> {
       categoryName: category.name,
       amount: saved.amount.toFixed(2),
       dateText: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
-      pagePath: `/pages/vehicle-detail/index?id=${car.sourceId}`,
+      pagePath: `pages/vehicle-detail/index?id=${car.sourceId}`,
       linkText: '查看这辆车的记录'
     }
   };

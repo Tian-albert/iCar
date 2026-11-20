@@ -125,7 +125,35 @@ export const readHandles = (): MaintainHandle[] => list<MaintainHandle>('maintai
 export const readLogs = (): MaintainLog[] => list<MaintainLog>('maintainLogs');
 
 /**
- * 选车：显式指定 > 置顶车 > 第一辆车。
+ * 写操作选车：**不允许静默回落到某辆车**。
+ *
+ * 多车用户说「停车 15」时，猜错车会把钱记到别人名下，而且是无声的——
+ * 用户只有在月底对账时才发现。所以：
+ *   · 只有 1 辆车 → 直接用它；
+ *   · 说了车名 → 模糊匹配；
+ *   · 多辆车且没说 → 返回 ambiguous，由调用方追问。
+ */
+export function resolveCarStrict(
+  cars: Car[],
+  carName: string
+): { car: Car | null; reason?: 'no-car' | 'no-match' | 'ambiguous' } {
+  if (!cars.length) return { car: null, reason: 'no-car' };
+  const key = (carName || '').trim();
+
+  if (key) {
+    const exact = cars.find(c => c.name === key);
+    if (exact) return { car: exact };
+    const fuzzy = cars.find(c => c.name.includes(key) || key.includes(c.name));
+    if (fuzzy) return { car: fuzzy };
+    return { car: null, reason: 'no-match' };
+  }
+
+  if (cars.length === 1) return { car: cars[0] };
+  return { car: null, reason: 'ambiguous' };
+}
+
+/**
+ * 读操作选车：显式指定 > 置顶车 > 第一辆车。
  *
  * 模糊匹配（contains）而不是全等：用户口语说「我的 CRV」，库里的名字是「我的 CRV 2021」。
  */

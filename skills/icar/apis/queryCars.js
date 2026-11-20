@@ -18,7 +18,7 @@ async function queryCars() {
                     text: '用户还没有添加任何车辆。可以引导用户到「车辆」页点右上角「＋」添加第一辆车。'
                 }
             ],
-            structuredContent: { count: '0', items: '', pagePath: '/pages/index/index', linkText: '去添加车辆' }
+            structuredContent: { count: '0', items: '', pagePath: 'pages/index/index', linkText: '去添加车辆' }
         };
     }
     const pinnedId = (_a = (0, store_1.getUser)()) === null || _a === void 0 ? void 0 : _a.pinnedCarId;
@@ -42,7 +42,7 @@ async function queryCars() {
         structuredContent: {
             count: String(rows.length),
             items,
-            pagePath: '/pages/index/index',
+            pagePath: 'pages/index/index',
             linkText: '查看我的车辆'
         }
     };
