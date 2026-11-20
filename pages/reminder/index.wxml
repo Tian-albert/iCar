@@ -44,20 +44,14 @@
               withCurrency="{{false}}"
             />
             <view class="mnt-legend">
-              <view class="mnt-legend-row">
-                <view class="mnt-dot" style="background:#F5474F"></view>
-                <text class="mnt-legend-name">已超期</text>
-                <text class="mnt-legend-val bad">{{mntBad}} 项</text>
-              </view>
-              <view class="mnt-legend-row">
-                <view class="mnt-dot" style="background:#E8912A"></view>
-                <text class="mnt-legend-name">临近到期</text>
-                <text class="mnt-legend-val warn">{{mntWarn}} 项</text>
-              </view>
-              <view class="mnt-legend-row">
-                <view class="mnt-dot" style="background:#B6BCC8"></view>
-                <text class="mnt-legend-name">正常</text>
-                <text class="mnt-legend-val">{{mntOk}} 项</text>
+              <view wx:for="{{mntRows}}" wx:key="key" class="mnt-legend-row">
+                <view class="mnt-dot" style="background:{{item.color}}"></view>
+                <text class="mnt-legend-name">{{item.name}}</text>
+                <!-- 比例条：条宽即该项占比，右侧数字对齐 -->
+                <view class="mnt-track">
+                  <view class="mnt-fill" style="width:{{item.width}};background:{{item.color}}"></view>
+                </view>
+                <text class="mnt-legend-val {{item.level}}">{{item.countText}}</text>
               </view>
             </view>
           </view>

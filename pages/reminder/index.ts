@@ -47,6 +47,11 @@ interface MaintainView {
   level: string;
 }
 
+/** 占比（四舍五入到整数百分比）；total 为 0 时返回 0 */
+function percentOf(n: number, total: number): number {
+  return total > 0 ? Math.round((n / total) * 100) : 0;
+}
+
 interface CarCostView {
   carSourceId: string;
   carName: string;
@@ -160,6 +165,8 @@ Page({
     remindEnabled: true,
     /** 保养状态环图：超期 / 临近 / 正常 的项数占比 */
     mntSegments: [] as Array<{ name: string; amount: string; percent: number; color: string }>,
+    /** 图例行（带比例条） */
+    mntRows: [] as Array<{ key: string; name: string; level: string; countText: string; width: string; color: string }>,
     mntTotalText: '',
     mntBad: 0,
     mntWarn: 0,
@@ -458,9 +465,9 @@ Page({
     if (total > 0) percents[percents.length - 1] += diff;
 
     const defs = [
-      { name: '已超期', count: bad, color: '#F5474F' },
-      { name: '临近到期', count: warn, color: '#E8912A' },
-      { name: '正常', count: ok, color: '#B6BCC8' }
+      { key: 'bad', name: '已超期', level: 'bad', count: bad, color: '#F5474F' },
+      { key: 'warn', name: '临近到期', level: 'warn', count: warn, color: '#E8912A' },
+      { key: 'ok', name: '正常', level: 'ok', count: ok, color: '#B6BCC8' }
     ];
 
     const segments = defs
@@ -471,6 +478,15 @@ Page({
     return {
       mntSegments: segments,
       mntTotalText: total > 0 ? `${bad} / ${total}` : '0 / 0',
+      // 图例行带比例条：条宽 = 该项占比，最短留 4% 免得看不见
+      mntRows: defs.map(d => ({
+        key: d.key,
+        name: d.name,
+        level: d.level,
+        countText: `${d.count} 项`,
+        width: `${Math.max(4, percentOf(d.count, total))}%`,
+        color: d.color
+      })),
       mntBad: bad,
       mntWarn: warn,
       mntOk: ok,
