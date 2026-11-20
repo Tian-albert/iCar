@@ -458,10 +458,4 @@
 .mnt-legend-val.warn {
   color: var(--color-warning);
 }
-.mnt-more {
-  margin-top: 8rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid var(--color-line);
-  font-size: 24rpx;
-  color: var(--color-primary);
-}
+/* 整卡可点，不再单独放「更多保养项」入口（`.mnt-more` 已删除） */
