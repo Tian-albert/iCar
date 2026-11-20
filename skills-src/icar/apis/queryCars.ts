@@ -15,12 +15,14 @@ export async function queryCars(): Promise<AgentApiResult> {
           text: '用户还没有添加任何车辆。可以引导用户到「车辆」页点右上角「＋」添加第一辆车。'
         }
       ],
-      structuredContent: { count: '0', items: '', pagePath: 'pages/index/index', linkText: '去添加车辆' }
+      // 无车时不带链接：唯一能引导的「车辆」页是 tabBar 页，navigateTo 跳不过去会静默失败
+      structuredContent: { count: '0', items: '' }
     };
   }
 
   const pinnedId = getUser()?.pinnedCarId;
   const rows = cars.map(c => ({
+    sourceId: c.sourceId,
     name: c.name,
     energyType: energyLabel(c),
     mileages: String(c.mileages || 0),
@@ -45,8 +47,10 @@ export async function queryCars(): Promise<AgentApiResult> {
     structuredContent: {
       count: String(rows.length),
       items,
-      pagePath: 'pages/index/index',
-      linkText: '查看我的车辆'
+      // 链到车辆详情（非 tabBar 页）而不是「车辆」列表页：
+      // tabBar 页只能 switchTab，page-link 走 navigateTo 会静默失败
+      pagePath: `pages/vehicle-detail/index?id=${rows[0].sourceId}`,
+      linkText: '查看车辆详情'
     }
   };
 }

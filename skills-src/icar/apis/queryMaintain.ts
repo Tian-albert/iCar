@@ -103,9 +103,7 @@ export async function queryMaintain(args: Args = {}): Promise<AgentApiResult> {
           carCount: String(cars.length),
           overdueCount: '0',
           urgentCount: '0',
-          items: '',
-          pagePath: 'pages/reminder/index',
-          linkText: '查看保养提醒'
+          items: ''
         }
       };
     }
@@ -130,9 +128,9 @@ export async function queryMaintain(args: Args = {}): Promise<AgentApiResult> {
         carCount: String(cars.length),
         overdueCount: String(overdueCount),
         urgentCount: String(visible.length),
-        items: detail,
-        pagePath: 'pages/reminder/index',
-        linkText: '查看保养提醒'
+        items: detail
+        // 全车汇总不给链接：「概览」是 tabBar 页（navigateTo 跳不过去），
+        // 「保养管理」只接受单车 id，多车场景没有唯一目标页
       }
     };
   }

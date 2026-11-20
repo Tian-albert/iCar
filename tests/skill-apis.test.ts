@@ -251,6 +251,24 @@ describe('queryStats', () => {
     }
   });
 
+  it('pagePath 不得指向 tabBar 页面（navigateTo 跳不过去，会静默失败）', async () => {
+    const appJson = JSON.parse(fsx.readFileSync('app.json', 'utf-8'));
+    const tabPages: string[] = (appJson.tabBar?.list || []).map((t: any) => t.pagePath);
+    expect(tabPages.length).toBeGreaterThan(0);
+
+    const apiDir = 'skills-src/icar/apis';
+    for (const name of fsx.readdirSync(apiDir)) {
+      if (!name.endsWith('.ts')) continue;
+      const src: string = fsx.readFileSync(`${apiDir}/${name}`, 'utf-8');
+      const re = /pagePath:\s*[`'"]([^`'"]+)[`'"]/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(src))) {
+        const path = m[1].split('?')[0];
+        expect(tabPages).not.toContain(path);
+      }
+    }
+  });
+
   it('能耗金额与区间里程单独返回（否则「不含能耗」是凭空的差值）', async () => {
     const { queryStats } = loadApis();
     const res = await queryStats({ rangeType: 'all' });
