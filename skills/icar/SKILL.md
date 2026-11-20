@@ -63,6 +63,10 @@
 **怎么传参**
 - `rangeType`：用户说「今年」传 `year`（默认），「这个月」传 `month`，「一共」传 `all`。
 - `year` / `month`：用户指定了具体年月才传；「去年」要换算成具体年份。
+- `rangeType=custom` + `startDate` + `endDate`：**任意区间必须走这个**。
+  用户说「最近半个月」「上周」「国庆那几天」「这三周」时，**自己换算成具体日期**再传，不要传给接口一个模糊词。
+  例：「最近半个月」→ 今天与前 13 天，共 14 天；「国庆那几天」→ `10-01` 至 `10-07`。
+  日期格式必须是 `YYYY-MM-DD`，`endDate` 含当天。
 - `carName`：见通用规则 1。
 
 **怎么念结果**
@@ -167,6 +171,9 @@
 | --- | --- |
 | 今年养车花了多少（多车、没说哪辆） | `queryStats` **不传 carName** → 返回全车合计 + 每车明细 |
 | 我的 CRV 今年花了多少 | `queryStats`，carName=我的 CRV |
+| 上个月 / 3 月花了多少 | `queryStats`，rangeType=month + year/month |
+| 最近半个月花了多少 | `queryStats`，rangeType=custom + startDate/endDate（今天与前 13 天） |
+| 国庆那几天花了多少 | `queryStats`，rangeType=custom，startDate=当年 10-01，endDate=10-07 |
 | 加满油 300 | `addRefuel`，但先问「加了多少升」（volume 必填、不能编） |
 | 加了 40 升，320 块（多车、没说哪辆） | `addRefuel` **不传 carName** → 接口提示后，先问「哪辆车」 |
 | 我的 CRV 加了 40 升 320 | `addRefuel`，volume=40，amount=320，carName=我的 CRV |

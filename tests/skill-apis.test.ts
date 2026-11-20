@@ -771,3 +771,46 @@ describe('addRefuel', () => {
     expect(res.structuredContent.consumptionUnit).toBe('kWh/100km');
   });
 });
+
+describe('queryStats 自定义区间（最近半个月 / 国庆）', () => {
+  it('按 startDate/endDate 统计，并把区间带进接力与蓝链', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'custom', startDate: '2026-11-01', endDate: '2026-11-20' });
+
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.rangeLabel).toBe('2026-11-01 至 2026-11-20');
+
+    // 单车时落单车统计页（range=custom）；多车落数据总览（rangeType=custom），见下一条
+    const { query } = res.handoff({ result: res } as any);
+    expect(query).toContain('custom');
+    expect(query).toContain('start=2026-11-01');
+    expect(query).toContain('end=2026-11-20');
+  });
+
+  it('日期缺失或格式不对时退回本年，不报错卡死对话', async () => {
+    const { queryStats } = loadApis();
+    const bad = await queryStats({ rangeType: 'custom', startDate: '上个月' });
+    expect(bad.isError).toBe(false);
+    expect(bad.structuredContent.rangeLabel).toContain('年');
+  });
+
+  it('起止颠倒时按先后的正确区间算（不产生负区间）', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'custom', startDate: '2026-11-20', endDate: '2026-11-01' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.rangeLabel).toBe('2026-11-20 至 2026-11-20');
+  });
+});
+
+describe('queryStats 自定义区间落到数据总览', () => {
+  it('多车时不传车名 → 接力落数据总览并带 rangeType=custom', async () => {
+    addSecondCar();
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeType: 'custom', startDate: '2026-10-01', endDate: '2026-10-07' });
+    expect(res.structuredContent.scope).toBe('all');
+    const { query } = res.handoff({ result: res } as any);
+    expect(query).toContain('rangeType=custom');
+    expect(query).toContain('start=2026-10-01');
+    expect(query).toContain('end=2026-10-07');
+  });
+});

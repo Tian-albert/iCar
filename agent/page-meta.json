@@ -19,15 +19,22 @@
         "properties": {
           "rangeType": {
             "type": "string",
-            "description": "统计维度：year 按年（默认）、month 按月、all 全部时间"
+            "description": "统计维度：year 按年（默认）、month 按月、all 全部时间、custom 任意区间（配合 start/end）"
           },
           "year": {
             "type": "number",
             "description": "年份，如 2026。rangeType 为 year 或 month 时使用"
-          },
-          "month": {
+          },          "month": {
             "type": "number",
             "description": "月份 1-12。仅在 rangeType 为 month 时使用"
+          },
+          "start": {
+            "type": "string",
+            "description": "任意区间起点 YYYY-MM-DD，仅 rangeType 为 custom 时使用"
+          },
+          "end": {
+            "type": "string",
+            "description": "任意区间终点 YYYY-MM-DD，含当天"
           }
         }
       }
@@ -45,7 +52,7 @@
           },
           "range": {
             "type": "string",
-            "description": "统计维度：year 按年（默认）、month 按月、all 全部时间"
+            "description": "统计维度：year 按年（默认）、month 按月、all 全部时间、custom 任意区间（配合 start/end）"
           },
           "year": {
             "type": "number",

@@ -25,6 +25,11 @@ function trendGranularityOf(range) {
         return 'day';
     if (range.type === 'year')
         return 'month';
+    if (range.type === 'custom') {
+        // 区间跨度小于两个月时按日看才有信息量；再长按月，否则柱子太密看不清
+        const days = Math.max(1, Math.round((range.end - range.start) / 86400000) + 1);
+        return days <= 62 ? 'day' : 'month';
+    }
     return 'year';
 }
 /**
@@ -62,6 +67,10 @@ function resolveRange(range) {
         const start = new Date(range.year, 0, 1).getTime();
         const end = endOfDay(new Date(range.year, 11, 31));
         return { start, end };
+    }
+    if (range.type === 'custom') {
+        // 用户说的「最近半个月」是含今天在内的 15 天，首尾都要算进去
+        return { start: (0, date_1.startOfDay)(range.start), end: endOfDay(new Date(range.end)) };
     }
     const start = new Date(range.year, range.month - 1, 1).getTime();
     const end = endOfDay(new Date(range.year, range.month, 0));
@@ -101,14 +110,30 @@ function groupByMonth(list, dateOf, valueOf) {
  * day 的标签是「日」数字（3），month 复用 groupByMonth（跨年时带年份），
  * year 的标签是四位年份。无数据的桶不补零（BR-23）。
  */
-function groupByGranularity(list, dateOf, valueOf, granularity) {
+function groupByGranularity(list, dateOf, valueOf, granularity, 
+/** 自定义区间强制带月份：区间可能跨月，也可能只有一个月但需要明确是哪个日期 */
+dayWithMonth = false) {
     if (granularity === 'month')
         return groupByMonth(list, dateOf, valueOf);
+    /**
+     * 按日聚合时，如果数据跨月（自定义区间常见），标签必须带月份，
+     * 否则 9/3 与 10/3 会合并成同一个「3 号」桶。
+     */
+    const crossMonth = granularity === 'day' &&
+        (dayWithMonth ||
+            new Set(list.map(x => {
+                const d = new Date(dateOf(x));
+                return `${d.getFullYear()}-${d.getMonth()}`;
+            })).size > 1);
     const map = new Map();
     for (const x of list) {
         const ts = dateOf(x);
         const d = new Date(ts);
-        const label = granularity === 'day' ? String(d.getDate()) : String(d.getFullYear());
+        const label = granularity === 'day'
+            ? crossMonth
+                ? `${d.getMonth() + 1}/${d.getDate()}`
+                : String(d.getDate())
+            : String(d.getFullYear());
         const hit = map.get(label);
         if (hit) {
             hit.value += valueOf(x);
@@ -201,8 +226,9 @@ function buildStats(range, costs, refuels, consumptions, categories, car) {
     const trendGranularity = trendGranularityOf(range);
     const monthlyMileage = groupByMonth(primarySegs, c => c.endDate, c => c.mileage);
     const monthlyCost = groupByMonth(costList, c => c.costDate, c => c.amount);
-    const mileageTrend = groupByGranularity(primarySegs, c => c.endDate, c => c.mileage, trendGranularity);
-    const costTrend = groupByGranularity(costList, c => c.costDate, c => c.amount, trendGranularity);
+    const customDay = range.type === 'custom';
+    const mileageTrend = groupByGranularity(primarySegs, c => c.endDate, c => c.mileage, trendGranularity, customDay);
+    const costTrend = groupByGranularity(costList, c => c.costDate, c => c.amount, trendGranularity, customDay);
     return {
         mileage: { latest, increased, fuelMileage, evMileage },
         fuel: { totalCost: totalFuelCost, avgConsumption: (0, number_1.round2)(avgConsumption), costPerKm: (0, number_1.round3)(fuelCostPerKm) },

@@ -22,3 +22,8 @@ project.private.config.json
 
 # 临时文件
 *.tmp
+
+# Python 缓存（video/ 下的剪辑脚本运行时会生成）
+# 注意：以 __ 开头且结尾的目录是微信开发者工具的保留目录，会触发告警
+__pycache__/
+*.pyc

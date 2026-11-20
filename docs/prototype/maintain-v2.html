@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>保养项改造原型 · 概览环图 + 全车保养页</title>
+<style>
+  :root{
+    --bg:#fff; --card:#fff; --fill:#f2f3f5; --line:#eef0f4;
+    --t1:#11151c; --t2:#5c6470; --t3:#8a93a6; --t4:#b6bcc8;
+    --pri:#3b6ff6; --pri-l:#eaf0ff; --danger:#f5474f; --warn:#e8912a; --ok:#2fa87a;
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{margin:0;padding:32px 24px 64px;background:#f5f6f8;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--t1)}
+  h1{font-size:22px;margin:0 0 6px}
+  .lead{color:var(--t2);font-size:13px;margin:0 0 26px;max-width:900px;line-height:1.75}
+  .row{display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap}
+  .col{width:320px}
+  .col h2{font-size:15px;margin:0 0 4px}
+  .col .d{font-size:12px;color:var(--t3);margin:0 0 12px;line-height:1.6;min-height:34px}
+  .phone{width:320px;height:660px;background:var(--bg);border:1px solid #e3e6ec;border-radius:28px;
+    overflow:hidden;box-shadow:0 12px 32px rgba(15,23,42,.08);position:relative}
+  .nav{height:52px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;
+    border-bottom:1px solid var(--line);background:#fff;position:relative}
+  .nav .back{position:absolute;left:14px;font-size:19px;color:var(--t2);font-weight:400}
+  .scroll{height:608px;overflow-y:auto;padding:14px 16px 24px}
+  .scroll::-webkit-scrollbar{width:0}
+
+  .sec{font-size:13px;font-weight:600;color:var(--t2);margin:18px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+  .sec:first-child{margin-top:0}
+  .sec .more{font-size:12px;font-weight:400;color:var(--pri)}
+  .card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--line)}
+
+  /* 概览保养环图 */
+  .mnt-hero{display:flex;align-items:center;gap:14px}
+  .ring{position:relative;width:104px;height:104px;border-radius:50%;flex-shrink:0;
+    background:conic-gradient(#f5474f 0 18%,#e8912a 18% 40%,#d8dee9 40% 100%);
+    -webkit-mask:radial-gradient(circle at 50% 50%,transparent 0 34px,#000 35px);
+            mask:radial-gradient(circle at 50% 50%,transparent 0 34px,#000 35px)}
+  .ringc{position:relative;width:104px;height:104px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ringc .txt{position:absolute;text-align:center}
+  .ringc .txt b{display:block;font-size:17px}
+  .ringc .txt span{font-size:10px;color:var(--t3)}
+  .mnt-side{flex:1}
+  .mnt-side .row1{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0}
+  .mnt-side i{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+  .mnt-side .n{flex:1;color:var(--t2)}
+  .mnt-side .v{font-weight:600}
+
+  .carrow{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .carrow:last-child{border-bottom:none}
+  .carrow .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .carrow .nm{flex:1;font-size:13px}
+  .carrow .nm em{display:block;font-style:normal;font-size:10px;color:var(--t3);margin-top:2px}
+  .carrow .rem{font-size:12px;font-weight:600}
+  .carrow .go{color:var(--t4);font-size:15px}
+
+  /* 全车保养页 */
+  .chips{display:flex;gap:8px;margin-bottom:14px}
+  .chip{font-size:12px;padding:6px 14px;border-radius:999px;background:var(--fill);color:var(--t2)}
+  .chip.on{background:var(--pri);color:#fff}
+  .grp{margin-bottom:14px}
+  .grp-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .grp-h b{font-size:13px}
+  .grp-h b em{font-style:normal;font-size:11px;color:var(--t3);font-weight:400;margin-left:6px}
+  .grp-h span{font-size:12px;color:var(--pri)}
+  .it{display:flex;align-items:center;gap:9px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .it:last-child{border-bottom:none}
+  .it .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .bar{flex:1}
+  .bar .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .bar .top .nm{font-weight:500}
+  .bar .top .rem{font-size:12px}
+  .track{height:4px;border-radius:2px;background:var(--fill);overflow:hidden}
+  .track i{display:block;height:100%;border-radius:2px}
+  .sub{font-size:11px;color:var(--t3);margin-top:5px}
+
+  .note{width:300px;font-size:12px;color:var(--t2);line-height:1.75}
+  .note h3{font-size:13px;margin:18px 0 6px;color:var(--t1)}
+  .note h3:first-child{margin-top:0}
+  .note ul{margin:0;padding-left:16px}
+  .note li{margin-bottom:5px}
+  .tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:5px;background:var(--pri-l);color:var(--pri);margin-right:4px}
+</style>
+</head>
+<body>
+  <h1>保养项改造原型 · 概览环图 + 全车保养页</h1>
+  <p class="lead">
+    修掉「保养只看到置顶车」的老问题：概览的保养区块换成<b>状态环图</b>（超期 / 临近 / 正常的项数占比），
+    「管理保养项」改为「<b>更多保养项</b>」，点进新的<b>全车保养页</b>——所有车只列临期与超期，点车行进该车详情。
+  </p>
+
+  <div class="row">
+    <!-- ============ 屏 1：概览（保养环图） ============ -->
+    <div class="col">
+      <h2>1 · 概览 · 保养环图</h2>
+      <p class="d">保养区块升级为「状态环图 + 图例」；环图整体可点，进全车保养页。</p>
+      <div class="phone">
+        <div class="nav">概览</div>
+        <div class="scroll">
+          <div class="sec">数据总览 <span style="color:var(--t4)">›</span></div>
+          <div class="card">
+            <div style="display:flex;text-align:center">
+              <div style="flex:1"><b style="display:block;font-size:18px">3</b><span style="font-size:11px;color:var(--t3)">车辆数</span></div>
+              <div style="flex:1"><b style="display:block;font-size:18px">1.2万</b><span style="font-size:11px;color:var(--t3)">本年总支出</span></div>
+              <div style="flex:1"><b style="display:block;font-size:18px">11,200</b><span style="font-size:11px;color:var(--t3)">总里程 km</span></div>
+            </div>
+          </div>
+
+          <div class="sec">保养提醒<span class="more">更多保养项 ›</span></div>
+          <div class="card">
+            <div class="mnt-hero">
+              <div class="ringc">
+                <div class="ring"></div>
+                <div class="txt"><b>1 / 6</b><span>超期 / 全部</span></div>
+              </div>
+              <div class="mnt-side">
+                <div class="row1"><i style="background:#f5474f"></i><span class="n">已超期</span><span class="v" style="color:#f5474f">1 项</span></div>
+                <div class="row1"><i style="background:#e8912a"></i><span class="n">临近到期</span><span class="v" style="color:#e8912a">2 项</span></div>
+                <div class="row1"><i style="background:#d8dee9"></i><span class="n">正常</span><span class="v" style="color:var(--t3)">3 项</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sec">本年花费按车</div>
+          <div class="card">
+            <div class="carrow"><span class="dot" style="background:#3b6ff6"></span><span class="nm">我的 CRV</span><span class="rem">¥8,240</span></div>
+            <div class="carrow"><span class="dot" style="background:#b4471a"></span><span class="nm">唐 DM-i</span><span class="rem">¥2,256</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 屏 2：全车保养页 ============ -->
+    <div class="col">
+      <h2>2 · 全车保养（新页面）</h2>
+      <p class="d">默认只看<b>待处理</b>（超期+临期）；按车分组，每行可点车名进该车详情。</p>
+      <div class="phone">
+        <div class="nav"><span class="back">‹</span>保养项目</div>
+        <div class="scroll">
+          <div class="chips">
+            <span class="chip on">待处理 3</span>
+            <span class="chip">全部 6</span>
+          </div>
+
+          <div class="grp">
+            <div class="grp-h">
+              <b>我的 CRV <em>燃油 · 15,600 km</em></b>
+              <span>车辆详情 ›</span>
+            </div>
+            <div class="card">
+              <div class="it">
+                <span class="dot" style="background:#f5474f"></span>
+                <div class="bar">
+                  <div class="top"><span class="nm">机油机滤</span><span class="rem" style="color:#f5474f">超期 300 km</span></div>
+                  <div class="track"><i style="width:100%;background:#f5474f"></i></div>
+                  <div class="sub">周期 5,000 km · 上次 10,300 km</div>
+                </div>
+              </div>
+              <div class="it">
+                <span class="dot" style="background:#e8912a"></span>
+                <div class="bar">
+                  <div class="top"><span class="nm">空气滤芯</span><span class="rem" style="color:#e8912a">剩 450 km</span></div>
+                  <div class="track"><i style="width:95%;background:#e8912a"></i></div>
+                  <div class="sub">周期 10,000 km · 上次 6,050 km</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grp">
+            <div class="grp-h">
+              <b>唐 DM-i <em>混动 · 12,300 km</em></b>
+              <span>车辆详情 ›</span>
+            </div>
+            <div class="card">
+              <div class="it">
+                <span class="dot" style="background:#e8912a"></span>
+                <div class="bar">
+                  <div class="top"><span class="nm">刹车油</span><span class="rem" style="color:#e8912a">剩 12 天</span></div>
+                  <div class="track"><i style="width:70%;background:#e8912a"></i></div>
+                  <div class="sub">周期 24 月 · 上次 2024-11-20</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grp">
+            <div class="grp-h"><b>小鹏 P7 <em>纯电 · 21,500 km</em></b><span>车辆详情 ›</span></div>
+            <div class="card"><div class="sub" style="margin:0">所有保养项都在周期内</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <h3>改动点</h3>
+      <ul>
+        <li><span class="tag">概览</span>保养区块：红橙灰三色状态环图 + 图例行（超期 1 / 临期 2 / 正常 3）</li>
+        <li><span class="tag">概览</span>「管理保养项」→「<b>更多保养项 ›</b>」，进新页</li>
+        <li><span class="tag">新页</span>全车保养：<b>待处理 / 全部</b> 两个筛选片，按车分组</li>
+        <li><span class="tag">新页</span>每辆车右上「车辆详情 ›」→ 该车详情页（保养进度区块）</li>
+        <li><span class="tag">AI</span>queryMaintain 的全车接力落点改到这一页（比概览锚点更精准）</li>
+      </ul>
+
+      <h3>环图数据从哪来</h3>
+      <ul>
+        <li>沿用 <code>buildOverview</code> 已算好的每项 <code>level</code>（overdue / urgent / ok）</li>
+        <li>环图三段 = 三种 level 的项数占比；中心数字「超期 N / 全部 M」</li>
+        <li>全为正常时环是整圈灰，中心「0 / M」——不再是空区块</li>
+      </ul>
+
+      <h3>待你确认</h3>
+      <ul>
+        <li>概览环图：<b>整卡可点</b> 还是只点「更多保养项」？<br>（我建议整卡可点 + 右上角箭头，与「数据总览」卡一致）</li>
+        <li>全车保养页要不要「记一次保养」入口？<br>（建议暂不加：保养记录需要选保养项+里程，表单复杂，先让用户去车辆详情/保养管理页记）</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

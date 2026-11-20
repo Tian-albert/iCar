@@ -3,7 +3,7 @@
 // 两个必须锁死的行为：
 //   ① 粒度跟着区间走（年→月、月→日、全部→年）——否则月视图只有一根柱子；
 //   ② 全车合计的每公里成本 = 全部支出 ÷ 全部有效里程，不能用某辆车的数。
-import { buildStats, groupByGranularity, trendGranularityOf } from '../domain/stats.service';
+import { buildStats, groupByGranularity, resolveRange, trendGranularityOf } from '../domain/stats.service';
 import { buildSummary } from '../domain/summary.service';
 
 function car(id: string, name: string, energyType: string, mileages = 10000): any {
@@ -179,5 +179,47 @@ describe('全车汇总 buildSummary', () => {
       { label: '5', value: 100 },
       { label: '10', value: 312 }
     ]);
+  });
+});
+
+describe('自定义区间（最近半个月 / 国庆那几天）', () => {
+  const start = new Date(2026, 9, 1).getTime();
+  const end = new Date(2026, 9, 7).getTime();
+
+  it('区间含首尾两天：起点归零、终点取当天 23:59', () => {
+    const r = resolveRange({ type: 'custom', start, end });
+    expect(new Date(r.start).getDate()).toBe(1);
+    expect(new Date(r.start).getHours()).toBe(0);
+    expect(new Date(r.end).getDate()).toBe(7);
+    expect(new Date(r.end).getHours()).toBe(23);
+  });
+
+  it('跨度 ≤62 天按日看，更长按月看', () => {
+    expect(trendGranularityOf({ type: 'custom', start, end })).toBe('day');
+    const longEnd = new Date(2026, 9, 1).getTime();
+    const longStart = new Date(2026, 5, 1).getTime();
+    expect(trendGranularityOf({ type: 'custom', start: longStart, end: longEnd })).toBe('month');
+  });
+
+  it('自定义区间的日标签带月份（否则 9/3 与 10/3 会合并）', () => {
+    const list = [
+      cost('c1', 'A', 'cat:park', 10, 2026, 9, 3),
+      cost('c2', 'A', 'cat:park', 20, 2026, 10, 3)
+    ];
+    const points = groupByGranularity(list, (x: any) => x.costDate, (x: any) => x.amount, 'day', true);
+    expect(points.map(p => p.label)).toEqual(['9/3', '10/3']);
+  });
+
+  it('汇总只统计区间内的记录', () => {
+    const cars = [car('A', '我的 CRV', 'fuel', 11000)];
+    const costs = [
+      cost('in1', 'A', 'cat:park', 100, 2026, 10, 2),
+      cost('in2', 'A', 'cat:park', 50, 2026, 10, 7),
+      cost('out1', 'A', 'cat:park', 999, 2026, 10, 8)
+    ];
+    const snap = buildSummary({ type: 'custom', start, end }, costs as any, [], [], CATEGORIES as any, cars as any);
+    expect(snap.expense.total).toBe(150);
+    expect(snap.trendGranularity).toBe('day');
+    expect(snap.costTrend.map(p => p.label)).toEqual(['10/2', '10/7']);
   });
 });

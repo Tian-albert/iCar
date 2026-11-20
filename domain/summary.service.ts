@@ -155,8 +155,8 @@ export function buildSummary(
     },
     categories: categoriesOut,
     trendGranularity: granularity,
-    costTrend: groupByGranularity(costList, c => c.costDate, c => c.amount, granularity),
-    energyTrend: groupByGranularity(energyCosts, c => c.costDate, c => c.amount, granularity),
+    costTrend: groupByGranularity(costList, c => c.costDate, c => c.amount, granularity, range.type === 'custom'),
+    energyTrend: groupByGranularity(energyCosts, c => c.costDate, c => c.amount, granularity, range.type === 'custom'),
     cars: rows.sort((a, b) => b.totalExpense - a.totalExpense)
   };
 }

@@ -53,11 +53,14 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 Page({
   data: {
     pageStyle: '',
-    rangeType: 'year' as 'month' | 'year' | 'all',
+    rangeType: 'year' as 'month' | 'year' | 'all' | 'custom',
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
     years: [] as number[],
     months: MONTHS,
+    /** 自定义区间的起止日期（date picker 的 value 是 YYYY-MM-DD） */
+    startDate: '',
+    endDate: '',
     hasCar: true,
     carCount: '0',
     mileageText: '0',
@@ -91,9 +94,19 @@ Page({
     // 从小微卡片接力进来时取走 payload（读完即删）
     const handoff = takeAgentHandoff(this);
     const now = new Date();
-    const type = query.rangeType === 'month' ? 'month' : query.rangeType === 'all' ? 'all' : 'year';
+    const type =
+      query.rangeType === 'month'
+        ? 'month'
+        : query.rangeType === 'all'
+          ? 'all'
+          : query.rangeType === 'custom'
+            ? 'custom'
+            : 'year';
     const year = Number(query.year) || now.getFullYear();
     const month = Math.min(12, Math.max(1, Number(query.month) || now.getMonth() + 1));
+    // 自定义区间：没传就默认最近 14 天（含今天）
+    const endDate = query.end || this.formatDate(now.getTime());
+    const startDate = query.start || this.formatDate(now.getTime() - 13 * 86400000);
 
     const storage = getStorage();
     const years = this.buildYears(storage);
@@ -103,6 +116,8 @@ Page({
         rangeType: type,
         year,
         month,
+        startDate,
+        endDate,
         years,
         fromAgent: !!handoff
       },
@@ -202,10 +217,32 @@ Page({
   },
 
   currentRange(): StatsRange {
-    const { rangeType, year, month } = this.data;
+    const { rangeType, year, month, startDate, endDate } = this.data;
     if (rangeType === 'all') return { type: 'all' };
     if (rangeType === 'month') return { type: 'month', year, month };
+    if (rangeType === 'custom') {
+      return {
+        type: 'custom',
+        start: this.parseDate(startDate),
+        end: this.parseDate(endDate)
+      };
+    }
     return { type: 'year', year };
+  },
+
+  /** YYYY-MM-DD → 当天 00:00 的时间戳（解析失败回落到今天） */
+  parseDate(text: string): number {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text || '');
+    if (!m) return Date.now();
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+  },
+
+  /** 时间戳 → YYYY-MM-DD（date picker 的 value 需要） */
+  formatDate(ts: number): string {
+    const d = new Date(ts);
+    const mm = `${d.getMonth() + 1}`.padStart(2, '0');
+    const dd = `${d.getDate()}`.padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
   },
 
   /**
@@ -219,11 +256,16 @@ Page({
     if (!points.length) return { bars: [] as BarView[], axis: [] as AxisTick[] };
 
     const max = points.reduce((m, p) => Math.max(m, p.value), 0) || 1;
-    const slotCount = granularity === 'day' ? 31 : granularity === 'month' ? 12 : points.length;
+    /**
+     * 自定义区间按「第几个桶」排布，而不是按日期落在 1~31 的格子里——
+     * 「国庆那几天」只有 7 天，按日期摆会挤在右侧一小段，左边大片空白。
+     */
+    const byIndex = granularity === 'day' && range.type === 'custom';
+    const slotCount = granularity === 'day' ? (byIndex ? points.length : 31) : granularity === 'month' ? 12 : points.length;
 
     // 每个点落在第几个槽位
-    const slotOf = (label: string): number => {
-      if (granularity === 'day') return Math.max(0, Number(label) - 1);
+    const slotOf = (label: string, idx: number): number => {
+      if (granularity === 'day') return byIndex ? idx : Math.max(0, Number(label) - 1);
       if (granularity === 'month') {
         // 跨年时 label 形如 2026-03 / 3月，取月份数字
         const m = Number((label.match(/(\d+)(?!.*\d)/) || [])[1]);
@@ -233,8 +275,8 @@ Page({
     };
 
     const slotWidth = 100 / slotCount;
-    const bars: BarView[] = points.map(p => {
-      const slot = slotOf(p.label);
+    const bars: BarView[] = points.map((p, idx) => {
+      const slot = slotOf(p.label, idx);
       // 柱中心的百分比：气泡钉在这里（柱子 left + 半宽）
       const left = slot * slotWidth;
       const width = slotWidth * 0.72;
@@ -251,7 +293,13 @@ Page({
     });
 
     const axis: AxisTick[] = [];
-    if (granularity === 'day') {
+    if (granularity === 'day' && byIndex) {
+      // 桶数不定，均匀取 6 个刻度，标签用数据自带的日期
+      const step = Math.max(1, Math.ceil(points.length / 6));
+      points.forEach((p, i) => {
+        if (i % step === 0) axis.push({ text: p.label, left: `${(i * slotWidth).toFixed(2)}%` });
+      });
+    } else if (granularity === 'day') {
       for (const d of [1, 5, 10, 15, 20, 25, 30]) {
         axis.push({ text: String(d), left: `${((d - 1) * slotWidth).toFixed(2)}%` });
       }
@@ -271,8 +319,15 @@ Page({
   /** 柱子对应的时间全称：点中时展示用 */
   barDateText(label: string, granularity: TrendGranularity, range: StatsRange): string {
     if (granularity === 'day') {
-      const base = range.type === 'month' ? `${range.year} 年 ${range.month} 月` : '';
-      return `${base} ${Number(label)} 日`;
+      if (range.type === 'month') {
+        return `${range.year} 年 ${range.month} 月 ${Number(label)} 日`;
+      }
+      if (range.type === 'custom') {
+        // 自定义区间的日标签形如 9/3（跨月）或 3（区间只在单月内）
+        const y = new Date(range.start).getFullYear();
+        return label.indexOf('/') >= 0 ? `${y} 年 ${label}` : `${new Date(range.start).getMonth() + 1} 月 ${label} 日`;
+      }
+      return `${Number(label)} 日`;
     }
     if (granularity === 'month') {
       // 跨年时 label 形如 2026-03 / 3月
@@ -310,7 +365,7 @@ Page({
   },
 
   onRangeChange(e: WechatMiniprogram.TouchEvent) {
-    const type = e.currentTarget.dataset.type as 'month' | 'year' | 'all';
+    const type = e.currentTarget.dataset.type as 'month' | 'year' | 'all' | 'custom';
     this.setData({ rangeType: type }, () => this.load());
   },
 
@@ -322,6 +377,19 @@ Page({
 
   onMonthChange(e: WechatMiniprogram.PickerChange) {
     this.setData({ month: Number(e.detail.value) + 1 }, () => this.load());
+  },
+
+  /** 自定义区间：起点（大于终点时把终点一起推后，避免出现负区间） */
+  onStartDateChange(e: WechatMiniprogram.PickerChange) {
+    const startDate = String(e.detail.value);
+    const endDate = startDate > this.data.endDate ? startDate : this.data.endDate;
+    this.setData({ startDate, endDate }, () => this.load());
+  },
+
+  onEndDateChange(e: WechatMiniprogram.PickerChange) {
+    const endDate = String(e.detail.value);
+    const startDate = endDate < this.data.startDate ? endDate : this.data.startDate;
+    this.setData({ startDate, endDate }, () => this.load());
   },
 
   /** 各车明细 → 单车统计页，并把当前区间带过去 */

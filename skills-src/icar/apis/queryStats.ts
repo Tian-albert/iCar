@@ -22,16 +22,36 @@ import {
 interface Args {
   /** 车辆名称，可不传；不传且有多辆车时返回全部车辆合计 */
   carName?: string;
-  /** 统计维度：year（默认）/ month / all */
-  rangeType?: 'year' | 'month' | 'all';
+  /** 统计维度：year（默认）/ month / all / custom */
+  rangeType?: 'year' | 'month' | 'all' | 'custom';
   year?: number;
   month?: number;
+  /** 自定义区间起点 YYYY-MM-DD（rangeType=custom 时必填） */
+  startDate?: string;
+  /** 自定义区间终点 YYYY-MM-DD（rangeType=custom 时必填） */
+  endDate?: string;
 }
 
 function rangeLabel(range: StatsRange): string {
   if (range.type === 'all') return '全部时间';
   if (range.type === 'year') return `${range.year} 年`;
+  if (range.type === 'custom') return `${ymd(range.start)} 至 ${ymd(range.end)}`;
   return `${range.year} 年 ${range.month} 月`;
+}
+
+/** 时间戳 → YYYY-MM-DD */
+function ymd(ts: number): string {
+  const d = new Date(ts);
+  const mm = `${d.getMonth() + 1}`.padStart(2, '0');
+  const dd = `${d.getDate()}`.padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** YYYY-MM-DD → 当天 00:00 的时间戳；解析不出来返回 null */
+function parseYmd(text: string | undefined): number | null {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec((text || '').trim());
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
 }
 
 /**
@@ -43,13 +63,15 @@ function rangeLabel(range: StatsRange): string {
 function summaryQuery(range: StatsRange): string {
   if (range.type === 'all') return 'rangeType=all';
   if (range.type === 'year') return `rangeType=year&year=${range.year}`;
+  if (range.type === 'custom') return `rangeType=custom&start=${ymd(range.start)}&end=${ymd(range.end)}`;
   return `rangeType=month&year=${range.year}&month=${range.month}`;
 }
 
-/** 单车统计页的 query（页面 own 的参数名是 range/year/month） */
+/** 单车统计页的 query（页面 own 的参数名是 range/year/month/custom） */
 function carStatsQuery(range: StatsRange): string {
   if (range.type === 'all') return 'range=all';
   if (range.type === 'year') return `range=year&year=${range.year}`;
+  if (range.type === 'custom') return `range=custom&start=${ymd(range.start)}&end=${ymd(range.end)}`;
   return `range=month&year=${range.year}&month=${range.month}`;
 }
 
@@ -76,13 +98,31 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
   }
 
   const now = new Date();
-  const type = args.rangeType === 'month' || args.rangeType === 'all' ? args.rangeType : 'year';
-  const range: StatsRange =
-    type === 'all'
-      ? { type: 'all' }
-      : type === 'month'
-        ? { type: 'month', year: args.year || now.getFullYear(), month: args.month || now.getMonth() + 1 }
+  const type =
+    args.rangeType === 'month' || args.rangeType === 'all' || args.rangeType === 'custom'
+      ? args.rangeType
+      : 'year';
+
+  /**
+   * 任意区间：「最近半个月」「国庆那几天」「上周」这类问法没有固定的年月，
+   * 只能让模型把口语换算成具体起止日期传进来。
+   * 日期缺失或解析失败时退回本年——绝不因为参数问题报错卡死对话。
+   */
+  let range: StatsRange;
+  if (type === 'all') {
+    range = { type: 'all' };
+  } else if (type === 'custom') {
+    const start = parseYmd(args.startDate);
+    const end = parseYmd(args.endDate) ?? start;
+    range =
+      start !== null && end !== null
+        ? { type: 'custom', start, end: Math.max(start, end) }
         : { type: 'year', year: args.year || now.getFullYear() };
+  } else if (type === 'month') {
+    range = { type: 'month', year: args.year || now.getFullYear(), month: args.month || now.getMonth() + 1 };
+  } else {
+    range = { type: 'year', year: args.year || now.getFullYear() };
+  }
   const label = rangeLabel(range);
 
   const askedName = (args.carName || '').trim();

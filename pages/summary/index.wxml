@@ -6,15 +6,27 @@
       <view hover-class="hover-dim" class="seg {{rangeType === 'month' ? 'seg-active' : ''}}" data-type="month" bindtap="onRangeChange">月</view>
       <view hover-class="hover-dim" class="seg {{rangeType === 'year' ? 'seg-active' : ''}}" data-type="year" bindtap="onRangeChange">年</view>
       <view hover-class="hover-dim" class="seg {{rangeType === 'all' ? 'seg-active' : ''}}" data-type="all" bindtap="onRangeChange">全部</view>
+      <view hover-class="hover-dim" class="seg {{rangeType === 'custom' ? 'seg-active' : ''}}" data-type="custom" bindtap="onRangeChange">区间</view>
     </view>
     <view class="range-pickers">
-      <picker wx:if="{{rangeType !== 'all'}}" range="{{years}}" bindchange="onYearChange">
+      <picker wx:if="{{rangeType === 'year' || rangeType === 'month'}}" range="{{years}}" bindchange="onYearChange">
         <view class="picker-value">{{year}}年 ▾</view>
       </picker>
       <picker wx:if="{{rangeType === 'month'}}" range="{{months}}" value="{{month - 1}}" bindchange="onMonthChange">
         <view class="picker-value">{{month}}月 ▾</view>
       </picker>
     </view>
+  </view>
+
+  <!-- 自定义区间：起止日期（「国庆那几天」「最近半个月」这类问法） -->
+  <view wx:if="{{rangeType === 'custom'}}" class="date-row">
+    <picker mode="date" value="{{startDate}}" end="{{endDate}}" bindchange="onStartDateChange">
+      <view class="picker-value">{{startDate}} ▾</view>
+    </picker>
+    <text class="date-sep">至</text>
+    <picker mode="date" value="{{endDate}}" start="{{startDate}}" bindchange="onEndDateChange">
+      <view class="picker-value">{{endDate}} ▾</view>
+    </picker>
   </view>
 
   <block wx:if="{{hasCar}}">

@@ -268,3 +268,15 @@
   line-height: 1.6;
   color: var(--color-text-3);
 }
+
+/* 自定义区间的起止日期行 */
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: -8rpx 0 20rpx;
+}
+.date-sep {
+  font-size: 22rpx;
+  color: var(--color-text-3);
+}
