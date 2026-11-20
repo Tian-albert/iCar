@@ -79,9 +79,13 @@ if (unregistered.length) {
 const API_HINTS = {
   queryCars: /几辆车|哪些车|车库|有纯电|是混动/,
   queryStats: /花了多少|花费|每公里|油耗|电耗|跑了多少公里|油费|支出|成本/,
-  queryMaintain: /保养|机油|滤芯|轮胎/,
+  queryMaintain: /该保养|保养吗|还剩多少|超期|要保养/,
+  queryRecords: /记录|都记了|明细|记过什么/,
   addCost: /记一笔|记一下|记上|补记|补录|停车\s*\d|洗车\s*\d|高速费/,
-  addRefuel: /加满|加了|加油|充电|升|度/
+  addRefuel: /加满|加了|加油|充电|升|度/,
+  addMaintain: /记一次保养|换了|做了.*保养|保养花了/,
+  addCar: /加一辆|新增一辆|提了一辆|又买了.*车/,
+  updateCar: /改名|改成|改一下|修改/
 };
 const covered = Object.keys(API_HINTS).filter(api =>
   positive.some(c => API_HINTS[api].test(c.intent))
