@@ -189,6 +189,11 @@
           "remark": {
             "type": "string",
             "description": "备注，如「中石化 92 号」。可省略"
+          },
+          "energyType": {
+            "type": "string",
+            "enum": ["fuel", "ev"],
+            "description": "能量类型：用户说「加油」传 fuel，「充电」传 ev。混动车两种都会记，不说则按车辆类型推断"
           }
         },
         "required": ["volume"]

@@ -411,6 +411,13 @@ describe('addCost', () => {
     expect(after).toBe(before);
   });
 
+  it('金额超出合理范围时拒绝（100 万停车费）', async () => {
+    const { addCost } = loadApis();
+    const res = await addCost({ amount: 1000000, categoryName: '停车' });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('超出合理范围');
+  });
+
   it('类别不存在时降级到默认类别，并如实告知用户', async () => {
     const { addCost } = loadApis();
     const res = await addCost({ amount: 30, categoryName: '洗车' });
@@ -624,6 +631,22 @@ describe('addRefuel', () => {
     // 里程涨了，机油（周期 5000）剩余量应随之减少
     const maintain = await queryMaintain({});
     expect(maintain.content[0].text).toContain('超期 2000 km');
+  });
+
+  it('数量超出合理范围时拒绝（500 升）', async () => {
+    const { addRefuel } = loadApis();
+    const res = await addRefuel({ volume: 500, amount: 4000 });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('超出合理范围');
+  });
+
+  it('可以显式指定 energyType（混动车加油/充电都要记）', async () => {
+    const { addRefuel } = loadApis();
+    // 车是燃油车，但用户说「充电」→ 显式指定后按充电记
+    const res = await addRefuel({ volume: 40, amount: 60, energyType: 'ev' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.kindLabel).toBe('充电');
+    expect(res.structuredContent.volumeUnit).toBe('kWh');
   });
 
   it('纯电车按充电记录，产出电耗而不是油耗', async () => {

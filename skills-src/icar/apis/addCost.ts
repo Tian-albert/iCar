@@ -44,6 +44,18 @@ export async function addCost(args: Args = {}): Promise<AgentApiResult> {
       ]
     };
   }
+  // 上限兜底：单笔 10 万以上大概率是口误或单位错（「100 万停车费」）
+  if (amount > 100000) {
+    return {
+      isError: true,
+      content: [
+        {
+          type: 'text',
+          text: `金额 ${amount} 元超出合理范围（单笔上限 10 万元），大概率是口误或单位说错了。请向用户确认正确金额后再记，不要照数字入账。`
+        }
+      ]
+    };
+  }
 
   const cars = readCars();
   if (!cars.length) {

@@ -63,6 +63,18 @@ async function addRefuel(args = {}) {
             ]
         };
     }
+    // 上限兜底：家用车油箱 30~100 升、电池 40~120 度，超过 200 基本是口误
+    if (volume > 200) {
+        return {
+            isError: true,
+            content: [
+                {
+                    type: 'text',
+                    text: `数量 ${volume} 超出合理范围（单次上限 200 升 / 度），大概率是口误或单位说错了。请向用户确认正确数量后再记。`
+                }
+            ]
+        };
+    }
     const hasPrice = isFinite(unitPrice) && unitPrice > 0;
     const hasAmount = isFinite(amountIn) && amountIn > 0;
     if (!hasPrice && !hasAmount) {
@@ -108,7 +120,12 @@ async function addRefuel(args = {}) {
             ]
         };
     }
-    const energyType = car.energyType === 'ev' ? 'ev' : 'fuel';
+    // 显式指定优先（混动车既能加油也能充电，只看车类型会记错）；否则按车推断
+    const energyType = args.energyType === 'ev' || args.energyType === 'fuel'
+        ? args.energyType
+        : car.energyType === 'ev'
+            ? 'ev'
+            : 'fuel';
     const unitLabel = energyType === 'ev' ? '元/kWh' : '元/升';
     const volumeUnit = energyType === 'ev' ? 'kWh' : '升';
     // 单价与金额互相反算（四舍五入到 2 位，与主包 round2 一致）
