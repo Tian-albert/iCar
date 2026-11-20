@@ -444,10 +444,15 @@
   margin-right: 10rpx;
   flex-shrink: 0;
 }
+/*
+ * 名称与数字都固定宽度：三行文字长度不同（「已超期」3 字 / 「临近到期」4 字），
+ * 若靠 flex 自适应，比例条的起点与总长会各不相同，看着参差不齐。
+ */
 .mnt-legend-name {
+  width: 92rpx;
+  flex: none;
   font-size: 22rpx;
   color: var(--color-text-2);
-  flex-shrink: 0;
 }
 .mnt-track {
   flex: 1;
@@ -463,10 +468,12 @@
   border-radius: 4rpx;
 }
 .mnt-legend-val {
+  width: 56rpx;
+  flex: none;
+  text-align: right;
   font-size: 22rpx;
   font-weight: 600;
   color: var(--color-text-3);
-  flex-shrink: 0;
 }
 .mnt-legend-val.bad {
   color: var(--color-danger);
