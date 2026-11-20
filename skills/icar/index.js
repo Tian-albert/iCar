@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // · createSkill 的 path 必须与 app.json 的 agent.skills[].path 完全一致；
 // · registerAPI 的 name 必须与 mcp.json 中 apis[].name 完全一致。
 const addCost_1 = require("./apis/addCost");
+const addRefuel_1 = require("./apis/addRefuel");
+const queryCars_1 = require("./apis/queryCars");
 const queryMaintain_1 = require("./apis/queryMaintain");
 const queryStats_1 = require("./apis/queryStats");
 const SKILL_PATH = 'skills/icar';
@@ -22,6 +24,8 @@ skill.use(async (ctx, next) => {
         throw new Error(`本地数据读取失败：${message}。请提示用户重试，或引导到对应页面手动操作。`);
     }
 });
+skill.registerAPI('queryCars', queryCars_1.queryCars);
 skill.registerAPI('queryStats', queryStats_1.queryStats);
 skill.registerAPI('queryMaintain', queryMaintain_1.queryMaintain);
 skill.registerAPI('addCost', addCost_1.addCost);
+skill.registerAPI('addRefuel', addRefuel_1.addRefuel);

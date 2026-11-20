@@ -111,6 +111,21 @@ function seed(): void {
     deleted: false
   });
 
+  // 加油/充电要靠系统预设类别归类（presetType=refuel / ev）
+  put('categories', {
+    sourceId: 'mp:category:refuel',
+    sourcePlatform: 'mp',
+    name: '加油',
+    icon: '⛽',
+    isPreset: true,
+    presetType: 'refuel',
+    visible: true,
+    sortOrder: 2,
+    createdAt: NOW,
+    updatedAt: NOW,
+    deleted: false
+  });
+
   put('costs', {
     sourceId: 'mp:costs:1',
     sourcePlatform: 'mp',
@@ -185,9 +200,11 @@ function seed(): void {
 // 加载的是编译产物（skills/icar 下的 .js）—— 与小程序实际执行的文件一致。
 function loadApis() {
   return {
+    queryCars: require('../skills/icar/apis/queryCars').queryCars,
     queryStats: require('../skills/icar/apis/queryStats').queryStats,
     queryMaintain: require('../skills/icar/apis/queryMaintain').queryMaintain,
-    addCost: require('../skills/icar/apis/addCost').addCost
+    addCost: require('../skills/icar/apis/addCost').addCost,
+    addRefuel: require('../skills/icar/apis/addRefuel').addRefuel
   };
 }
 
@@ -383,5 +400,110 @@ describe('addCost', () => {
     expect(typeof saved.sourceId).toBe('string');
     expect(saved.sourceId.startsWith('mp:costs:')).toBe(true);
     expect(res.isError).toBe(false);
+  });
+});
+
+describe('queryCars', () => {
+  it('列出车辆并标出置顶', async () => {
+    const { queryCars } = loadApis();
+    const res = await queryCars({});
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.count).toBe('1');
+    expect(res.content[0].text).toContain('我的 CRV（燃油，5850 km，置顶）');
+  });
+
+  it('没有车辆时给引导而不是空回答', async () => {
+    resetMemory();
+    const { queryCars } = loadApis();
+    const res = await queryCars({});
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.count).toBe('0');
+    expect(res.content[0].text).toContain('还没有添加任何车辆');
+  });
+});
+
+describe('addRefuel', () => {
+  it('只给量 + 金额时反算单价，并同步写入关联支出', async () => {
+    const { addRefuel, queryStats } = loadApis();
+    const res = await addRefuel({ volume: 40, amount: 320, mileage: 6250 });
+
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.unitPrice).toBe('8.00');
+    expect(res.structuredContent.amount).toBe('320.00');
+    expect(res.content[0].text).toContain('加油 40 升');
+
+    // 加油必须同时产生一笔支出，否则「今年花了多少」会漏账
+    const stats = await queryStats({ rangeType: 'all' });
+    expect(stats.structuredContent.totalExpense).toBe('820.00');
+    expect(stats.structuredContent.energyCost).toBe('320.00');
+  });
+
+  it('两次加满后自动算出油耗区间', async () => {
+    const { addRefuel } = loadApis();
+    await addRefuel({ volume: 40, amount: 320, mileage: 6050 });
+    const second = await addRefuel({ volume: 40, amount: 320, mileage: 6450 });
+
+    // 区间 400km、40L → 10.00 L/100km
+    expect(second.structuredContent.consumption).toBe('10.00');
+    expect(second.structuredContent.consumptionMileage).toBe('400');
+    expect(second.content[0].text).toContain('本次算出油耗 10.00 L/100km');
+  });
+
+  it('没加满时不产出区间，并解释原因', async () => {
+    const { addRefuel } = loadApis();
+    await addRefuel({ volume: 40, amount: 320, mileage: 6050 });
+    const res = await addRefuel({ volume: 20, amount: 160, mileage: 6200, isFull: false });
+
+    expect(res.structuredContent.consumption).toBe('');
+    expect(res.content[0].text).toContain('没加满');
+  });
+
+  it('缺少加油量或金额时先追问，且不写库', async () => {
+    const { addRefuel } = loadApis();
+    const before = ((memory.get('icar:index') as any).fuelRecords || []).length;
+
+    const noVolume = await addRefuel({ amount: 320 });
+    expect(noVolume.isError).toBe(true);
+    expect(noVolume.content[0].text).toContain('缺少加油量');
+
+    const noMoney = await addRefuel({ volume: 40 });
+    expect(noMoney.isError).toBe(true);
+    expect(noMoney.content[0].text).toContain('缺少金额');
+
+    const after = ((memory.get('icar:index') as any).fuelRecords || []).length;
+    expect(after).toBe(before);
+  });
+
+  it('没给里程时沿用车辆当前里程，并在文案里说明', async () => {
+    const { addRefuel } = loadApis();
+    const res = await addRefuel({ volume: 40, amount: 320 });
+    expect(res.structuredContent.mileage).toBe('5850');
+    expect(res.content[0].text).toContain('沿用了车辆当前里程');
+  });
+
+  it('加满后回写车辆里程（否则保养剩余量会算错）', async () => {
+    const { addRefuel, queryMaintain } = loadApis();
+    await addRefuel({ volume: 40, amount: 320, mileage: 7000 });
+    const car: any = memory.get(`icar:cars:${CAR_ID}`);
+    expect(car.mileages).toBe(7000);
+
+    // 里程涨了，机油（周期 5000）剩余量应随之减少
+    const maintain = await queryMaintain({});
+    expect(maintain.content[0].text).toContain('超期 2000 km');
+  });
+
+  it('纯电车按充电记录，产出电耗而不是油耗', async () => {
+    resetMemory();
+    seed();
+    const car: any = memory.get(`icar:cars:${CAR_ID}`);
+    car.energyType = 'ev';
+    memory.set(`icar:cars:${CAR_ID}`, car);
+
+    const { addRefuel } = loadApis();
+    const res = await addRefuel({ volume: 60, amount: 90, mileage: 5850 });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.kindLabel).toBe('充电');
+    expect(res.structuredContent.volumeUnit).toBe('kWh');
+    expect(res.structuredContent.consumptionUnit).toBe('kWh/100km');
   });
 });

@@ -3,6 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.readLogs = exports.readHandles = exports.readMaintains = exports.readConsumptions = exports.readRefuels = exports.readCosts = exports.readCategories = exports.readCars = void 0;
 exports.list = list;
 exports.insert = insert;
+exports.get = get;
+exports.update = update;
+exports.hardDelete = hardDelete;
 exports.getUser = getUser;
 exports.pickCar = pickCar;
 exports.energyLabel = energyLabel;
@@ -46,6 +49,41 @@ function insert(table, entity) {
         wx.setStorageSync(KEY_INDEX, index);
     }
     return entity;
+}
+/** 按 id 取单条（含已删除的，由调用方判断 deleted） */
+function get(table, id) {
+    try {
+        const v = wx.getStorageSync(`icar:${table}:${id}`);
+        return v && typeof v === 'object' ? v : null;
+    }
+    catch (e) {
+        return null;
+    }
+}
+/** 覆盖更新（记录必须已存在，索引不变） */
+function update(table, entity) {
+    wx.setStorageSync(`icar:${table}:${entity.sourceId}`, entity);
+    return entity;
+}
+/**
+ * 物理删除（不写回收站）。
+ *
+ * 只用于「可重算的派生数据」——目前只有 `fuelConsumptions`：
+ * 油耗区间由加油记录全量重算得出，留着旧区间会与新记录打架；
+ * 用户真正在乎的记录（加油、支出）一律走软删。
+ */
+function hardDelete(table, id) {
+    try {
+        wx.removeStorageSync(`icar:${table}:${id}`);
+        const index = readIndex();
+        if (index[table]) {
+            index[table] = index[table].filter(x => x !== id);
+            wx.setStorageSync(KEY_INDEX, index);
+        }
+    }
+    catch (e) {
+        // 删除失败不影响主流程：区间会在下次重算时被覆盖
+    }
 }
 function getUser() {
     try {

@@ -68,6 +68,42 @@ export function insert<T extends { sourceId: string }>(table: string, entity: T)
   return entity;
 }
 
+/** 按 id 取单条（含已删除的，由调用方判断 deleted） */
+export function get<T>(table: string, id: string): T | null {
+  try {
+    const v = wx.getStorageSync(`icar:${table}:${id}`);
+    return v && typeof v === 'object' ? (v as T) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** 覆盖更新（记录必须已存在，索引不变） */
+export function update<T extends { sourceId: string }>(table: string, entity: T): T {
+  wx.setStorageSync(`icar:${table}:${entity.sourceId}`, entity);
+  return entity;
+}
+
+/**
+ * 物理删除（不写回收站）。
+ *
+ * 只用于「可重算的派生数据」——目前只有 `fuelConsumptions`：
+ * 油耗区间由加油记录全量重算得出，留着旧区间会与新记录打架；
+ * 用户真正在乎的记录（加油、支出）一律走软删。
+ */
+export function hardDelete(table: string, id: string): void {
+  try {
+    wx.removeStorageSync(`icar:${table}:${id}`);
+    const index = readIndex();
+    if (index[table]) {
+      index[table] = index[table].filter(x => x !== id);
+      wx.setStorageSync(KEY_INDEX, index);
+    }
+  } catch (e) {
+    // 删除失败不影响主流程：区间会在下次重算时被覆盖
+  }
+}
+
 export function getUser(): User | null {
   try {
     const v = wx.getStorageSync(KEY_USER);

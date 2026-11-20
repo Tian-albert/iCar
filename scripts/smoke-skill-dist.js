@@ -28,9 +28,10 @@ require(path.join(__dirname, '..', 'skills', 'icar', 'index.js'));
 
 const registered = globalThis.wx.modelContext._registered;
 const names = Object.keys(registered).sort();
+const EXPECTED = ['addCost', 'addRefuel', 'queryCars', 'queryMaintain', 'queryStats'];
 console.log('registered:', names.join(', '));
-if (JSON.stringify(names) !== JSON.stringify(['addCost', 'queryMaintain', 'queryStats'])) {
-  console.error('FAIL: 注册的接口名不对');
+if (JSON.stringify(names) !== JSON.stringify(EXPECTED)) {
+  console.error('FAIL: 注册的接口名不对，期望', EXPECTED.join(', '));
   process.exit(1);
 }
 
@@ -50,6 +51,8 @@ put('cars', {
   maintainSoonMileage: 500, maintainSoonDays: 15
 });
 put('categories', { sourceId: 'mp:cat:1', name: '停车', visible: true, presetType: '' });
+// 加油记录要靠系统预设类别归类（presetType=refuel），库里没有就记不了
+put('categories', { sourceId: 'mp:cat:fuel', name: '加油', visible: true, presetType: 'refuel' });
 put('costs', {
   sourceId: 'mp:costs:1', carSourceId: CAR, categorySourceId: 'mp:cat:1',
   amount: 300, costDate: NOW, remark: '', maintainHandleSourceId: '',
@@ -62,9 +65,29 @@ put('maintains', {
 });
 
 (async () => {
+  const cars = await registered.queryCars({});
+  console.log('queryCars:', cars.content[0].text);
+  if (cars.structuredContent.count !== '1') {
+    console.error('FAIL: 车辆数 =', cars.structuredContent.count);
+    process.exit(1);
+  }
+
+  const refuel = await registered.addRefuel({ volume: 40, amount: 320, mileage: 6250 });
+  console.log('addRefuel:', refuel.content[0].text);
+  if (refuel.isError) {
+    console.error('FAIL: addRefuel 返回错误');
+    process.exit(1);
+  }
+  // 加油应当同时写入关联支出：300 + 320 = 620
+  const afterRefuel = await registered.queryStats({ rangeType: 'all' });
+  if (afterRefuel.structuredContent.totalExpense !== '620.00') {
+    console.error('FAIL: 加油未同步写入支出 =', afterRefuel.structuredContent.totalExpense);
+    process.exit(1);
+  }
+
   const stats = await registered.queryStats({ rangeType: 'all' });
   console.log('queryStats:', stats.content[0].text);
-  if (stats.structuredContent.totalExpense !== '300.00') {
+  if (stats.structuredContent.totalExpense !== '620.00') {
     console.error('FAIL: totalExpense =', stats.structuredContent.totalExpense);
     process.exit(1);
   }
@@ -83,8 +106,9 @@ put('maintains', {
     process.exit(1);
   }
 
+  // 初始 300 + 加油 320 + 停车 15 = 635
   const stats2 = await registered.queryStats({ rangeType: 'all' });
-  if (stats2.structuredContent.totalExpense !== '315.00') {
+  if (stats2.structuredContent.totalExpense !== '635.00') {
     console.error('FAIL: 记账后统计未更新 =', stats2.structuredContent.totalExpense);
     process.exit(1);
   }

@@ -123,7 +123,7 @@ describe('契约对齐：mcp.json ↔ index.ts ↔ app.json', () => {
       .map(s => s.replace("registerAPI('", '').replace("'", ''))
       .sort();
     expect(registered).toEqual(declared);
-    expect(declared).toEqual(['addCost', 'queryMaintain', 'queryStats']);
+    expect(declared).toEqual(['addCost', 'addRefuel', 'queryCars', 'queryMaintain', 'queryStats']);
   });
 
   it('每个接口都有 name / description / inputSchema（对象）', () => {

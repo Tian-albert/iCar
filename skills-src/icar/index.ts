@@ -4,6 +4,8 @@
 // · createSkill 的 path 必须与 app.json 的 agent.skills[].path 完全一致；
 // · registerAPI 的 name 必须与 mcp.json 中 apis[].name 完全一致。
 import { addCost } from './apis/addCost';
+import { addRefuel } from './apis/addRefuel';
+import { queryCars } from './apis/queryCars';
 import { queryMaintain } from './apis/queryMaintain';
 import { queryStats } from './apis/queryStats';
 
@@ -23,6 +25,8 @@ skill.use(async (ctx, next) => {
   }
 });
 
+skill.registerAPI('queryCars', queryCars);
 skill.registerAPI('queryStats', queryStats);
 skill.registerAPI('queryMaintain', queryMaintain);
 skill.registerAPI('addCost', addCost);
+skill.registerAPI('addRefuel', addRefuel);

@@ -1,6 +1,27 @@
 {
   "apis": [
     {
+      "name": "queryCars",
+      "description": "列出用户已有的车辆及每辆车的能量类型（燃油/纯电/混动）、当前里程、是否置顶。适用于「我有几辆车」「我的车叫什么」；多车用户要记账或查统计前，可先用它确认车名再传 carName。只读。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "count": { "type": "string" },
+          "items": { "type": "string" },
+          "linkText": { "type": "string" },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
+    },
+    {
       "name": "queryStats",
       "description": "查询用户某一辆车的养车花费与能耗统计。返回总支出、每公里成本、平均油耗或电耗、有效里程。适用于「今年养车花了多少」「每公里多少钱」「油耗怎么样」这类问题。只读，不修改任何数据。",
       "inputSchema": {
@@ -118,6 +139,75 @@
           "categoryName": { "type": "string" },
           "amount": { "type": "string" },
           "dateText": { "type": "string" },
+          "linkText": { "type": "string" },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
+    },
+    {
+      "name": "addRefuel",
+      "description": "帮用户记一笔加油或充电并写入本地存储。加油量（升/度）必填；单价与实付金额给一个即可，另一个会自动反算。加满两次后才能算出油耗，因此 isFull 要如实传。缺少加油量或金额时不要调用，先追问。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "volume": {
+            "type": "number",
+            "description": "加油量（升）或充电量（kWh），必须大于 0。用户说「加了 40 个」即 40"
+          },
+          "unitPrice": {
+            "type": "number",
+            "description": "单价（元/升 或 元/kWh）。与 amount 至少给一个"
+          },
+          "amount": {
+            "type": "number",
+            "description": "实付金额（元）。与 unitPrice 至少给一个；都给了以 amount 为准"
+          },
+          "mileage": {
+            "type": "number",
+            "description": "加油/充电时的总里程 km。用户没说时不传，会沿用车辆当前里程（回复里会提示可能不准）"
+          },
+          "carName": {
+            "type": "string",
+            "description": "车辆名称。用户没说哪辆车时不要传"
+          },
+          "isFull": {
+            "type": "boolean",
+            "description": "这次是否加满/充满，默认 true。没加满时油耗要等下次加满才算得出"
+          },
+          "isLowFuel": {
+            "type": "boolean",
+            "description": "加油前油量/电量是否已偏低，默认 false"
+          },
+          "dateText": {
+            "type": "string",
+            "description": "加油日期 YYYY-MM-DD，默认今天"
+          },
+          "remark": {
+            "type": "string",
+            "description": "备注，如「中石化 92 号」。可省略"
+          }
+        },
+        "required": ["volume"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": { "type": "string" },
+          "energyType": { "type": "string" },
+          "kindLabel": { "type": "string" },
+          "volume": { "type": "string" },
+          "volumeUnit": { "type": "string" },
+          "unitPrice": { "type": "string" },
+          "amount": { "type": "string" },
+          "mileage": { "type": "string" },
+          "dateText": { "type": "string" },
+          "consumption": { "type": "string" },
+          "consumptionUnit": { "type": "string" },
+          "consumptionMileage": { "type": "string" },
           "linkText": { "type": "string" },
           "pagePath": {
             "type": "string",
