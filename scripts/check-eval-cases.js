@@ -61,12 +61,19 @@ for (const c of cases) {
   }
 }
 
-// 3. 未注册场景：涉及私有数据需 1 条 private_data + 1 条 product_service
-const hasPrivate = unregistered.some(c => has(c, 'private_data'));
-const hasService = unregistered.some(c => has(c, 'product_service'));
-if (!hasPrivate) errors.push('缺少 private_data 类型的未注册用例');
-if (!hasService) errors.push('缺少 product_service 类型的未注册用例');
-if (unregistered.length > 2) warn.push(`未注册用例 ${unregistered.length} 条，官方上限 2 条`);
+// 3. 未注册场景：**平台按小程序能力动态判定是否要求**（车记本实测：不要求）。
+//    若平台判定需要，规则是 1 条 private_data + 1 条 product_service、上限 2 条。
+//    这里只做一致性检查，不作为硬性失败——以评测工具的实际检测结果为准。
+if (unregistered.length) {
+  const hasPrivate = unregistered.some(c => has(c, 'private_data'));
+  const hasService = unregistered.some(c => has(c, 'product_service'));
+  if (hasPrivate !== hasService) {
+    errors.push('未注册用例必须同时包含 private_data 与 product_service 各一条');
+  }
+  if (unregistered.length > 2) warn.push(`未注册用例 ${unregistered.length} 条，官方上限 2 条`);
+} else {
+  warn.push('当前无未注册用例；若平台检测判定需要（涉及私有数据），需补 1 条 private_data + 1 条 product_service');
+}
 
 // 4. 原子接口覆盖度 ≥85%（按关键词粗判，官方由模型判定）
 const API_HINTS = {
