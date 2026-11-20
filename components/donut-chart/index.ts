@@ -28,7 +28,11 @@ Component({
      * 概览页的保养环图只有 200rpx 宽、右侧还要放图例，标签会挤成一片；
      * 关掉标签后外围留白消失，小尺寸也能画满（图例本身承担了标签作用）。
      */
-    showLabels: { type: Boolean, value: true }
+    showLabels: { type: Boolean, value: true },
+    /** 中心下方的小字；概览的保养环图传 ''，中心只留「1 / 6」 */
+    centerLabel: { type: String, value: '总支出' },
+    /** 中心主文字是否加 ¥ 前缀；计数场景传 false，避免「¥1 / 6」 */
+    withCurrency: { type: Boolean, value: true }
   },
   observers: {
     'segments, total, showLabels'() {
@@ -135,7 +139,9 @@ Component({
             segments: segs,
             total: this.data.total as string,
             activeIndex: this.data.activeIndex as number,
-            showLabels: withLabels
+            showLabels: withLabels,
+            centerLabel: this.data.centerLabel as string,
+            withCurrency: this.data.withCurrency as boolean
           });
         });
     }

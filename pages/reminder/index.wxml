@@ -40,6 +40,8 @@
               segments="{{mntSegments}}"
               total="{{mntTotalText}}"
               showLabels="{{false}}"
+              centerLabel=""
+              withCurrency="{{false}}"
             />
             <view class="mnt-legend">
               <view class="mnt-legend-row">

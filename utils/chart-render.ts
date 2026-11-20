@@ -158,8 +158,13 @@ export interface DonutRenderOptions {
    * 概览页那种 100px 左右的小环图设 false，否则标签会挤成一团。
    */
   showLabels?: boolean;
-  /** 中心下方的小字，默认「总支出」 */
+  /** 中心下方的小字，默认「总支出」；传空字符串表示不画 */
   centerLabel?: string;
+  /**
+   * 中心主文字是否加 ¥ 前缀，默认 true。
+   * 概览的保养环图中心是「1 / 6」这种计数，加 ¥ 就成了「¥1 / 6」。
+   */
+  withCurrency?: boolean;
   /**
    * 外标签文字的自定义格式化。
    *
@@ -230,10 +235,16 @@ export function renderDonut(opts: DonutRenderOptions): void {
   ctx.textBaseline = 'middle';
   ctx.fillStyle = CHART_THEME.text1;
   ctx.font = fontOf(14, scale, 'bold');
-  ctx.fillText(`¥${total}`, cx, cy - 7 * scale);
-  ctx.fillStyle = CHART_THEME.text3;
-  ctx.font = fontOf(10, scale);
-  ctx.fillText(opts.centerLabel || '总支出', cx, cy + 13 * scale);
+  const centerValue = opts.withCurrency === false ? total : `¥${total}`;
+  // centerLabel 未传时用默认文案；显式传 '' 表示「只留数字」，不再补一行小字
+  const centerLabel = opts.centerLabel === undefined ? '总支出' : opts.centerLabel;
+  // 只有数字时整体上移一点，视觉才居中
+  ctx.fillText(centerValue, cx, centerLabel ? cy - 7 * scale : cy);
+  if (centerLabel) {
+    ctx.fillStyle = CHART_THEME.text3;
+    ctx.font = fontOf(10, scale);
+    ctx.fillText(centerLabel, cx, cy + 13 * scale);
+  }
 
   if (showLabels) {
   // 外标签（防重叠）
