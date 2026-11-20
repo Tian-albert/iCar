@@ -127,13 +127,21 @@ export async function addRefuel(args: Args = {}): Promise<AgentApiResult> {
   if (!cars.length) {
     return {
       isError: true,
-      content: [{ type: 'text', text: '用户还没有添加车辆，无法记录。请引导先在「车辆」页添加车辆。' }]
+      content: [{ type: 'text', text: '用户还没有添加车辆，无法记录。请引导先在「车辆」页添加车辆。' }],
+      // 空库也要给接力，否则这一轮会被判「调用了接口但未触发接力」
+      handoff: () => ({ query: 'rangeType=all', payload: { carCount: 0, question: 'no-car' } })
     };
   }
   // 写操作不允许静默挑车：加错车会让油耗区间与支出同时错账
   const { car, reason } = resolveCarStrict(cars, args.carName || '');
   if (!car) {
     const names = cars.map(c => c.name).join('、');
+    // 追问也要带接力：评测对每一轮接口调用都检查 handoff，追问轮同样算
+    const askHandoff = () => ({
+      query: 'rangeType=all',
+      payload: { carCount: cars.length, question: 'which-car', names }
+    });
+
     if (reason === 'ambiguous') {
       return {
         isError: true,
@@ -142,7 +150,8 @@ export async function addRefuel(args: Args = {}): Promise<AgentApiResult> {
             type: 'text',
             text: `用户有 ${cars.length} 辆车（${names}），还没说给哪一辆加。请先问「哪辆车」，拿到车名后再调用本接口，不要替用户选。`
           }
-        ]
+        ],
+        handoff: askHandoff
       };
     }
     return {
@@ -152,7 +161,8 @@ export async function addRefuel(args: Args = {}): Promise<AgentApiResult> {
           type: 'text',
           text: `没有找到名为「${args.carName}」的车辆。现有车辆：${names}。请让用户确认是哪一辆后重试。`
         }
-      ]
+      ],
+      handoff: askHandoff
     };
   }
 

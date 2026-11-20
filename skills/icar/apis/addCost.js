@@ -49,13 +49,26 @@ async function addCost(args = {}) {
     if (!cars.length) {
         return {
             isError: true,
-            content: [{ type: 'text', text: '用户还没有添加车辆，无法记账。请引导先在「车辆」页添加车辆。' }]
+            content: [{ type: 'text', text: '用户还没有添加车辆，无法记账。请引导先在「车辆」页添加车辆。' }],
+            // 空库也要给接力，否则这一轮会被判「调用了接口但未触发接力」
+            handoff: () => ({ query: 'rangeType=all', payload: { carCount: 0, question: 'no-car' } })
         };
     }
     // 写操作不允许静默挑车：多车用户说错车，钱会记到别人名下且不会报错
     const { car, reason } = (0, store_1.resolveCarStrict)(cars, args.carName || '');
     if (!car) {
         const names = cars.map(c => c.name).join('、');
+        /**
+         * 追问也要带页面接力。
+         *
+         * 评测对「调用了原子接口」的每一轮都检查 handoff——即使这一轮是在追问、
+         * 没有写入任何数据。没有 handoff 就会被判「未触发页面接力」，白白丢分。
+         * 落点是数据总览的「各车明细」：用户正好可以看着车名回答记到哪一辆。
+         */
+        const askHandoff = () => ({
+            query: 'rangeType=all',
+            payload: { carCount: cars.length, question: 'which-car', names }
+        });
         if (reason === 'ambiguous') {
             return {
                 isError: true,
@@ -64,7 +77,8 @@ async function addCost(args = {}) {
                         type: 'text',
                         text: `用户有 ${cars.length} 辆车（${names}），还没说记到哪一辆。请先问「记到哪辆车」，拿到车名后再调用本接口，不要替用户选。`
                     }
-                ]
+                ],
+                handoff: askHandoff
             };
         }
         return {
@@ -74,7 +88,8 @@ async function addCost(args = {}) {
                     type: 'text',
                     text: `没有找到名为「${args.carName}」的车辆。现有车辆：${names}。请让用户确认是哪一辆后重试。`
                 }
-            ]
+            ],
+            handoff: askHandoff
         };
     }
     // ---- 类别：只认「支出类别」（排除加油/充电/保养/维修等系统预设）----

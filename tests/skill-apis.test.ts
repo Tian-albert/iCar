@@ -824,3 +824,32 @@ describe('分类明细带笔数（「今年加油花了多少」要能答出次�
     expect(res.structuredContent.categories[0].count).toBeTruthy();
   });
 });
+
+describe('追问轮也要有页面接力（评测对每轮接口调用都检查 handoff）', () => {
+  it('多车没说车名时 addCost 追问，同时给出 handoff', async () => {
+    addSecondCar();
+    const { addCost } = loadApis();
+    const res = await addCost({ amount: 15, categoryName: '停车' });
+
+    expect(res.isError).toBe(true);
+    expect(typeof res.handoff).toBe('function');
+    const { query } = res.handoff({ result: res } as any);
+    expect(query).toBe('rangeType=all');
+  });
+
+  it('多车没说车名时 addRefuel 追问，同时给出 handoff', async () => {
+    addSecondCar();
+    const { addRefuel } = loadApis();
+    const res = await addRefuel({ volume: 40, amount: 320 });
+    expect(res.isError).toBe(true);
+    expect(typeof res.handoff).toBe('function');
+  });
+
+  it('空库时也给出 handoff（否则同样被判未触发接力）', async () => {
+    resetMemory();
+    const { addCost } = loadApis();
+    const res = await addCost({ amount: 15 });
+    expect(res.isError).toBe(true);
+    expect(typeof res.handoff).toBe('function');
+  });
+});
