@@ -41,6 +41,15 @@ function rowsOf(car) {
         return rank(a) - rank(b) || b.progress - a.progress;
     });
 }
+/** 保养状态统计：全部 / 超期 / 临近 / 正常（「保养统计」场景直接用它回答） */
+function statOf(rows) {
+    return {
+        total: rows.length,
+        overdue: rows.filter(r => r.overdue).length,
+        urgent: rows.filter(r => r.urgent && !r.overdue).length,
+        ok: rows.filter(r => !r.overdue && !r.urgent).length
+    };
+}
 async function queryMaintain(args = {}) {
     const cars = (0, store_1.readCars)();
     if (!cars.length) {
@@ -78,13 +87,14 @@ async function queryMaintain(args = {}) {
         }
         const visible = onlyUrgent ? all.filter(r => r.overdue || r.urgent) : all;
         const overdueCount = all.filter(r => r.overdue).length;
+        const stat = statOf(all);
         if (!visible.length) {
             return {
                 isError: false,
                 content: [
                     {
                         type: 'text',
-                        text: `${cars.length} 辆车的保养项都在周期内，暂无需要处理的项。`
+                        text: `${cars.length} 辆车的 ${stat.total} 项保养都在周期内，暂无需要处理的项。`
                     }
                 ],
                 structuredContent: {
@@ -92,6 +102,8 @@ async function queryMaintain(args = {}) {
                     carCount: String(cars.length),
                     overdueCount: '0',
                     urgentCount: '0',
+                    totalCount: String(stat.total),
+                    okCount: String(stat.ok),
                     items: ''
                 },
                 // 全车汇总 → 概览页（保养提醒就长在那里），不落到某一辆车
@@ -109,6 +121,7 @@ async function queryMaintain(args = {}) {
                     text: nameMissNote +
                         `${cars.length} 辆车共有 ${visible.length} 项需要关注` +
                         `${overdueCount ? `，其中 ${overdueCount} 项已超期` : ''}：${detail}。` +
+                        `（全部 ${stat.total} 项：超期 ${stat.overdue} / 临近 ${stat.urgent} / 正常 ${stat.ok}）` +
                         `需要看某一辆的完整保养项，告诉我车名即可。`
                 }
             ],
@@ -116,7 +129,10 @@ async function queryMaintain(args = {}) {
                 scope: 'all',
                 carCount: String(cars.length),
                 overdueCount: String(overdueCount),
-                urgentCount: String(visible.length),
+                urgentCount: String(stat.urgent),
+                pendingCount: String(visible.length),
+                totalCount: String(stat.total),
+                okCount: String(stat.ok),
                 items: detail
                 // 全车汇总不给蓝链：「概览」是 tabBar 页（navigateTo 跳不过去），
                 // 「保养管理」只接受单车 id，多车场景没有唯一目标页
@@ -156,9 +172,10 @@ async function queryMaintain(args = {}) {
     }
     const visible = onlyUrgent ? rows.filter(r => r.overdue || r.urgent) : rows;
     const overdueCount = rows.filter(r => r.overdue).length;
+    const stat = statOf(rows);
     let text;
     if (!visible.length) {
-        text = `${car.name}（${(0, store_1.energyLabel)(car)}）所有保养项都在周期内，暂无需要处理的项。`;
+        text = `${car.name}（${(0, store_1.energyLabel)(car)}）${stat.total} 项保养都在周期内，暂无需要处理的项。`;
     }
     else {
         const lines = visible
@@ -167,7 +184,8 @@ async function queryMaintain(args = {}) {
             .join('；');
         text =
             `${car.name}（${(0, store_1.energyLabel)(car)}）有 ${visible.length} 项需要关注` +
-                `${overdueCount ? `，其中 ${overdueCount} 项已超期` : ''}：${lines}。`;
+                `${overdueCount ? `，其中 ${overdueCount} 项已超期` : ''}：${lines}。` +
+                `（全部 ${stat.total} 项：超期 ${stat.overdue} / 临近 ${stat.urgent} / 正常 ${stat.ok}）`;
     }
     return {
         isError: false,
@@ -177,7 +195,10 @@ async function queryMaintain(args = {}) {
             carName: car.name,
             energyType: (0, store_1.energyLabel)(car),
             overdueCount: String(overdueCount),
-            urgentCount: String(visible.length),
+            urgentCount: String(stat.urgent),
+            pendingCount: String(visible.length),
+            totalCount: String(stat.total),
+            okCount: String(stat.ok),
             items: visible.slice(0, 5).map(r => `${r.name}｜${r.remainText}`).join('；'),
             pagePath: `pages/vehicle-detail/index?id=${car.sourceId}`,
             linkText: '查看保养进度'

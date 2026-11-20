@@ -1033,3 +1033,28 @@ describe('queryRecords', () => {
     expect(typeof res.handoff).toBe('function');
   });
 });
+
+describe('queryMaintain 保养统计（超期 / 临近 / 正常计数）', () => {
+  it('单车：给出全部项数与三种状态计数', async () => {
+    const { queryMaintain } = loadApis();
+    const res = await queryMaintain({ carName: '我的 CRV', onlyUrgent: false });
+    expect(res.isError).toBe(false);
+    const total = Number(res.structuredContent.totalCount);
+    expect(total).toBeGreaterThanOrEqual(2);
+    expect(Number(res.structuredContent.overdueCount)).toBeGreaterThanOrEqual(1);
+    expect(
+      Number(res.structuredContent.overdueCount) +
+        Number(res.structuredContent.urgentCount) +
+        Number(res.structuredContent.okCount)
+    ).toBe(total);
+  });
+
+  it('全车：也给出总数，便于回答「一共几项保养」', async () => {
+    addSecondCar();
+    const { queryMaintain } = loadApis();
+    const res = await queryMaintain({ onlyUrgent: false });
+    expect(res.structuredContent.scope).toBe('all');
+    expect(Number(res.structuredContent.totalCount)).toBeGreaterThan(0);
+    expect(res.content[0].text).toContain('全部');
+  });
+});
