@@ -10,6 +10,7 @@ import { updateCar } from './apis/updateCar';
 import { addRefuel } from './apis/addRefuel';
 import { queryCars } from './apis/queryCars';
 import { queryMaintain } from './apis/queryMaintain';
+import { queryRecords } from './apis/queryRecords';
 import { queryStats } from './apis/queryStats';
 
 const SKILL_PATH = 'skills/icar';
@@ -31,6 +32,7 @@ skill.use(async (ctx, next) => {
 skill.registerAPI('queryCars', queryCars);
 skill.registerAPI('queryStats', queryStats);
 skill.registerAPI('queryMaintain', queryMaintain);
+skill.registerAPI('queryRecords', queryRecords);
 skill.registerAPI('addCost', addCost);
 skill.registerAPI('addRefuel', addRefuel);
 skill.registerAPI('addMaintain', addMaintain);

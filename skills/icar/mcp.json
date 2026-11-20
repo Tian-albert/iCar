@@ -565,6 +565,93 @@
           }
         }
       }
+    },
+    {
+      "name": "queryRecords",
+      "description": "查某辆车的用车记录（近期明细）：默认返回最近 10 条，含日期、类型、摘要与金额，并给出合计。用户问「我最近记过什么」「上个月都花了哪些」时用。只读。",
+      "_meta": {
+        "ui": {
+          "pagePath": "pages/records/index"
+        }
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string",
+            "description": "车辆名称。多辆车又没说时不要传，先问用户"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "all",
+              "cost",
+              "fuel",
+              "maintain",
+              "repair"
+            ],
+            "description": "只看某一类记录：all 全部（默认）、cost 日常支出、fuel 加油充电、maintain 保养、repair 维修"
+          },
+          "rangeType": {
+            "type": "string",
+            "enum": [
+              "year",
+              "month",
+              "all",
+              "custom"
+            ],
+            "description": "时间范围：all 全部（默认）、year 今年、month 本月、custom 任意区间"
+          },
+          "year": {
+            "type": "number",
+            "description": "年份，如 2026"
+          },
+          "month": {
+            "type": "number",
+            "description": "月份 1-12，仅在 rangeType 为 month 时使用"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "任意区间起点 YYYY-MM-DD"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "任意区间终点 YYYY-MM-DD，含当天"
+          },
+          "limit": {
+            "type": "number",
+            "description": "最多返回几条，默认 10，上限 30"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string"
+          },
+          "rangeLabel": {
+            "type": "string"
+          },
+          "count": {
+            "type": "string"
+          },
+          "totalExpense": {
+            "type": "string"
+          },
+          "items": {
+            "type": "string"
+          },
+          "linkText": {
+            "type": "string"
+          },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
     }
   ]
 }

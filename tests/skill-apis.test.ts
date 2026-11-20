@@ -224,7 +224,8 @@ function loadApis() {
     addRefuel: require('../skills/icar/apis/addRefuel').addRefuel,
     addMaintain: require('../skills/icar/apis/addMaintain').addMaintain,
     addCar: require('../skills/icar/apis/addCar').addCar,
-    updateCar: require('../skills/icar/apis/updateCar').updateCar
+    updateCar: require('../skills/icar/apis/updateCar').updateCar,
+    queryRecords: require('../skills/icar/apis/queryRecords').queryRecords
   };
 }
 
@@ -989,5 +990,46 @@ describe('addCar / updateCar', () => {
     const res = await updateCar({ mileages: 9999 });
     expect(res.isError).toBe(true);
     expect(res.content[0].text).toContain('哪一辆');
+  });
+});
+
+describe('queryRecords', () => {
+  it('返回近期记录与合计（加油从 refuel 反查升数）', async () => {
+    const { queryRecords, addRefuel } = loadApis();
+    await addRefuel({ volume: 40, amount: 320, mileage: 6250 });
+
+    const res = await queryRecords({ carName: '我的 CRV' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.count).toBeTruthy();
+    // 加油那条应带「40 升」
+    expect(res.structuredContent.items).toContain('40 升');
+    // 合计 = 种子里的 500 + 加油 320
+    expect(res.structuredContent.totalExpense).toBe('820.00');
+  });
+
+  it('按类型过滤：只看加油', async () => {
+    const { queryRecords, addRefuel } = loadApis();
+    await addRefuel({ volume: 40, amount: 320, mileage: 6250 });
+    const res = await queryRecords({ type: 'fuel' });
+    expect(res.isError).toBe(false);
+    const items: string = res.structuredContent.items;
+    expect(items).toContain('加油');
+    expect(items).not.toContain('停车');
+  });
+
+  it('没有记录时说清楚，而不是空回答', async () => {
+    const { queryRecords } = loadApis();
+    const res = await queryRecords({ rangeType: 'month', year: 2020, month: 1 });
+    expect(res.isError).toBe(false);
+    expect(res.content[0].text).toContain('没有记录');
+  });
+
+  it('多车没说车名时追问并给 handoff', async () => {
+    addSecondCar();
+    const { queryRecords } = loadApis();
+    const res = await queryRecords({});
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('哪一辆');
+    expect(typeof res.handoff).toBe('function');
   });
 });

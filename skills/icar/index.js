@@ -12,6 +12,7 @@ const updateCar_1 = require("./apis/updateCar");
 const addRefuel_1 = require("./apis/addRefuel");
 const queryCars_1 = require("./apis/queryCars");
 const queryMaintain_1 = require("./apis/queryMaintain");
+const queryRecords_1 = require("./apis/queryRecords");
 const queryStats_1 = require("./apis/queryStats");
 const SKILL_PATH = 'skills/icar';
 const skill = wx.modelContext.createSkill(SKILL_PATH);
@@ -30,6 +31,7 @@ skill.use(async (ctx, next) => {
 skill.registerAPI('queryCars', queryCars_1.queryCars);
 skill.registerAPI('queryStats', queryStats_1.queryStats);
 skill.registerAPI('queryMaintain', queryMaintain_1.queryMaintain);
+skill.registerAPI('queryRecords', queryRecords_1.queryRecords);
 skill.registerAPI('addCost', addCost_1.addCost);
 skill.registerAPI('addRefuel', addRefuel_1.addRefuel);
 skill.registerAPI('addMaintain', addMaintain_1.addMaintain);

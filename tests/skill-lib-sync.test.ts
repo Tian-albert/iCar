@@ -130,6 +130,7 @@ describe('契约对齐：mcp.json ↔ index.ts ↔ app.json', () => {
       'addRefuel',
       'queryCars',
       'queryMaintain',
+      'queryRecords',
       'queryStats',
       'updateCar'
     ]);
