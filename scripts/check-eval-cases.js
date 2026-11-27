@@ -108,10 +108,43 @@ if (complexRatio < 0.3) {
   errors.push(`复杂用例占比 ${(complexRatio * 100).toFixed(0)}%，要求 ≥30%`);
 }
 
-// 6. 时间标签：≥4 条
+// 6. 时间标签：≥4 条，且要覆盖平台判定的 8 类时间语义
+//
+// 平台检测说明里明确列了这 8 类（实测因「尚缺 模糊时段（7/8）」被驳回）：
+// 基准参照 / 偏移量 / 节假日相关 / 完整日期 / 星期 / 时刻 / 组合 / 模糊时段
+const TIME_CATEGORIES = {
+  基准参照: /今天|昨天|前天|明天|本周/,
+  偏移量: /上个月|下个月|去年|前年|明年|半个月|这一年|这一年下来|最近一年/,
+  节假日相关: /国庆|春节|中秋|五一|元旦|清明|端午/,
+  完整日期: /\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*[日号]/,
+  星期: /周[一二三四五六日天]|星期[一二三四五六日天]/,
+  时刻: /\d{1,2}\s*点|上午|下午|晚上|早上/,
+  模糊时段: /前阵子|前段时间|前些天|前几天|这两天|这阵子|那会儿|月初|月底|年底|最近(?!.*(半个月|一年))/
+};
+
+function timeCatsOf(intent) {
+  const hit = Object.keys(TIME_CATEGORIES).filter(k => TIME_CATEGORIES[k].test(intent));
+  // 组合：同一句里出现 ≥2 类时间表达（如「上周五下午 3 点」）
+  if (hit.length >= 2) hit.push('组合');
+  return hit;
+}
+
 const timeTagged = cases.filter(c => has(c, 'time'));
 if (timeTagged.length < 4) {
   warn.push(`时间标签仅 ${timeTagged.length} 条（若平台判定需要，要求 ≥4 条且覆盖 8 类表达）`);
+}
+
+const coveredCats = new Set();
+for (const c of timeTagged) {
+  for (const k of timeCatsOf(c.intent)) coveredCats.add(k);
+}
+const ALL_TIME_CATS = Object.keys(TIME_CATEGORIES).concat('组合');
+const missingCats = ALL_TIME_CATS.filter(k => !coveredCats.has(k));
+if (missingCats.length) {
+  errors.push(
+    `时间语义覆盖 ${ALL_TIME_CATS.length - missingCats.length}/8，尚缺：${missingCats.join('、')}` +
+      `（平台会以同样口径驳回）`
+  );
 }
 
 // 7. 用例多样性：同一「数字/车名」重复率
@@ -129,7 +162,10 @@ console.log(`文件：${path.relative(process.cwd(), FILE)}`);
 console.log(`总数 ${cases.length}　正例 ${positive.length}　负例 ${negative.length}　未注册 ${unregistered.length}`);
 console.log(`接口覆盖 ${covered.length}/${Object.keys(API_HINTS).length}（${(coverage * 100).toFixed(0)}%）：${covered.join(', ')}`);
 console.log(`复杂用例 ${complex.length}（${(complexRatio * 100).toFixed(0)}%）`);
-console.log(`时间标签 ${timeTagged.length} 条　数字最大重复 ${maxRepeat} 次`);
+console.log(
+  `时间标签 ${timeTagged.length} 条　语义覆盖 ${ALL_TIME_CATS.filter(k => coveredCats.has(k)).length}/8` +
+    `（${ALL_TIME_CATS.filter(k => coveredCats.has(k)).join('、')}）　数字最大重复 ${maxRepeat} 次`
+);
 if (maxRepeat > Math.max(2, Math.ceil(positive.length * 0.05))) {
   warn.push(`某数字重复 ${maxRepeat} 次，可能触发多样性检测（同一实体应 < 5% 正例数）`);
 }
