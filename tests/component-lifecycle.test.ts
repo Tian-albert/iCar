@@ -5,7 +5,7 @@
 // 此时首次渲染未完成，setData 与首帧数据竞争。三个图表组件曾因此报错。
 //
 // 正确写法：observers 里先判断是否已 ready，初始绘制交给 lifetimes.ready()。
-const fsx = require('fs') as any;
+const fsLife = require('fs') as any;
 
 const COMPONENTS = [
   'components/donut-chart/index.ts',
@@ -14,7 +14,7 @@ const COMPONENTS = [
 ];
 
 function read(f: string): string {
-  return fsx.readFileSync(f, 'utf-8');
+  return fsLife.readFileSync(f, 'utf-8');
 }
 
 /** 剥离注释，避免注释里提到的 setData / _ready 干扰位置判断 */

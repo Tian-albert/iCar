@@ -2,11 +2,11 @@
 //
 // 背景：wx.shareFileMessage 在微信开发者工具中不可用（必然 fail），
 // 且要求基础库 >= 2.16.1。原来直接调用，用户只看到「分享失败」，以为功能坏了。
-const fsx = require('fs') as any;
+const fsTransfer = require('fs') as any;
 
-const wxml: string = fsx.readFileSync('pages/data-transfer/index.wxml', 'utf-8');
-const ts: string = fsx.readFileSync('pages/data-transfer/index.ts', 'utf-8');
-const wxss: string = fsx.readFileSync('pages/data-transfer/index.wxss', 'utf-8');
+const wxml: string = fsTransfer.readFileSync('pages/data-transfer/index.wxml', 'utf-8');
+const ts: string = fsTransfer.readFileSync('pages/data-transfer/index.ts', 'utf-8');
+const wxss: string = fsTransfer.readFileSync('pages/data-transfer/index.wxss', 'utf-8');
 
 describe('只保留文件方式', () => {
   it('页面没有「导出并复制」与「粘贴导入」', () => {

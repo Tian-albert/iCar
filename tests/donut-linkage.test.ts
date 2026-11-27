@@ -4,10 +4,10 @@
 // 统计页的环图在 donut-chart 组件内，如果没有「受控属性 + 事件」，
 // 就会出现「点扇区只放大扇区、图例毫无反应」「点图例没任何效果」的割裂。
 // 这个文件把这条链路钉住。
-const fsx = require('fs') as any;
+const fsDonut = require('fs') as any;
 
 function read(p: string): string {
-  return fsx.readFileSync(p, 'utf-8');
+  return fsDonut.readFileSync(p, 'utf-8');
 }
 
 describe('donut-chart 组件：受控选中 + 事件回传', () => {

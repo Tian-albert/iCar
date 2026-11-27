@@ -116,7 +116,9 @@ if (timeTagged.length < 4) {
 
 // 7. 用例多样性：同一「数字/车名」重复率
 const amounts = positive
-  .map(c => (c.intent.match(/\d+(?:\.\d+)?/g) || []).join(','))
+  // 紧贴字母的数字是车型名（小鹏 P7、唐 DM-i），不是数据实体；
+  // 用后向断言排除，否则 P7 会被当成「数字 7 重复 6 次」误报
+  .map(c => (c.intent.match(/(?<![A-Za-z])\d+(?:\.\d+)?/g) || []).join(','))
   .filter(Boolean);
 const counter = {};
 for (const a of amounts) for (const n of a.split(',')) counter[n] = (counter[n] || 0) + 1;

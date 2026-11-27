@@ -4,10 +4,10 @@
 // 1. 改名只改了 TabBar，忘了页面顶部导航标题（app.json 的 tabBar.list 与
 //    页面 json 的 navigationBarTitleText 是三处独立配置）。
 // 2. 概览页带了 section 参数，但车辆详情页没有对应锚点，点击后停在首屏。
-const fsx = require('fs') as any;
+const fsNav = require('fs') as any;
 
 function read(p: string): string {
-  return fsx.readFileSync(p, 'utf-8');
+  return fsNav.readFileSync(p, 'utf-8');
 }
 
 /** 收集所有匹配的第一个捕获组（项目 lib 为 ES2017，不能用 String.matchAll） */
