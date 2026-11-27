@@ -589,11 +589,11 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
     expect(pathOf('queryStats')).toBe('pages/summary/index');
     // 全车保养页：按车分组列临期/超期，比概览锚点更精准
     expect(pathOf('queryMaintain')).toBe('pages/maintain-all/index');
-    // 写操作落到「记一笔」页：用户此刻要的是继续记，不是看记录
+    // 写操作落到**记录页**：刚记完的那条就在列表第一条，用户能立刻确认
     // （落 vehicle-detail 会被判「没承接记录诉求」，第三轮 20 条关联性差都栽在这）
-    expect(pathOf('addCost')).toBe('pages/entry/index');
-    expect(pathOf('addRefuel')).toBe('pages/entry/index');
-    expect(pathOf('addMaintain')).toBe('pages/entry/index');
+    expect(pathOf('addCost')).toBe('pages/records/index');
+    expect(pathOf('addRefuel')).toBe('pages/records/index');
+    expect(pathOf('addMaintain')).toBe('pages/records/index');
   });
 
   it('每个接口的返回值都带 handoff，且 payload 有效', async () => {
@@ -856,7 +856,8 @@ describe('追问轮也要有页面接力（评测对每轮接口调用都检查 
     expect(res.isError).toBe(true);
     expect(typeof res.handoff).toBe('function');
     const { query } = res.handoff({ result: res } as any);
-    expect(query).toBe('rangeType=all');
+    // 追问轮没有确定车辆：由记录页转「我的车辆」让用户选，不停在记录页
+    expect(query).toBe('ask=1');
   });
 
   it('多车没说车名时 addRefuel 追问，同时给出 handoff', async () => {
@@ -1229,5 +1230,41 @@ describe('模糊时间：接口统一换算（rangeText）', () => {
     const res = await queryStats({ rangeText: '上个世纪那会儿' });
     expect(res.isError).toBe(false);
     expect(res.structuredContent.rangeLabel).toBeTruthy();
+  });
+});
+
+describe('写操作的落点分流：追问 → 车辆列表，成功 → 该车记录页并定位新增', () => {
+  it('addCost 成功：落到该车的「支出」Tab，并带 new=1', async () => {
+    const { addCost } = loadApis();
+    const res = await addCost({ amount: 15, categoryName: '停车', carName: '我的 CRV' });
+    expect(res.isError).toBe(false);
+    const { query } = res.handoff({ result: res } as any);
+    expect(query).toContain('tab=cost');
+    expect(query).toContain('new=1');
+    expect(query).toContain('id=');
+  });
+
+  it('addRefuel 成功：落到「加油」Tab 并带 new=1', async () => {
+    const { addRefuel } = loadApis();
+    const res = await addRefuel({ volume: 40, amount: 316, mileage: 16000, carName: '我的 CRV' });
+    const { query } = res.handoff({ result: res } as any);
+    expect(query).toContain('tab=fuel');
+    expect(query).toContain('new=1');
+  });
+
+  it('addMaintain 成功：落到「保养」Tab 并带 new=1', async () => {
+    const { addMaintain } = loadApis();
+    const res = await addMaintain({ maintainName: '机油机滤', mileage: 16200, carName: '我的 CRV' });
+    const { query } = res.handoff({ result: res } as any);
+    expect(query).toContain('tab=maintain');
+    expect(query).toContain('new=1');
+  });
+
+  it('addRefuel 追问轮：ask=1（由记录页转车辆列表）', async () => {
+    addSecondCar();
+    const { addRefuel } = loadApis();
+    const res = await addRefuel({ volume: 40, amount: 316 });
+    expect(res.isError).toBe(true);
+    expect(res.handoff({ result: res } as any).query).toBe('ask=1');
   });
 });

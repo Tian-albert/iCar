@@ -35,6 +35,22 @@ Page({
     filterText: ''
   },
   onLoad(options: Record<string, string>) {
+    /**
+     * 写操作接力到这里，按参数分流（mcp 里一个接口只能声明一个 landing 页）：
+     *   ask=1            → 还没确定哪辆车：转「我的车辆」让用户选（不能停在记录页）
+     *   go=maintain-manage → 保养项缺失：转「保养项管理」补项
+     *   new=1            → 刚记完一笔：停在对应 Tab 并滚到最新一条
+     */
+    if (options.ask === '1') {
+      wx.switchTab({ url: '/pages/index/index' });
+      return;
+    }
+    if (options.go === 'maintain-manage' && options.id) {
+      // handoff 的 query 由接口 encode，平台不解码，这里先解再转
+      wx.redirectTo({ url: `/pages/maintain-manage/index?id=${decodeURIComponent(options.id)}` });
+      return;
+    }
+
     const storage = getStorage();
 
     /**
@@ -44,7 +60,9 @@ Page({
      * 用户点进去看到的是默认列表——「调出来一个空白页面」就是这么来的。
      */
     const carName = options.carName ? decodeURIComponent(options.carName) : '';
-    let carId = options.id || '';
+    // 必须解码：接力带的 id 是 encodeURIComponent 过的（含冒号），
+    // 不解码就查不到车，整个列表变成空态——这正是「落进去空白」的成因之一
+    let carId = options.id ? decodeURIComponent(options.id) : '';
     if (!carId && carName) {
       // 宽松匹配：接力传的是用户看到的车名，可能与库里差一个空格
       const hit = listCars(storage).find(
@@ -57,6 +75,8 @@ Page({
     const start = options.start ? new Date(options.start).getTime() : 0;
     const end = options.end ? new Date(options.end).getTime() : 0;
     (this as any)._filter = { start, end, category };
+    // 刚记完一笔：进页面后滚到最新一条（列表按时间倒序，最新在最上）
+    (this as any)._scrollNew = options.new === '1';
 
     const rangeText = options.start && options.end ? `${options.start.slice(5)} ~ ${options.end.slice(5)}` : '';
     const filterText = [carName, category, rangeText].filter(Boolean).join(' · ');
@@ -83,6 +103,10 @@ Page({
   },
   onShow() {
     this.load();
+    if ((this as any)._scrollNew) {
+      (this as any)._scrollNew = false;
+      wx.pageScrollTo({ scrollTop: 0, duration: 200 });
+    }
   },
   onTabChange(e: WechatMiniprogram.TouchEvent) {
     const tab = e.currentTarget.dataset.tab as TabKey;

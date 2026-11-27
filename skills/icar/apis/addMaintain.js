@@ -27,7 +27,7 @@ async function addMaintain(args = {}) {
         return {
             isError: true,
             content: [{ type: 'text', text: '用户还没有添加车辆，无法记录保养。请引导先在「车辆」页添加车辆。' }],
-            handoff: () => ({ query: 'rangeType=all', payload: { carCount: 0, question: 'no-car' } })
+            handoff: () => ({ query: 'ask=1', payload: { carCount: 0, question: 'no-car' } })
         };
     }
     // 写操作不允许静默挑车：保养记错车会把周期与里程全打乱
@@ -35,7 +35,7 @@ async function addMaintain(args = {}) {
     if (!car) {
         const names = cars.map(c => c.name).join('、');
         const askHandoff = () => ({
-            query: 'rangeType=all',
+            query: 'ask=1',
             payload: { carCount: cars.length, question: 'which-car', names }
         });
         if (reason === 'ambiguous') {
@@ -74,7 +74,7 @@ async function addMaintain(args = {}) {
                         `保养要记到具体某一项上，请先问用户「做的是哪一项」，拿到名称后再调用。`
                 }
             ],
-            handoff: () => ({ query: `id=${encodeURIComponent(car.sourceId)}`, payload: { carName: car.name } })
+            handoff: () => ({ query: `go=maintain-manage&id=${encodeURIComponent(car.sourceId)}`, payload: { carName: car.name } })
         };
     }
     const exact = items.find(m => m.name === asked);
@@ -89,7 +89,7 @@ async function addMaintain(args = {}) {
                         `请让用户确认是哪一项，或引导到「保养项管理」页先添加这一项——不要自己造一个新项。`
                 }
             ],
-            handoff: () => ({ query: `id=${encodeURIComponent(car.sourceId)}`, payload: { carName: car.name } })
+            handoff: () => ({ query: `go=maintain-manage&id=${encodeURIComponent(car.sourceId)}`, payload: { carName: car.name } })
         };
     }
     const makeDate = parseDate(args.dateText, now);
@@ -177,12 +177,12 @@ async function addMaintain(args = {}) {
             amount: amountSaved.toFixed(2),
             remainText,
             cycleText: target.cycleMileages ? `每 ${target.cycleMileages} km` : '',
-            pagePath: `pages/entry/index?carId=${car.sourceId}&tab=maintain`,
+            pagePath: `pages/records/index?id=${car.sourceId}&tab=maintain&new=1`,
             linkText: '查看保养进度'
         },
         // 页面接力：这辆车的保养进度区块
         handoff: () => ({
-            query: `carId=${encodeURIComponent(car.sourceId)}&tab=maintain`,
+            query: `id=${encodeURIComponent(car.sourceId)}&tab=maintain&new=1`,
             payload: { carName: car.name, maintainName: target.name, remainText }
         })
     };

@@ -59,3 +59,19 @@ describe('评测遗留两处：类型徽标与 0 里程引导', () => {
     expect(wxml).toContain('bindtap="onEditCar"');
   });
 });
+
+describe('写操作落点分流（mcp 一个接口只能声明一个 landing 页，靠参数分流）', () => {
+  it('records 页处理 ask=1 / go=maintain-manage / new=1', () => {
+    const ts = read('pages/records/index.ts');
+    // 追问轮：转「我的车辆」，不能停在记录页
+    expect(ts).toContain("options.ask === '1'");
+    expect(ts).toContain("'/pages/index/index'");
+    // 保养项缺失：转保养项管理
+    expect(ts).toContain("'maintain-manage'");
+    // 刚记完：滚到最新一条
+    expect(ts).toContain('_scrollNew');
+    expect(ts).toContain('pageScrollTo');
+    // 接力带的 id 是编码过的，必须解码，否则查不到车、列表空态
+    expect(ts).toContain('decodeURIComponent(options.id)');
+  });
+});

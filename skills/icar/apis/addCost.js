@@ -51,7 +51,7 @@ async function addCost(args = {}) {
             isError: true,
             content: [{ type: 'text', text: '用户还没有添加车辆，无法记账。请引导先在「车辆」页添加车辆。' }],
             // 空库也要给接力，否则这一轮会被判「调用了接口但未触发接力」
-            handoff: () => ({ query: 'rangeType=all', payload: { carCount: 0, question: 'no-car' } })
+            handoff: () => ({ query: 'ask=1', payload: { carCount: 0, question: 'no-car' } })
         };
     }
     // 写操作不允许静默挑车：多车用户说错车，钱会记到别人名下且不会报错
@@ -66,7 +66,7 @@ async function addCost(args = {}) {
          * 落点是数据总览的「各车明细」：用户正好可以看着车名回答记到哪一辆。
          */
         const askHandoff = () => ({
-            query: 'rangeType=all',
+            query: 'ask=1',
             payload: { carCount: cars.length, question: 'which-car', names }
         });
         if (reason === 'ambiguous') {
@@ -161,12 +161,12 @@ async function addCost(args = {}) {
             categoryName: category.name,
             amount: saved.amount.toFixed(2),
             dateText: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
-            pagePath: `pages/entry/index?carId=${car.sourceId}&tab=cost`,
+            pagePath: `pages/records/index?id=${car.sourceId}&tab=cost&new=1`,
             linkText: '查看这辆车的记录'
         },
         // 页面接力：记完账直接带用户进这辆车的详情看记录
         handoff: () => ({
-            query: `carId=${encodeURIComponent(car.sourceId)}&tab=cost`,
+            query: `id=${encodeURIComponent(car.sourceId)}&tab=cost&new=1`,
             payload: { carName: car.name, amount: saved.amount.toFixed(2), categoryName: category.name }
         })
     };

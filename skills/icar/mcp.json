@@ -204,7 +204,7 @@
       "name": "addCost",
       "_meta": {
         "ui": {
-          "pagePath": "pages/entry/index"
+          "pagePath": "pages/records/index"
         }
       },
       "description": "帮用户记一笔支出并写入本地存储，例如「记一笔停车费 15 块」「昨天高速费 80」。金额必填且必须大于 0；缺少金额时不要调用本接口，先向用户追问。写入成功前不要告诉用户已经记好。",
@@ -266,7 +266,7 @@
       "name": "addRefuel",
       "_meta": {
         "ui": {
-          "pagePath": "pages/entry/index"
+          "pagePath": "pages/records/index"
         }
       },
       "description": "帮用户记一笔加油或充电并写入本地存储。加油量（升/度）必填；单价与实付金额给一个即可，另一个会自动反算。加满两次后才能算出油耗，因此 isFull 要如实传。缺少加油量或金额时不要调用，先追问。",
@@ -377,7 +377,7 @@
       "description": "记录一次保养并重置该项的周期。必须先知道**哪辆车**与**哪一项保养**（如机油机滤）：保养项不存在时不要凭空创建，引导用户到「保养项管理」添加。金额选填，传了会同时记一笔保养支出。",
       "_meta": {
         "ui": {
-          "pagePath": "pages/entry/index"
+          "pagePath": "pages/records/index"
         }
       },
       "inputSchema": {

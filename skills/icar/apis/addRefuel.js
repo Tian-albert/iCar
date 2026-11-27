@@ -94,7 +94,7 @@ async function addRefuel(args = {}) {
             isError: true,
             content: [{ type: 'text', text: '用户还没有添加车辆，无法记录。请引导先在「车辆」页添加车辆。' }],
             // 空库也要给接力，否则这一轮会被判「调用了接口但未触发接力」
-            handoff: () => ({ query: 'rangeType=all', payload: { carCount: 0, question: 'no-car' } })
+            handoff: () => ({ query: 'ask=1', payload: { carCount: 0, question: 'no-car' } })
         };
     }
     // 写操作不允许静默挑车：加错车会让油耗区间与支出同时错账
@@ -103,7 +103,7 @@ async function addRefuel(args = {}) {
         const names = cars.map(c => c.name).join('、');
         // 追问也要带接力：评测对每一轮接口调用都检查 handoff，追问轮同样算
         const askHandoff = () => ({
-            query: 'rangeType=all',
+            query: 'ask=1',
             payload: { carCount: cars.length, question: 'which-car', names }
         });
         if (reason === 'ambiguous') {
@@ -289,12 +289,12 @@ async function addRefuel(args = {}) {
             consumption: latest ? latest.fuelConsumption.toFixed(2) : '',
             consumptionUnit: energyType === 'ev' ? 'kWh/100km' : 'L/100km',
             consumptionMileage: latest ? String(latest.mileage) : '',
-            pagePath: `pages/entry/index?carId=${car.sourceId}&tab=fuel`,
+            pagePath: `pages/records/index?id=${car.sourceId}&tab=fuel&new=1`,
             linkText: '查看加油记录'
         },
         // 页面接力：进这辆车的详情看加油记录与油耗
         handoff: () => ({
-            query: `carId=${encodeURIComponent(car.sourceId)}&tab=fuel`,
+            query: `id=${encodeURIComponent(car.sourceId)}&tab=fuel&new=1`,
             payload: {
                 carName: car.name,
                 amount: actualPay.toFixed(2),
