@@ -32,12 +32,14 @@
       <view class="card">
         <view wx:if="{{item.items.length === 0}}" class="empty-line">还没有配置保养项</view>
         <block wx:else>
+          <!-- 「待处理」只列超期/临期：正常项压暗也是满屏，不如直接不显示 -->
           <view
             wx:for="{{item.items}}"
             wx:for-item="mnt"
             wx:key="key"
+            wx:if="{{filter === 'all' || mnt.level !== 'ok'}}"
             hover-class="hover-dim"
-            class="item {{filter === 'pending' && mnt.level === 'ok' ? 'item-dim' : ''}}"
+            class="item"
             data-id="{{item.carSourceId}}"
             bindtap="onTapCar"
           >

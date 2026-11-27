@@ -513,7 +513,8 @@ describe('多车场景：读汇总、写追问', () => {
     expect(res.structuredContent.totalExpense).toBe('500.00');
     expect(res.content[0].text).toContain('2 辆车');
     expect(res.content[0].text).toContain('我的 CRV');
-    expect(res.content[0].text).toContain('老婆的车');
+    // 0 支出的车不进明细：「¥0.00（0.000/km）」只是噪音，挤掉真正有数据的车
+    expect(res.content[0].text).not.toContain('¥0.00');
   });
 
   it('说了车名则只统计那一辆', async () => {
@@ -1024,13 +1025,79 @@ describe('queryRecords', () => {
     expect(res.content[0].text).toContain('没有记录');
   });
 
-  it('多车没说车名时追问并给 handoff', async () => {
+  it('多车没说车名时汇总全部车辆，不再要求先选车', async () => {
     addSecondCar();
     const { queryRecords } = loadApis();
     const res = await queryRecords({});
-    expect(res.isError).toBe(true);
-    expect(res.content[0].text).toContain('哪一辆');
+
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.scope).toBe('all');
+    expect(res.content[0].text).toContain('2 辆车');
+    // 按车拆分是「所有车」场景的关键：用户要知道钱花在哪辆上
+    expect(res.structuredContent.byCar).toContain('我的 CRV');
     expect(typeof res.handoff).toBe('function');
+  });
+
+  it('handoff 带上车辆/类别/区间，落进去不是空白页', async () => {
+    const { queryRecords } = loadApis();
+    const res = await queryRecords({
+      carName: '我的 CRV',
+      categoryName: '停车',
+      rangeType: 'custom',
+      startDate: '2026-11-01',
+      endDate: '2026-11-27'
+    });
+    const { query } = res.handoff({ result: res } as any);
+    expect(query).toContain('carName=');
+    expect(query).toContain('category=');
+    expect(query).toContain('start=2026-11-01');
+  });
+
+  it('按分类过滤：只返回该分类的记录', async () => {
+    const { queryRecords } = loadApis();
+    const res = await queryRecords({ categoryName: '停车' });
+    expect(res.isError).toBe(false);
+    expect(res.content[0].text).toContain('停车');
+    expect(res.structuredContent.categoryName).toBe('停车');
+  });
+
+  it('分类不存在时报错并列出可选分类', async () => {
+    const { queryRecords } = loadApis();
+    const res = await queryRecords({ categoryName: '不存在的分类' });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('停车');
+  });
+});
+
+describe('queryStats 按分类统计（「今年加油花了多少」）', () => {
+  it('全车 + 分类：给出金额、笔数、占比与按车拆分', async () => {
+    addSecondCar();
+    const { addCost, queryStats } = loadApis();
+    await addCost({ amount: 45, categoryName: '停车', carName: '老婆的车' });
+
+    const res = await queryStats({ rangeType: 'all', categoryName: '停车' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.categoryName).toBe('停车');
+    // 种子里我的 CRV 已有 300 停车，新增 45
+    expect(res.structuredContent.categoryAmount).toBe('345.00');
+    expect(Number(res.structuredContent.categoryCount)).toBeGreaterThanOrEqual(2);
+    expect(res.content[0].text).toContain('占全部支出的');
+    expect(res.handoff({ result: res } as any).query).toContain('focus=category');
+  });
+
+  it('单车 + 分类：以该分类为主语回答', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ carName: '我的 CRV', rangeType: 'all', categoryName: '停车' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.categoryAmount).toBe('300.00');
+    expect(res.content[0].text).toMatch(/我的 CRV.*「停车」共/);
+  });
+
+  it('分类不存在时列出可选分类，不瞎凑', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ categoryName: '路桥费' });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('停车');
   });
 });
 
@@ -1056,5 +1123,75 @@ describe('queryMaintain 保养统计（超期 / 临近 / 正常计数）', () =>
     expect(res.structuredContent.scope).toBe('all');
     expect(Number(res.structuredContent.totalCount)).toBeGreaterThan(0);
     expect(res.content[0].text).toContain('全部');
+  });
+});
+
+describe('车名归一化与候选提示（「我的CRV」不该查不到）', () => {
+  it('空格/连字符/大小写不敏感：唐DM-i 能匹配 唐 DM-i', async () => {
+    put('cars', {
+      sourceId: 'mp:cars:tang',
+      sourcePlatform: 'mp',
+      name: '唐 DM-i',
+      type: 'car',
+      icon: '🚐',
+      customIconAssetId: '',
+      initDate: NOW,
+      initMileages: 0,
+      mileages: 9000,
+      evMileages: 0,
+      hevMileages: 0,
+      batteryCapacity: 0,
+      energyType: 'hybrid',
+      energyTrackingEnabled: true,
+      maintainSoonMileage: 500,
+      maintainSoonDays: 15,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deleted: false
+    });
+    const { queryMaintain } = loadApis();
+    const res = await queryMaintain({ carName: '唐DM-i', onlyUrgent: false });
+    expect(res.isError).toBe(false);
+    // 这辆车没配保养项，走的是「无保养项」分支，断言落在文案上
+    expect(res.content[0].text).toContain('唐 DM-i');
+  });
+
+  it('「我的CRV」在只有一辆 CRV 时能匹配上（词元匹配）', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ carName: '我的CRV', rangeType: 'all' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.scope).toBe('car');
+    expect(res.structuredContent.carName).toBe('我的 CRV');
+  });
+
+  it('有两辆 CRV 时给出候选让用户选，而不是拿全车合计顶替', async () => {
+    put('cars', {
+      sourceId: 'mp:cars:crv2',
+      sourcePlatform: 'mp',
+      name: '老婆的 CRV',
+      type: 'car',
+      icon: '🚙',
+      customIconAssetId: '',
+      initDate: NOW,
+      initMileages: 0,
+      mileages: 8000,
+      evMileages: 0,
+      hevMileages: 0,
+      batteryCapacity: 0,
+      energyType: 'fuel',
+      energyTrackingEnabled: true,
+      maintainSoonMileage: 500,
+      maintainSoonDays: 15,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deleted: false
+    });
+
+    const { queryStats } = loadApis();
+    // 只说「CRV」：两辆车都含这个词，必须问清楚而不是猜一辆
+    const res = await queryStats({ carName: 'CRV', rangeType: 'all' });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('老婆的 CRV');
+    expect(res.content[0].text).toContain('我的 CRV');
   });
 });

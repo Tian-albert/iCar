@@ -5,7 +5,7 @@ import { listMaintains, listMaintainHandles, listMaintainLogs, removeMaintainHan
 import { listRepairs, removeRepair } from '../../services/repair.service';
 import { listCosts, listCategories, removeCost } from '../../services/cost.service';
 import { displayIcon, isImageIcon } from '../../utils/icons';
-import { getCar } from '../../services/car.service';
+import { getCar, listCars } from '../../services/car.service';
 import { formatDateTime } from '../../utils/date';
 import { Cost, FuelConsumption, RefuelLog } from '../../types/models';
 
@@ -30,18 +30,56 @@ Page({
     repairRecords: [] as any[],
     costRecords: [] as any[],
     hasMore: false,
-    total: 0
+    total: 0,
+    /** 接力带来的筛选说明（空字符串表示未筛选） */
+    filterText: ''
   },
   onLoad(options: Record<string, string>) {
+    const storage = getStorage();
+
+    /**
+     * 接力参数：车名 / 类别 / 区间。
+     *
+     * 之前这里只认 id 和 tab，AI 接力带过来的筛选条件全被丢掉，
+     * 用户点进去看到的是默认列表——「调出来一个空白页面」就是这么来的。
+     */
+    const carName = options.carName ? decodeURIComponent(options.carName) : '';
+    let carId = options.id || '';
+    if (!carId && carName) {
+      // 宽松匹配：接力传的是用户看到的车名，可能与库里差一个空格
+      const hit = listCars(storage).find(
+        c => c.name === carName || c.name.replace(/\s/g, '') === carName.replace(/\s/g, '')
+      );
+      carId = hit ? hit.sourceId : '';
+    }
+
+    const category = options.category ? decodeURIComponent(options.category) : '';
+    const start = options.start ? new Date(options.start).getTime() : 0;
+    const end = options.end ? new Date(options.end).getTime() : 0;
+    (this as any)._filter = { start, end, category };
+
+    const rangeText = options.start && options.end ? `${options.start.slice(5)} ~ ${options.end.slice(5)}` : '';
+    const filterText = [carName, category, rangeText].filter(Boolean).join(' · ');
+
     const tab = (['fuel', 'maintain', 'repair', 'cost'] as string[]).includes(options.tab)
       ? options.tab
-      : 'fuel';
+      : category
+        ? 'cost'
+        : 'fuel';
+
     // R-07：Tab 文案随车型变化，避免纯电车点「查看全部充电记录」进来仍显示「加油」
-    const car = getCar(getStorage(), options.id);
+    const car = getCar(storage, carId);
     const energyType = car?.energyType || 'fuel';
     const recordNoun =
       energyType === 'ev' ? '充电' : energyType === 'hybrid' ? '加油/充电' : '加油';
-    this.setData({ carId: options.id, activeTab: tab, recordNoun });
+    this.setData({ carId, activeTab: tab, recordNoun, filterText });
+  },
+
+  /** 清掉接力带来的筛选，回到这辆车的全部记录 */
+  onClearFilter() {
+    (this as any)._filter = {};
+    this.setData({ filterText: '' });
+    this.load();
   },
   onShow() {
     this.load();
@@ -110,13 +148,17 @@ Page({
     const storage = getStorage();
     const carId = this.data.carId;
 
+    // 接力带来的筛选：区间 + 分类（没有就是空对象，等价于不过滤）
+    const f: { start?: number; end?: number; category?: string } = (this as any)._filter || {};
+    const inRange = (ts: number) => (!f.start || ts >= f.start) && (!f.end || ts >= 0 && ts <= f.end);
+
     // 加油
-    const refuels = listRefuels(storage, carId);
+    const refuels = listRefuels(storage, carId).filter(r => inRange(r.fuelDate));
     const segs = getConsumptions(storage, carId);
     const fuelRecords = buildFuelRecords(refuels, segs);
 
     // 保养
-    const handles = listMaintainHandles(storage, carId);
+    const handles = listMaintainHandles(storage, carId).filter(h => inRange(h.makeDate));
     const logs = listMaintainLogs(storage, carId);
     const maintainMap = new Map(listMaintains(storage, carId).map(m => [m.sourceId, m.name]));
     const maintainRecords = handles.map(h => {
@@ -137,7 +179,9 @@ Page({
     });
 
     // 维修
-    const repairRecords = listRepairs(storage, carId).map(r => ({
+    const repairRecords = listRepairs(storage, carId)
+      .filter(r => inRange(r.repairDate))
+      .map(r => ({
       sourceId: r.sourceId,
       dateText: formatDateTime(r.repairDate),
       content: r.content,
@@ -149,6 +193,9 @@ Page({
     const catMap = new Map(listCategories(storage).map(c => [c.sourceId, c]));
     const costRecords = listCosts(storage, carId)
       .filter(c => !c.fuelRecordSourceId && !c.maintainHandleSourceId && !c.repairSourceId)
+      .filter(c => inRange(c.costDate))
+      // 分类筛选：接力传的是分类名（「停车」），按名字包含匹配
+      .filter(c => !f.category || (catMap.get(c.categorySourceId)?.name || '').includes(f.category))
       .map(c => ({
         sourceId: c.sourceId,
         emoji: displayIcon(catMap.get(c.categorySourceId)?.icon ?? 'ticket'),

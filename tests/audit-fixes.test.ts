@@ -57,8 +57,10 @@ function record(
 describe('审计修复：纯电车统计页里程不为 0', () => {
   it('纯电车 fuelMileage 为 0，但 evMileage 有值（页面据此取值）', () => {
     const { adapter, car } = setup('ev');
-    record(adapter, car.sourceId, 100, 20, 'ev');
-    record(adapter, car.sourceId, 600, 20, 'ev');
+    // 20 kWh / 500 km = 4 kWh/100km —— 低于物理下界会被判为不可信区间，
+    // 这里用真实量级（60 kWh → 12 kWh/100km）
+    record(adapter, car.sourceId, 100, 60, 'ev');
+    record(adapter, car.sourceId, 600, 60, 'ev');
 
     const snap = buildStats(
       { type: 'all' },

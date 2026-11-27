@@ -122,22 +122,65 @@ exports.readLogs = readLogs;
  *   · 说了车名 → 模糊匹配；
  *   · 多辆车且没说 → 返回 ambiguous，由调用方追问。
  */
+/**
+ * 车名归一化：去掉空格、连字符与大小写差异。
+ *
+ * 库里是「唐 DM-i」，用户说「唐DM-i」；库里是「我的 CRV」，用户说「我的CRV」——
+ * 全靠 includes 匹配会判成「没有这辆车」，白白浪费一轮对话。
+ */
+function normName(s) {
+    return (s || '').replace(/[\s\-_·]+/g, '').toLowerCase();
+}
+/** 名字切成词元（按空格/连字符），用于「我的CRV」匹配「老王的 CRV」这类改名场景 */
+function tokensOf(s) {
+    return (s || '')
+        .toLowerCase()
+        .split(/[\s\-_·]+/)
+        .filter(Boolean);
+}
 function resolveCarStrict(cars, carName) {
     if (!cars.length)
         return { car: null, reason: 'no-car' };
     const key = (carName || '').trim();
     if (key) {
-        const exact = cars.find(c => c.name === key);
-        if (exact)
-            return { car: exact };
-        const fuzzy = cars.find(c => c.name.includes(key) || key.includes(c.name));
-        if (fuzzy)
-            return { car: fuzzy };
-        return { car: null, reason: 'no-match' };
+        const nk = normName(key);
+        const exact = cars.filter(c => c.name === key || normName(c.name) === nk);
+        if (exact.length === 1)
+            return { car: exact[0] };
+        if (exact.length > 1)
+            return { car: null, reason: 'ambiguous', candidates: exact.map(c => c.name) };
+        /**
+         * 包含匹配必须**先收集再判定**：只取第一个会把「CRV」在两辆车里随便挑一辆，
+         * 用户问的是自己的车，答成另一辆就是错账。
+         */
+        const fuzzy = cars.filter(c => {
+            const nc = normName(c.name);
+            return nc.includes(nk) || nk.includes(nc);
+        });
+        if (fuzzy.length === 1)
+            return { car: fuzzy[0] };
+        if (fuzzy.length > 1)
+            return { car: null, reason: 'ambiguous', candidates: fuzzy.map(c => c.name) };
+        /**
+         * 词元匹配：改写过的车名不会保留旧名，但通常会保留「CRV」「P7」这类核心词。
+         * 只命中一辆才算数；命中多辆时返回候选让用户确认——静默挑一辆会答错车。
+         */
+        const keyTokens = tokensOf(key).filter(t => t.length >= 2);
+        if (keyTokens.length) {
+            const hits = cars.filter(c => {
+                const nt = tokensOf(c.name);
+                return keyTokens.some(t => nt.includes(t) || normName(c.name).includes(t));
+            });
+            if (hits.length === 1)
+                return { car: hits[0] };
+            if (hits.length > 1)
+                return { car: null, reason: 'ambiguous', candidates: hits.map(c => c.name) };
+        }
+        return { car: null, reason: 'no-match', candidates: cars.map(c => c.name) };
     }
     if (cars.length === 1)
         return { car: cars[0] };
-    return { car: null, reason: 'ambiguous' };
+    return { car: null, reason: 'ambiguous', candidates: cars.map(c => c.name) };
 }
 /**
  * 读操作选车：显式指定 > 置顶车 > 第一辆车。

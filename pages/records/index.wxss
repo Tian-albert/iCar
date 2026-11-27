@@ -163,3 +163,23 @@
 .act.delete {
   color: var(--color-danger);
 }
+
+/* 接力筛选条：让用户清楚「这是筛过的列表」，并能一键清除 */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  padding: 14rpx 20rpx;
+  border-radius: 12rpx;
+  background: var(--color-primary-light);
+}
+.filter-text {
+  font-size: 24rpx;
+  color: var(--color-primary);
+}
+.filter-clear {
+  font-size: 24rpx;
+  color: var(--color-text-2);
+  text-decoration: underline;
+}

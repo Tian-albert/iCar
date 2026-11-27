@@ -39,7 +39,7 @@
           "pagePath": "pages/summary/index"
         }
       },
-      "description": "查询养车花费与能耗统计。**用户没说哪辆车且有多辆车时，返回全部车辆合计与每车明细**（「今年养车花了多少」问的是全部，不是某一辆）；说了车名则只返回那一辆。含总支出、每公里成本、油耗/电耗、有效里程。只读。",
+      "description": "查询养车花费与能耗统计。**用户没说哪辆车且有多辆车时，返回全部车辆合计与每车明细**（「今年养车花了多少」问的是全部）；说了车名则只返回那一辆。传 categoryName 可只统计某一分类（如「今年加油花了多少钱」）。含总支出、每公里成本、油耗/电耗、有效里程。只读。",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -72,6 +72,10 @@
           "endDate": {
             "type": "string",
             "description": "自定义区间终点，格式 YYYY-MM-DD，含当天。与 startDate 同时使用"
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "只看某个支出分类，如「加油」「洗车」「停车」「保险」。用户问「今年加油花了多少」时必须传，否则只能给总支出"
           }
         }
       },
@@ -568,7 +572,7 @@
     },
     {
       "name": "queryRecords",
-      "description": "查某辆车的用车记录（近期明细）：默认返回最近 10 条，含日期、类型、摘要与金额，并给出合计。用户问「我最近记过什么」「上个月都花了哪些」时用。只读。",
+      "description": "查用车记录明细。**没说车名且有多辆车时汇总全部车辆**（合计 + 按车金额），不再要求先选车；可用 type 按大类过滤、categoryName 按具体分类过滤、rangeType 限定区间。默认返回最近 10 条。只读。",
       "_meta": {
         "ui": {
           "pagePath": "pages/records/index"
@@ -621,6 +625,10 @@
           "limit": {
             "type": "number",
             "description": "最多返回几条，默认 10，上限 30"
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "只看某个支出分类，如「加油」「洗车」「停车」「保险」。用户问「今年加油花了多少」时必须传，否则只能给总支出"
           }
         }
       },
@@ -649,6 +657,17 @@
             "type": "string",
             "format": "page-link",
             "x-link-text-field": "linkText"
+          },
+          "scope": {
+            "type": "string",
+            "description": "car 单车 / all 全车"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "byCar": {
+            "type": "string",
+            "description": "全车作用域下的按车金额列表"
           }
         }
       }

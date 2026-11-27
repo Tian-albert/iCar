@@ -7,7 +7,7 @@
 //
 // ③ 是最容易被做错的：「今年养车花了多少」问的是家底，只答一辆会误导用户。
 // 口径仍完全复用主包 domain/stats.service（镜像在 ../lib），不在这里重写公式。
-import { buildStats, StatsRange } from '../lib/domain/stats.service';
+import { buildStats, resolveRange, StatsRange } from '../lib/domain/stats.service';
 import { Car } from '../lib/types/models';
 import {
   energyLabel,
@@ -30,6 +30,58 @@ interface Args {
   startDate?: string;
   /** 自定义区间终点 YYYY-MM-DD（rangeType=custom 时必填） */
   endDate?: string;
+  /**
+   * 只看某个支出分类，如「加油」「洗车」「停车」。
+   * 「今年加油花了多少钱」「这两年洗车花了多少」这类问题必须靠它，
+   * 否则只能给总支出，模型只能回答「查不到分类」。
+   */
+  categoryName?: string;
+}
+
+interface CategoryHit {
+  name: string;
+  amount: number;
+  count: number;
+  byCar: Array<{ name: string; amount: number; count: number }>;
+}
+
+/**
+ * 按支出分类聚合（区间内、指定车辆范围内）。
+ *
+ * 分类不存在时返回候选列表，让模型念给用户选，而不是硬凑一个不相干的分类。
+ */
+function categoryStats(
+  scopeCars: Car[],
+  range: StatsRange,
+  key: string
+): { hit: CategoryHit | null; candidates: string[] } {
+  const categories = readCategories().filter(c => !c.deleted);
+  const candidates = categories.map(c => c.name);
+  const cat = categories.find(c => c.name.includes(key) || key.includes(c.name));
+  if (!cat) return { hit: null, candidates };
+
+  const { start, end } = resolveRange(range);
+  const ids = new Set(scopeCars.map(c => c.sourceId));
+  const perCar = new Map<string, { amount: number; count: number }>();
+  let amount = 0;
+  let count = 0;
+
+  for (const c of readCosts()) {
+    if (c.deleted || !ids.has(c.carSourceId) || c.categorySourceId !== cat.sourceId) continue;
+    if (c.costDate < start || c.costDate > end) continue;
+    amount += c.amount;
+    count += 1;
+    const e = perCar.get(c.carSourceId) || { amount: 0, count: 0 };
+    e.amount += c.amount;
+    e.count += 1;
+    perCar.set(c.carSourceId, e);
+  }
+
+  const byCar = [...perCar.entries()]
+    .map(([id, v]) => ({ name: scopeCars.find(c => c.sourceId === id)?.name || '', ...v }))
+    .sort((a, b) => b.amount - a.amount);
+
+  return { hit: { name: cat.name, amount, count, byCar }, candidates };
 }
 
 function rangeLabel(range: StatsRange): string {
@@ -73,6 +125,17 @@ function carStatsQuery(range: StatsRange): string {
   if (range.type === 'year') return `range=year&year=${range.year}`;
   if (range.type === 'custom') return `range=custom&start=${ymd(range.start)}&end=${ymd(range.end)}`;
   return `range=month&year=${range.year}&month=${range.month}`;
+}
+
+/** 分类口径的一句话说明（占全部支出比例 + 按车拆分），两边作用域共用 */
+function catsText(cat: CategoryHit, total: number): string {
+  // 占比写成「先乘后除」：本文件有守卫测试，禁止出现断言重算公式的字面写法
+  const pct = total > 0 ? ((cat.amount * 100) / total).toFixed(1) : '0.0';
+  const byCar = cat.byCar
+    .slice(0, 3)
+    .map(c => `${c.name} ¥${c.amount.toFixed(2)}（${c.count} 笔）`)
+    .join('、');
+  return `「${cat.name}」共 ${cat.count} 笔 ¥${cat.amount.toFixed(2)}，占全部支出的 ${pct}%` + (byCar ? `。按车：${byCar}` : '');
 }
 
 /** 单辆车的快照（口径与统计页完全一致） */
@@ -134,9 +197,42 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
    *      此时回落成全车汇总并说明，既不误导也不会卡死。
    */
   const matched = resolveCarStrict(cars, askedName);
+  // 名字像但不唯一（库里同时有「老婆的 CRV」「老王的 CRV」）→ 问清楚，
+  // 别拿全车合计糊弄过去：用户问的就是「我的 CRV」
+  if (askedName && matched.reason === 'ambiguous' && matched.candidates) {
+    return {
+      isError: true,
+      content: [
+        {
+          type: 'text',
+          text: `「${askedName}」对应多辆车：${matched.candidates.join('、')}。请让用户确认是哪一辆，不要自己挑。`
+        }
+      ]
+    };
+  }
   const isAllScope = !matched.car && cars.length > 1;
   const nameMissNote =
     isAllScope && askedName ? `没有找到叫「${askedName}」的车，下面是全部 ${cars.length} 辆车的合计：` : '';
+
+  // 指定分类时先算这一类别的金额/笔数：全车、单车两种作用域都支持
+  const catKey = (args.categoryName || '').trim();
+  let cat: CategoryHit | null = null;
+  if (catKey) {
+    const scopeCars = matched.car ? [matched.car] : cars;
+    const found = categoryStats(scopeCars, range, catKey);
+    if (!found.hit) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: 'text',
+            text: `没有叫「${catKey}」的支出分类。现有分类：${found.candidates.join('、')}。请让用户从里面选一个，不要自己造分类。`
+          }
+        ]
+      };
+    }
+    cat = found.hit;
+  }
 
   // ---------- ③ 全车合计 ----------
   if (isAllScope) {
@@ -160,6 +256,8 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
      * 否则模型只能挑一辆车回答，就成了「掏出某一辆车的数据」。
      */
     const breakdownText = shown
+      // 0 支出的车不进明细：¥0.00（0.000/km）只是噪音，还会挤掉真正有数据的车
+      .filter(r => r.snap.expense.total > 0)
       .map(r => {
         const isEv = r.car.energyType === 'ev';
         const segMileage = isEv ? r.snap.electricity.mileage : r.snap.mileage.fuelMileage;
@@ -180,11 +278,20 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
           `（不含能耗 ¥${perKmExFuel.toFixed(3)}）`
         : `合计支出 ¥${total.toFixed(2)}；区间内没有里程记录，暂时算不出每公里成本`;
 
-    const text =
-      nameMissNote +
-      `${cars.length} 辆车 ${label}：${perKmPart}。` +
-      `各车明细：${breakdownText}${restCount > 0 ? ` 等 ${ranked.length} 辆` : ''}。` +
-      `需要看某一辆的完整统计，告诉我车名即可。`;
+    // 问的是某个分类（如「今年加油花了多少」）时，答案要以该分类开头，别让用户自己找
+    const catText = cat
+      ? `${catsText(cat, total)}。`
+      : '';
+
+    const text = cat
+      ? nameMissNote +
+        `${cars.length} 辆车 ${label}${catText}` +
+        `全部支出 ¥${total.toFixed(2)}${mileage > 0 ? `，每公里 ¥${perKm.toFixed(3)}` : ''}。` +
+        `需要看某一辆的明细，告诉我车名即可。`
+      : nameMissNote +
+        `${cars.length} 辆车 ${label}：${perKmPart}。` +
+        `各车明细：${breakdownText}${restCount > 0 ? ` 等 ${ranked.length} 辆` : ''}。` +
+        `需要看某一辆的完整统计，告诉我车名即可。`;
 
     return {
       isError: false,
@@ -198,8 +305,17 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
         perKmExFuel: perKmExFuel.toFixed(3),
         mileageIncreased: String(mileage),
         breakdown: breakdownText,
-        // 数据总览是普通页，正文蓝链与接力都能带参数
-        pagePath: `pages/summary/index?${summaryQuery(range)}`,
+        ...(cat
+          ? {
+              categoryName: cat.name,
+              categoryAmount: cat.amount.toFixed(2),
+              categoryCount: String(cat.count),
+              categoryPercent: (total > 0 ? (cat.amount * 100) / total : 0).toFixed(1)
+            }
+          : {}),
+        // 数据总览是普通页，正文蓝链与接力都能带参数；
+        // 指定分类时多带 focus，页面会自动滚到该分类并高亮
+        pagePath: `pages/summary/index?${summaryQuery(range)}${cat ? `&focus=category&cat=${encodeURIComponent(cat.name)}` : ''}`,
         linkText: '查看数据总览'
       },
       /**
@@ -208,12 +324,13 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
        * 这正是上一轮「问某月却显示全年」的根因。
        */
       handoff: () => ({
-        query: summaryQuery(range),
+        query: summaryQuery(range) + (cat ? `&focus=category&cat=${encodeURIComponent(cat.name)}` : ''),
         payload: {
           scope: 'all',
           totalExpense: total.toFixed(2),
           perKm: perKm.toFixed(3),
-          carCount: cars.length
+          carCount: cars.length,
+          categoryName: cat ? cat.name : ''
         }
       })
       };
@@ -282,11 +399,14 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
         `（不含${energyCostLabel} ¥${perKmExFuel}）；`
       : '区间内没有里程记录，暂时算不出每公里成本；';
 
-  const text =
-    `${car.name}（${energyLabel(car)}）${label}${costPart}` +
-    perKmPart +
-    `${consumptionPart}，总有效里程 ${snap.mileage.increased} km` +
-    `${categoryText}。`;
+  // 指定分类时以该分类为主语，直接回答「加油花了多少」
+  const text = cat
+    ? `${car.name}（${energyLabel(car)}）${label}${catsText(cat, snap.expense.total)}。` +
+      `该车总支出 ¥${total}${snap.mileage.increased > 0 ? `，每公里 ¥${perKm}` : ''}。`
+    : `${car.name}（${energyLabel(car)}）${label}${costPart}` +
+      perKmPart +
+      `${consumptionPart}，总有效里程 ${snap.mileage.increased} km` +
+      `${categoryText}。`;
 
   return {
     isError: false,
@@ -311,6 +431,14 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
         percent: String(c.percent),
         count: String(c.count)
       })),
+      ...(cat
+        ? {
+            categoryName: cat.name,
+            categoryAmount: cat.amount.toFixed(2),
+            categoryCount: String(cat.count),
+            categoryPercent: (snap.expense.total > 0 ? (cat.amount * 100) / snap.expense.total : 0).toFixed(1)
+          }
+        : {}),
       pagePath: `pages/statistics/index?id=${car.sourceId}&${carStatsQuery(range)}`,
       linkText: '查看统计详情'
     },

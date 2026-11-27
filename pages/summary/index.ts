@@ -86,7 +86,9 @@ Page({
     carRows: [] as CarRowView[],
     emptyChart: false,
     /** 是否由小微卡片接力进入（仅用于埋点/调试，不影响渲染） */
-    fromAgent: false
+    fromAgent: false,
+    /** 接力指定的分类名：进页面后自动滚到分类卡并高亮（如「加油」） */
+    focusCat: ''
   },
 
   onLoad(query: Record<string, string>) {
@@ -119,7 +121,9 @@ Page({
         startDate,
         endDate,
         years,
-        fromAgent: !!handoff
+        fromAgent: !!handoff,
+        // focus=category&cat=加油：进页面后定位到该分类
+        focusCat: query.cat ? decodeURIComponent(query.cat) : ''
       },
       () => this.load()
     );
@@ -215,6 +219,29 @@ Page({
         color: snap.categories.length ? ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#A855F7', '#14B8A6'][i % 6] : '#3B82F6'
       }))
     });
+
+    /**
+     * 接力带了 focus=category&cat=加油 时，进页面直接滚到分类卡并高亮那一行。
+     *
+     * 评测轨迹里的原话是「调出了数据总览界面，但没滑动到加油数据那里」——
+     * 页面是对的，但用户要的数字在第 3 屏，等于没给到。
+     */
+    const focusCat = this.data.focusCat;
+    if (focusCat) {
+      const idx = snap.categories.findIndex(c => c.name.includes(focusCat) || focusCat.includes(c.name));
+      if (idx >= 0) {
+        this.setData({ activeCat: idx });
+        // 等渲染完成再滚，否则拿不到节点位置
+        (wx as any).nextTick
+          ? (wx as any).nextTick(() => this.scrollToCategories())
+          : setTimeout(() => this.scrollToCategories(), 50);
+      }
+    }
+  },
+
+  /** 滚到分类支出卡（offsetTop 留一点顶部余量，别贴着导航栏） */
+  scrollToCategories() {
+    (wx as any).pageScrollTo({ selector: '#catCard', duration: 300, offsetTop: -12 });
   },
 
   currentRange(): StatsRange {

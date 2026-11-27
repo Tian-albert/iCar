@@ -1,5 +1,11 @@
 <page-meta page-style="{{pageStyle}}" />
 <view class="page">
+  <!-- 接力筛选条：AI 带过来的车/类别/区间，让用户知道「现在是筛过的」 -->
+  <view wx:if="{{filterText}}" class="filter-bar">
+    <text class="filter-text">筛选：{{filterText}}</text>
+    <text class="filter-clear" bindtap="onClearFilter">清除</text>
+  </view>
+
   <!-- Tab -->
   <view class="seg-tabs">
     <view class="seg {{activeTab === 'fuel' ? 'seg-active' : ''}}" data-tab="fuel" hover-class="hover-dim" bindtap="onTabChange">{{recordNoun}}</view>

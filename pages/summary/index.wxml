@@ -91,7 +91,8 @@
 
     <!-- 分类支出：环图 + 比例条联动（与统计页同一组件） -->
     <view wx:if="{{donutSegments.length}}" class="sec-title">分类支出</view>
-    <view wx:if="{{donutSegments.length}}" class="card">
+    <!-- id 供接力定位：「今年加油花了多少」进页面直接滚到这里 -->
+    <view wx:if="{{donutSegments.length}}" id="catCard" class="card">
       <view class="donut-wrap">
         <donut-chart
           class="donut-chart"

@@ -22,6 +22,25 @@ export function clampFuelConsumption(value: number): number {
 }
 
 /**
+ * 区间可信度下界。
+ *
+ * 只有上限收敛是不够的：里程只涨了 30km 却记了 40 升，会算出 1.33 L/100km
+ * 这种"比摩托车还省"的数（实测评测里就出现过）。这类区间不是真实油耗，
+ * 而是录入/补录错误，**整段丢弃**比夹到某个值更诚实。
+ */
+export const MIN_SEGMENT_MILEAGE = 30;
+export const MIN_FUEL_CONSUMPTION = 2;
+export const MIN_EV_CONSUMPTION = 5;
+
+/** 区间是否可信：里程够长，且折算出的能耗落在物理可能范围 */
+function isPlausibleSegment(mileage: number, fuelAmount: number, energyType: EnergyType): boolean {
+  if (mileage < MIN_SEGMENT_MILEAGE || fuelAmount <= 0) return false;
+  const per100 = (fuelAmount / mileage) * 100;
+  const isEv = energyType === 'ev';
+  return per100 >= (isEv ? MIN_EV_CONSUMPTION : MIN_FUEL_CONSUMPTION);
+}
+
+/**
  * 金额联动：应付金额 = 单价 × 加油量（四舍五入 2 位）
  * 实付金额默认取应付金额（用户可改，由调用方决定）
  */
@@ -77,6 +96,8 @@ export function buildConsumption(
 
   const fuelAmount = start.isFull ? end.volume : start.volume;
   const cost = start.isFull ? end.actualPayAmount : start.actualPayAmount;
+  // 此处只做上限收敛（历史口径，供单点校验与既有测试使用）；
+  // 「不可信区间整段丢弃」发生在 rebuildConsumptions——那才是真实数据进图表/统计的入口。
   return makeSegment(start, end, mileage, fuelAmount, cost);
 }
 
@@ -113,7 +134,10 @@ export function rebuildConsumptions(logs: RefuelLog[]): FuelConsumption[] {
     fuelAmount += cur.volume;
     cost += cur.actualPayAmount;
     if (cur.isFull) {
-      result.push(makeSegment(anchor, cur, mileage, fuelAmount, cost));
+      // 不可信区间整段丢弃（里程过短 / 折算值低于物理下界），锚点照常前移
+      if (isPlausibleSegment(mileage, fuelAmount, cur.energyType || 'fuel')) {
+        result.push(makeSegment(anchor, cur, mileage, fuelAmount, cost));
+      }
       anchor = cur;
       fuelAmount = 0;
       cost = 0;

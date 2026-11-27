@@ -50,7 +50,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     ver: 'v1.2.0',
-    date: '2026-11-15',
+    date: '2026-11-18',
     sections: [
       {
         title: '新增',

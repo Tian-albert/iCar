@@ -85,6 +85,18 @@ export async function queryMaintain(args: Args = {}): Promise<AgentApiResult> {
    * 就是这么被判失败的。
    */
   const matched = resolveCarStrict(cars, askedName);
+  // 名字对应多辆车 → 让用户选，不要用全车汇总顶替
+  if (askedName && matched.reason === 'ambiguous' && matched.candidates) {
+    return {
+      isError: true,
+      content: [
+        {
+          type: 'text',
+          text: `「${askedName}」对应多辆车：${matched.candidates.join('、')}。请让用户确认是哪一辆，不要自己挑。`
+        }
+      ]
+    };
+  }
   const isAllScope = !matched.car && cars.length > 1;
   const nameMissNote =
     isAllScope && askedName ? `没有找到叫「${askedName}」的车，下面是全部 ${cars.length} 辆车的汇总：` : '';
@@ -144,7 +156,8 @@ export async function queryMaintain(args: Args = {}): Promise<AgentApiResult> {
           type: 'text',
           text:
             nameMissNote +
-            `${cars.length} 辆车共有 ${visible.length} 项需要关注` +
+            // 说「需要关注」的数量必须是 超期+临近，不能拿 visible.length（onlyUrgent=false 时它是全部项）
+            `${cars.length} 辆车共有 ${stat.overdue + stat.urgent} 项需要关注` +
             `${overdueCount ? `，其中 ${overdueCount} 项已超期` : ''}：${detail}。` +
             `（全部 ${stat.total} 项：超期 ${stat.overdue} / 临近 ${stat.urgent} / 正常 ${stat.ok}）` +
             `需要看某一辆的完整保养项，告诉我车名即可。`
@@ -210,9 +223,13 @@ export async function queryMaintain(args: Args = {}): Promise<AgentApiResult> {
       .slice(0, 3)
       .map(r => `${r.name}：${r.remainText}${r.overdue ? '（已超期）' : ''}`)
       .join('；');
+    // onlyUrgent=false 时 visible 是全部项，不能再说「有 N 项需要关注」——那是自相矛盾
+    const pending = stat.overdue + stat.urgent;
     text =
-      `${car.name}（${energyLabel(car)}）有 ${visible.length} 项需要关注` +
-      `${overdueCount ? `，其中 ${overdueCount} 项已超期` : ''}：${lines}。` +
+      (pending > 0
+        ? `${car.name}（${energyLabel(car)}）有 ${pending} 项需要关注` +
+          `${overdueCount ? `，其中 ${overdueCount} 项已超期` : ''}：${lines}。`
+        : `${car.name}（${energyLabel(car)}）${stat.total} 项保养都在周期内，暂无需要处理的项。`) +
       `（全部 ${stat.total} 项：超期 ${stat.overdue} / 临近 ${stat.urgent} / 正常 ${stat.ok}）`;
   }
 
