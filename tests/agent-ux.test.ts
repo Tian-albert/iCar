@@ -40,3 +40,22 @@ describe('全车保养页：待处理不显示正常项', () => {
     expect(wxml).not.toContain('item-dim');
   });
 });
+
+describe('评测遗留两处：类型徽标与 0 里程引导', () => {
+  it('各车明细显示能量类型（「哪些车是混动」要能在页面上看到）', () => {
+    const wxml = read('pages/summary/index.wxml');
+    expect(wxml).toContain('car-type');
+    expect(wxml).toContain('typeText');
+
+    const ts = read('pages/summary/index.ts');
+    expect(ts).toContain("'混动'");
+    expect(ts).toContain("'纯电'");
+  });
+
+  it('0 里程的车在详情页给补录入口，而不是整页 0', () => {
+    const wxml = read('pages/vehicle-detail/index.wxml');
+    expect(wxml).toContain('mileages === 0');
+    expect(wxml).toContain('mileage-hint');
+    expect(wxml).toContain('bindtap="onEditCar"');
+  });
+});

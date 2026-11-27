@@ -36,6 +36,15 @@
   font-size: 28rpx;
   color: var(--color-text-3);
 }
+/* 0 里程提示：整页数字都是 0 时给一条明确的补录入口，避免像空白页 */
+.mileage-hint {
+  margin-top: 12rpx;
+  padding: 10rpx 16rpx;
+  border-radius: 12rpx;
+  background: var(--color-primary-light);
+  font-size: 24rpx;
+  color: var(--color-primary);
+}
 .header-actions {
   display: flex;
   flex-direction: column;

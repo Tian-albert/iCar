@@ -222,6 +222,8 @@ Page({
       carRows: snap.cars.map((c, i) => ({
         carSourceId: c.carSourceId,
         name: c.name,
+        // 「哪些车是混动」这类问题要在页面上直接看得到类型，不能只靠名字猜
+        typeText: c.energyType === 'ev' ? '纯电' : c.energyType === 'hybrid' ? '混动' : '燃油',
         subText:
           c.consumption > 0
             ? `${c.consumptionUnit === 'kWh/100km' ? '电耗' : '油耗'} ${c.consumption.toFixed(2)} ${c.consumptionUnit} · ${c.mileage} km`

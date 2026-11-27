@@ -149,7 +149,7 @@
       >
         <view class="car-dot" style="background:{{item.color}}"></view>
         <view class="car-main">
-          <view class="car-name">{{item.name}}</view>
+          <view class="car-name">{{item.name}}<text class="car-type">{{item.typeText}}</text></view>
           <view class="car-sub">{{item.subText}}</view>
         </view>
         <view class="car-amount">{{item.totalText}}</view>

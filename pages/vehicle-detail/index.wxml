@@ -7,6 +7,13 @@
     <view class="header-info">
       <view class="header-name">{{carName}}</view>
       <view class="header-mileage">当前里程 {{mileages}} km</view>
+<!--
+  0 里程的车（新增时没填里程）整页数字都是 0，看起来像空白页；
+  在这里给一个明确的补录入口，顺便让「每公里成本」恢复正常。
+-->
+<view wx:if="{{mileages === 0}}" class="mileage-hint" hover-class="hover-dim" bindtap="onEditCar">
+  还没记录当前里程，点这里补上 ›
+</view>
     </view>
     <view class="header-actions">
       <view class="header-link" hover-class="header-link-hover" bindtap="onEditCar">编辑 ›</view>

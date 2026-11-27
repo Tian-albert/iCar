@@ -236,6 +236,18 @@
   font-size: 26rpx;
   color: var(--color-text-1);
 }
+/* 能量类型徽标：用户问「哪些是混动」时，页面上要能直接看到 */
+.car-type {
+  display: inline-block;
+  margin-left: 10rpx;
+  padding: 0 8rpx;
+  border-radius: 6rpx;
+  background: var(--color-fill);
+  font-size: 18rpx;
+  line-height: 28rpx;
+  color: var(--color-text-3);
+  vertical-align: 2rpx;
+}
 .car-sub {
   margin-top: 4rpx;
   font-size: 22rpx;
