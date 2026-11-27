@@ -62,6 +62,22 @@
       </view>
     </view>
 
+    <!-- 指标卡三：油 / 电分列（L 与 kWh 不能相加，问「平均油耗」必须能在这里看到） -->
+    <view id="energyCard" class="metric-card">
+      <view class="metric-col">
+        <view class="metric-value">{{fuelCostText}}</view>
+        <view class="metric-label">油费合计</view>
+      </view>
+      <view class="metric-col">
+        <view class="metric-value">{{avgFuelText}}</view>
+        <view class="metric-label">平均油耗 L/100km</view>
+      </view>
+      <view class="metric-col">
+        <view class="metric-value">{{avgEvText}}</view>
+        <view class="metric-label">平均电耗 kWh/100km</view>
+      </view>
+    </view>
+
     <!-- 费用走势：只画有数据的柱子；点击柱子显示该天/月/年的金额 -->
     <view class="sec-title">
       费用走势

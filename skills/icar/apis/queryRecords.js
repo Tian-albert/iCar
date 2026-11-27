@@ -13,6 +13,7 @@ exports.queryRecords = queryRecords;
 // 金额一律以 costs 表为准——加油/保养/维修都会联动生成一条 cost，
 // 再从 refuels / maintainHandles 反查会重复计数。
 const stats_service_1 = require("../lib/domain/stats.service");
+const date_range_1 = require("../lib/domain/date-range");
 const store_1 = require("../lib/store");
 function ymd(ts) {
     const d = new Date(ts);
@@ -29,6 +30,10 @@ function parseYmd(text) {
 function buildRange(args) {
     var _a;
     const now = new Date();
+    // 模糊时间优先：与 queryStats 共用同一份口径，避免模型各算一套
+    const vague = args.rangeText ? (0, date_range_1.resolveVagueRange)(args.rangeText, now.getTime()) : null;
+    if (vague)
+        return { type: 'custom', start: vague.start, end: vague.end };
     if (args.rangeType === 'custom') {
         const start = parseYmd(args.startDate);
         const end = (_a = parseYmd(args.endDate)) !== null && _a !== void 0 ? _a : start;
@@ -176,7 +181,9 @@ async function queryRecords(args = {}) {
             ? `${range.year} 年`
             : range.type === 'month'
                 ? `${range.year} 年 ${range.month} 月`
-                : `${ymd(range.start)} 至 ${ymd(range.end)}`;
+                // 自定义区间回显天数：用户说「最近半个月」时，能核对是不是 14 天。
+                // 两端都先取当天 0 点再相减——直接用 end（23:59:59.999）会多算一天
+                : `${ymd(range.start)} 至 ${ymd(range.end)}（共 ${Math.round((new Date(range.end).setHours(0, 0, 0, 0) - new Date(range.start).setHours(0, 0, 0, 0)) / 86400000) + 1} 天）`;
     const label = catLabel ? `「${catLabel}」` : '';
     // 按车汇总（全车作用域才需要，最多 6 行，0 元车不列）
     const perCar = new Map();

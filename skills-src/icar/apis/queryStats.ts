@@ -8,6 +8,7 @@
 // ③ 是最容易被做错的：「今年养车花了多少」问的是家底，只答一辆会误导用户。
 // 口径仍完全复用主包 domain/stats.service（镜像在 ../lib），不在这里重写公式。
 import { buildStats, resolveRange, StatsRange } from '../lib/domain/stats.service';
+import { resolveVagueRange } from '../lib/domain/date-range';
 import { Car } from '../lib/types/models';
 import {
   energyLabel,
@@ -30,6 +31,8 @@ interface Args {
   startDate?: string;
   /** 自定义区间终点 YYYY-MM-DD（rangeType=custom 时必填） */
   endDate?: string;
+  /** 模糊时间原话（「这两天」「前阵子」「国庆那几天」），由接口统一换算 */
+  rangeText?: string;
   /**
    * 只看某个支出分类，如「加油」「洗车」「停车」。
    * 「今年加油花了多少钱」「这两年洗车花了多少」这类问题必须靠它，
@@ -171,8 +174,18 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
    * 只能让模型把口语换算成具体起止日期传进来。
    * 日期缺失或解析失败时退回本年——绝不因为参数问题报错卡死对话。
    */
+  /**
+   * 模糊时间由接口统一换算（「这两天」「前阵子」「国庆那几天」）。
+   *
+   * 之前靠模型各自算：同一句「这两天」在不同轮次会算成 2 天 / 3 天 / 7 天，
+   * 评测里就表现为「答非所问」。这里给唯一口径，并在 label 里写明共几天。
+   */
+  const vague = args.rangeText ? resolveVagueRange(args.rangeText, now.getTime()) : null;
+
   let range: StatsRange;
-  if (type === 'all') {
+  if (vague) {
+    range = { type: 'custom', start: vague.start, end: vague.end };
+  } else if (type === 'all') {
     range = { type: 'all' };
   } else if (type === 'custom') {
     const start = parseYmd(args.startDate);
@@ -186,7 +199,7 @@ export async function queryStats(args: Args = {}): Promise<AgentApiResult> {
   } else {
     range = { type: 'year', year: args.year || now.getFullYear() };
   }
-  const label = rangeLabel(range);
+  const label = vague ? vague.label : rangeLabel(range);
 
   const askedName = (args.carName || '').trim();
   /**

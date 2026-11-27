@@ -340,12 +340,12 @@ export async function addRefuel(args: Args = {}): Promise<AgentApiResult> {
       consumption: latest ? latest.fuelConsumption.toFixed(2) : '',
       consumptionUnit: energyType === 'ev' ? 'kWh/100km' : 'L/100km',
       consumptionMileage: latest ? String(latest.mileage) : '',
-      pagePath: `pages/vehicle-detail/index?id=${car.sourceId}`,
+      pagePath: `pages/entry/index?carId=${car.sourceId}&tab=fuel`,
       linkText: '查看加油记录'
     },
     // 页面接力：进这辆车的详情看加油记录与油耗
     handoff: () => ({
-      query: `id=${encodeURIComponent(car.sourceId)}`,
+      query: `carId=${encodeURIComponent(car.sourceId)}&tab=fuel`,
       payload: {
         carName: car.name,
         amount: actualPay.toFixed(2),

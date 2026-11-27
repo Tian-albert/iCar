@@ -11,6 +11,7 @@ exports.queryStats = queryStats;
 // ③ 是最容易被做错的：「今年养车花了多少」问的是家底，只答一辆会误导用户。
 // 口径仍完全复用主包 domain/stats.service（镜像在 ../lib），不在这里重写公式。
 const stats_service_1 = require("../lib/domain/stats.service");
+const date_range_1 = require("../lib/domain/date-range");
 const store_1 = require("../lib/store");
 /**
  * 按支出分类聚合（区间内、指定车辆范围内）。
@@ -133,8 +134,18 @@ async function queryStats(args = {}) {
      * 只能让模型把口语换算成具体起止日期传进来。
      * 日期缺失或解析失败时退回本年——绝不因为参数问题报错卡死对话。
      */
+    /**
+     * 模糊时间由接口统一换算（「这两天」「前阵子」「国庆那几天」）。
+     *
+     * 之前靠模型各自算：同一句「这两天」在不同轮次会算成 2 天 / 3 天 / 7 天，
+     * 评测里就表现为「答非所问」。这里给唯一口径，并在 label 里写明共几天。
+     */
+    const vague = args.rangeText ? (0, date_range_1.resolveVagueRange)(args.rangeText, now.getTime()) : null;
     let range;
-    if (type === 'all') {
+    if (vague) {
+        range = { type: 'custom', start: vague.start, end: vague.end };
+    }
+    else if (type === 'all') {
         range = { type: 'all' };
     }
     else if (type === 'custom') {
@@ -151,7 +162,7 @@ async function queryStats(args = {}) {
     else {
         range = { type: 'year', year: args.year || now.getFullYear() };
     }
-    const label = rangeLabel(range);
+    const label = vague ? vague.label : rangeLabel(range);
     const askedName = (args.carName || '').trim();
     /**
      * 全车作用域有两种入口：

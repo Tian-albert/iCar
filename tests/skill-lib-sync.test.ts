@@ -29,7 +29,8 @@ const MIRRORED = [
   'utils/id.ts',
   'domain/fuel.service.ts',
   'domain/stats.service.ts',
-  'domain/maintain.service.ts'
+  'domain/maintain.service.ts',
+  'domain/date-range.ts'
 ];
 
 describe('SKILL 数据层镜像一致性（skills-src，TS 源）', () => {

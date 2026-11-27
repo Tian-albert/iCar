@@ -589,9 +589,11 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
     expect(pathOf('queryStats')).toBe('pages/summary/index');
     // 全车保养页：按车分组列临期/超期，比概览锚点更精准
     expect(pathOf('queryMaintain')).toBe('pages/maintain-all/index');
-    // 单车写操作落到这辆车的详情是合理的
-    expect(pathOf('addCost')).toBe('pages/vehicle-detail/index');
-    expect(pathOf('addRefuel')).toBe('pages/vehicle-detail/index');
+    // 写操作落到「记一笔」页：用户此刻要的是继续记，不是看记录
+    // （落 vehicle-detail 会被判「没承接记录诉求」，第三轮 20 条关联性差都栽在这）
+    expect(pathOf('addCost')).toBe('pages/entry/index');
+    expect(pathOf('addRefuel')).toBe('pages/entry/index');
+    expect(pathOf('addMaintain')).toBe('pages/entry/index');
   });
 
   it('每个接口的返回值都带 handoff，且 payload 有效', async () => {
@@ -1193,5 +1195,39 @@ describe('车名归一化与候选提示（「我的CRV」不该查不到）', (
     expect(res.isError).toBe(true);
     expect(res.content[0].text).toContain('老婆的 CRV');
     expect(res.content[0].text).toContain('我的 CRV');
+  });
+});
+
+describe('模糊时间：接口统一换算（rangeText）', () => {
+  it('queryStats 传「这两天」→ 区间 2 天且在 rangeLabel 里回显', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeText: '这两天' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.rangeLabel).toContain('共 2 天');
+    // 接力也要带具体起止，否则页面又回到默认区间
+    const { query } = res.handoff({ result: res } as any);
+    // 单车走统计页（range=custom），全车走总览页（rangeType=custom）
+    expect(query).toContain('custom');
+    expect(query).toContain('start=');
+  });
+
+  it('queryStats 传「前两天」→ 3 天', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeText: '前两天' });
+    expect(res.structuredContent.rangeLabel).toContain('共 3 天');
+  });
+
+  it('queryRecords 传「最近半个月」→ 14 天', async () => {
+    const { queryRecords } = loadApis();
+    const res = await queryRecords({ rangeText: '最近半个月' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.rangeLabel).toContain('共 14 天');
+  });
+
+  it('识别不了的模糊词退回默认区间，不报错', async () => {
+    const { queryStats } = loadApis();
+    const res = await queryStats({ rangeText: '上个世纪那会儿' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.rangeLabel).toBeTruthy();
   });
 });

@@ -43,6 +43,17 @@ export interface SummarySnapshot {
     energyTotal: number;
     energyPercent: number;
   };
+  /** 油 / 电分开：指标卡要分列油费、平均油耗、平均电耗 */
+  energy: {
+    fuelCost: number;
+    evCost: number;
+    /** L/100km，无有效区间时为 0 */
+    avgFuelConsumption: number;
+    /** kWh/100km，无有效区间时为 0 */
+    avgEvConsumption: number;
+    fuelMileage: number;
+    evMileage: number;
+  };
   categories: Array<{
     categorySourceId: string;
     name: string;
@@ -83,6 +94,36 @@ export function buildSummary(
   // 油费/电费：由加油/充电联动生成的支出（带 fuelRecordSourceId）
   const energyCosts = costList.filter(c => !!c.fuelRecordSourceId);
   const energyTotal = round2(energyCosts.reduce((s, c) => s + c.amount, 0));
+
+  /**
+   * 油费 / 电费分开统计，以及两者的加权平均能耗。
+   *
+   * 指标卡要分列「油费」「平均油耗」「平均电耗」——L 与 kWh 不能相加，
+   * 只给一个合计数，用户问「平均油耗多少」时页面就答不了。
+   */
+  const energyTypeByCost = new Map(refuels.map(r => [r.costSourceId, r.energyType] as [string, string]));
+  let fuelCost = 0;
+  let evCost = 0;
+  for (const c of energyCosts) {
+    // 没回填 costSourceId 的旧数据按加油算：默认车是燃油，误差方向更保守
+    if (energyTypeByCost.get(c.sourceId) === 'ev') evCost += c.amount;
+    else fuelCost += c.amount;
+  }
+
+  let fuelAmount = 0;
+  let fuelSegMileage = 0;
+  let evAmount = 0;
+  let evSegMileage = 0;
+  for (const seg of consumptions) {
+    if (!inRange(seg.endDate)) continue;
+    if (seg.energyType === 'ev') {
+      evAmount += seg.fuelAmount;
+      evSegMileage += seg.mileage;
+    } else {
+      fuelAmount += seg.fuelAmount;
+      fuelSegMileage += seg.mileage;
+    }
+  }
 
   // ---------- 每辆车：复用 buildStats，口径与车辆统计页同源 ----------
   const rows: SummaryCarRow[] = cars.map(car => {
@@ -167,6 +208,14 @@ export function buildSummary(
       perKmExEnergy: round3(perKmExEnergy),
       energyTotal,
       energyPercent: total > 0 ? round2((energyTotal / total) * 100) : 0
+    },
+    energy: {
+      fuelCost: round2(fuelCost),
+      evCost: round2(evCost),
+      avgFuelConsumption: fuelSegMileage > 0 ? round2((fuelAmount / fuelSegMileage) * 100) : 0,
+      avgEvConsumption: evSegMileage > 0 ? round2((evAmount / evSegMileage) * 100) : 0,
+      fuelMileage: fuelSegMileage,
+      evMileage: evSegMileage
     },
     categories: categoriesOut,
     trendGranularity: granularity,

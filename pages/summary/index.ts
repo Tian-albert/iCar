@@ -88,7 +88,13 @@ Page({
     /** 是否由小微卡片接力进入（仅用于埋点/调试，不影响渲染） */
     fromAgent: false,
     /** 接力指定的分类名：进页面后自动滚到分类卡并高亮（如「加油」） */
-    focusCat: ''
+    focusCat: '',
+    /** 接力指定 focus=energy：滚到能耗指标卡（用户问油耗/电耗时） */
+    focusEnergy: false,
+    /** 指标卡三：油费合计 / 平均油耗 / 平均电耗 */
+    fuelCostText: '',
+    avgFuelText: '',
+    avgEvText: ''
   },
 
   onLoad(query: Record<string, string>) {
@@ -122,8 +128,9 @@ Page({
         endDate,
         years,
         fromAgent: !!handoff,
-        // focus=category&cat=加油：进页面后定位到该分类
-        focusCat: query.cat ? decodeURIComponent(query.cat) : ''
+        // focus=category&cat=加油 → 定位到该分类；focus=energy → 定位到能耗卡
+        focusCat: query.cat ? decodeURIComponent(query.cat) : '',
+        focusEnergy: query.focus === 'energy'
       },
       () => this.load()
     );
@@ -190,6 +197,10 @@ Page({
       totalText: `¥${formatCompact(snap.expense.total)}`,
       perKmText: `¥${snap.expense.perKm.toFixed(3)}`,
       energyPercentText: `${snap.expense.energyPercent}%`,
+      fuelCostText: `¥${formatCompact(snap.energy.fuelCost)}`,
+      // 没有有效区间时显示「--」：0.00 L/100km 会被当成「不烧油」
+      avgFuelText: snap.energy.avgFuelConsumption > 0 ? snap.energy.avgFuelConsumption.toFixed(2) : '--',
+      avgEvText: snap.energy.avgEvConsumption > 0 ? snap.energy.avgEvConsumption.toFixed(2) : '--',
       granularityLabel: GRANULARITY_LABEL[granularity],
       bars: bars.bars,
       axis: bars.axis,
@@ -233,15 +244,20 @@ Page({
         this.setData({ activeCat: idx });
         // 等渲染完成再滚，否则拿不到节点位置
         (wx as any).nextTick
-          ? (wx as any).nextTick(() => this.scrollToCategories())
-          : setTimeout(() => this.scrollToCategories(), 50);
+          ? (wx as any).nextTick(() => this.scrollTo('#catCard'))
+          : setTimeout(() => this.scrollTo('#catCard'), 50);
       }
+    } else if (this.data.focusEnergy) {
+      // 问的是油耗/电耗/油费 → 停在能耗卡上
+      (wx as any).nextTick
+        ? (wx as any).nextTick(() => this.scrollTo('#energyCard'))
+        : setTimeout(() => this.scrollTo('#energyCard'), 50);
     }
   },
 
-  /** 滚到分类支出卡（offsetTop 留一点顶部余量，别贴着导航栏） */
-  scrollToCategories() {
-    (wx as any).pageScrollTo({ selector: '#catCard', duration: 300, offsetTop: -12 });
+  /** 滚到指定卡片（offsetTop 留一点顶部余量，别贴着导航栏） */
+  scrollTo(selector: string) {
+    (wx as any).pageScrollTo({ selector, duration: 300, offsetTop: -12 });
   },
 
   currentRange(): StatsRange {

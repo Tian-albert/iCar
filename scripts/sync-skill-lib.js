@@ -35,7 +35,8 @@ const FILES = [
   'utils/id.ts',
   'domain/fuel.service.ts',
   'domain/stats.service.ts',
-  'domain/maintain.service.ts'
+  'domain/maintain.service.ts',
+  'domain/date-range.ts'
 ];
 
 const checkOnly = process.argv.includes('--check');
