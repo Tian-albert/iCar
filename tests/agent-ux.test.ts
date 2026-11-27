@@ -75,3 +75,14 @@ describe('写操作落点分流（mcp 一个接口只能声明一个 landing 页
     expect(ts).toContain('decodeURIComponent(options.id)');
   });
 });
+
+describe('我的车辆：能量类型要能在列表里看到', () => {
+  it('car 列表项带 energyText，模板渲染它', () => {
+    const ts = read('pages/index/index.ts');
+    expect(ts).toContain('energyText');
+    expect(ts).toContain("'混动'");
+
+    const wxml = read('pages/index/index.wxml');
+    expect(wxml).toContain('item.energyText');
+  });
+});

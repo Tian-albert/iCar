@@ -585,7 +585,8 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
     const mcp = JSON.parse(fsApi.readFileSync('skills/icar/mcp.json', 'utf-8'));
     const pathOf = (name: string) => mcp.apis.find((a: any) => a.name === name)._meta.ui.pagePath;
     // 「我有几辆车」→ 我的车辆列表；「今年花了多少」→ 概览
-    expect(pathOf('queryCars')).toBe('pages/summary/index');
+    // 「我有哪些车」要看的是车库列表，不是统计页
+    expect(pathOf('queryCars')).toBe('pages/index/index');
     expect(pathOf('queryStats')).toBe('pages/summary/index');
     // 全车保养页：按车分组列临期/超期，比概览锚点更精准
     expect(pathOf('queryMaintain')).toBe('pages/maintain-all/index');
@@ -621,8 +622,9 @@ describe('页面接力（handoff）——评测「页面有效性」依赖它', 
     addSecondCar(); // 多车才会触发全车作用域
     const { queryCars, queryStats, queryMaintain } = loadApis();
 
+    // 「我的车辆」是 tabBar 页：switchTab 会丢参数，所以 query 留空
     const cars = await queryCars({});
-    expect(cars.handoff({ result: cars } as any).query).toBe('rangeType=all');
+    expect(cars.handoff({ result: cars } as any).query).toBe('');
 
     const stats = await queryStats({ rangeType: 'all' });
     expect(stats.handoff({ result: stats } as any).query).toBe('rangeType=all');

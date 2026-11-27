@@ -4,10 +4,10 @@
       "name": "queryCars",
       "_meta": {
         "ui": {
-          "pagePath": "pages/summary/index"
+          "pagePath": "pages/index/index"
         }
       },
-      "description": "列出用户已有的车辆及每辆车的能量类型（燃油/纯电/混动）、当前里程、是否置顶。适用于「我有几辆车」「我的车叫什么」；多车用户要记账或查统计前，可先用它确认车名再传 carName。只读。",
+      "description": "列出用户名下所有车辆及其类型、当前里程。用户问「我有哪些车」「车库里有几辆」「哪些是混动」时用。只读。",
       "inputSchema": {
         "type": "object",
         "properties": {}

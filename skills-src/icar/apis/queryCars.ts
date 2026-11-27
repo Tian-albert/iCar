@@ -18,7 +18,8 @@ export async function queryCars(): Promise<AgentApiResult> {
       // 无车时不带链接：唯一能引导的「车辆」页是 tabBar 页，navigateTo 跳不过去会静默失败
       structuredContent: { count: '0', items: '' },
       // 空库也接力到车辆页——那正是「去添加车辆」的目标
-      handoff: () => ({ query: 'rangeType=all', payload: { carCount: 0 } })
+      // 空库也落「我的车辆」——那正是「去添加车辆」的地方
+      handoff: () => ({ query: '', payload: { carCount: 0 } })
     };
   }
 
@@ -49,18 +50,18 @@ export async function queryCars(): Promise<AgentApiResult> {
     structuredContent: {
       count: String(rows.length),
       items,
-      // 数据总览是普通页，「各车明细」正好是车辆清单，蓝链与接力都能带参数
-      pagePath: 'pages/summary/index?rangeType=all',
-      linkText: '查看各车概况'
+      // 不放正文蓝链：「车辆」是 tabBar 页，navigateTo 跳不过去；入口交给接力
+      pagePath: '',
+      linkText: '查看我的车辆'
     },
     /**
-     * 页面接力：落到**数据总览**的「各车明细」（普通页）。
+     * 页面接力：落到「我的车辆」（tabBar 页）。
      *
-     * 不再指向「车辆」tabBar 页——switchTab 会丢掉 query，
-     * 上一轮评测里这条被判成「未触发页面接力」。
+     * 问「我有哪些车」要看的就是车库列表，把他带到统计页是错位。
+     * tabBar 页不带业务 query（switchTab 会丢参数），所以 query 留空、只投 payload。
      */
     handoff: () => ({
-      query: 'rangeType=all',
+      query: '',
       payload: { carCount: rows.length, names: rows.map(r => r.name).join('、') }
     })
   };

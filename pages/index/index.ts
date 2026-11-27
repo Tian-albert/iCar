@@ -23,6 +23,8 @@ interface CarView extends Car {
   monthCostText: string;
   /** 里程（千分位，与 Hero 保持一致） */
   mileagesText: string;
+  /** 能量类型：燃油 / 纯电 / 混动（「哪些是混动」要能直接在列表看到） */
+  energyText: string;
   /** 保养状态：ok 正常 / warn 临近 / bad 超期 */
   state: 'ok' | 'warn' | 'bad';
   stateText: string;
@@ -158,6 +160,7 @@ Page({
         isImage: isImageIcon(c.icon || ''),
         monthCostText: fmtMoney(monthCost),
         mileagesText: fmtInt(c.mileages),
+        energyText: c.energyType === 'ev' ? '纯电' : c.energyType === 'hybrid' ? '混动' : '燃油',
         state: sum.state,
         stateText: pending > 0 ? (sum.state === 'bad' ? '超期' : '临近') : '正常'
       };
