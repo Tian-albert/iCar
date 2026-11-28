@@ -85,7 +85,10 @@ const API_HINTS = {
   addRefuel: /加满|加了|加油|充电|升|度/,
   addMaintain: /记一次保养|换了|做了.*保养|保养花了/,
   addCar: /加一辆|新增一辆|提了一辆|又买了.*车/,
-  updateCar: /改名|改成|改一下|修改/
+  updateCar: /改名|改成|改一下|修改/,
+  queryExpiring: /到期|过期|年检|保险.*(什么时候|到期)/,
+  queryCarDetail: /买了多久|服役|档案|这辆车.*(情况|信息)/,
+  queryFaq: /备份|换手机|恢复|会丢|怎么用|使用说明/
 };
 const covered = Object.keys(API_HINTS).filter(api =>
   positive.some(c => API_HINTS[api].test(c.intent))
