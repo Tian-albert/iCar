@@ -7,6 +7,7 @@ import { listCosts, listCategories, removeCost } from '../../services/cost.servi
 import { displayIcon, isImageIcon } from '../../utils/icons';
 import { getCar, listCars } from '../../services/car.service';
 import { formatDateTime } from '../../utils/date';
+import { resolveAgentParams } from '../../utils/agent-handoff';
 import { Cost, FuelConsumption, RefuelLog } from '../../types/models';
 
 type TabKey = 'fuel' | 'maintain' | 'repair' | 'cost';
@@ -35,19 +36,22 @@ Page({
     filterText: ''
   },
   onLoad(options: Record<string, string>) {
+    // 三层兜底：URL → handoff.query → handoff.payload（平台不保证 query 送达）
+    const { params: q } = resolveAgentParams(this, options);
+
     /**
      * 写操作接力到这里，按参数分流（mcp 里一个接口只能声明一个 landing 页）：
      *   ask=1            → 还没确定哪辆车：转「我的车辆」让用户选（不能停在记录页）
      *   go=maintain-manage → 保养项缺失：转「保养项管理」补项
      *   new=1            → 刚记完一笔：停在对应 Tab 并滚到最新一条
      */
-    if (options.ask === '1') {
+    if (q.ask === '1') {
       wx.switchTab({ url: '/pages/index/index' });
       return;
     }
-    if (options.go === 'maintain-manage' && options.id) {
+    if (q.go === 'maintain-manage' && q.id) {
       // handoff 的 query 由接口 encode，平台不解码，这里先解再转
-      wx.redirectTo({ url: `/pages/maintain-manage/index?id=${decodeURIComponent(options.id)}` });
+      wx.redirectTo({ url: `/pages/maintain-manage/index?id=${decodeURIComponent(q.id)}` });
       return;
     }
 
@@ -59,10 +63,10 @@ Page({
      * 之前这里只认 id 和 tab，AI 接力带过来的筛选条件全被丢掉，
      * 用户点进去看到的是默认列表——「调出来一个空白页面」就是这么来的。
      */
-    const carName = options.carName ? decodeURIComponent(options.carName) : '';
+    const carName = q.carName ? decodeURIComponent(q.carName) : '';
     // 必须解码：接力带的 id 是 encodeURIComponent 过的（含冒号），
     // 不解码就查不到车，整个列表变成空态——这正是「落进去空白」的成因之一
-    let carId = options.id ? decodeURIComponent(options.id) : '';
+    let carId = q.id ? decodeURIComponent(q.id) : '';
     if (!carId && carName) {
       // 宽松匹配：接力传的是用户看到的车名，可能与库里差一个空格
       const hit = listCars(storage).find(
@@ -71,18 +75,18 @@ Page({
       carId = hit ? hit.sourceId : '';
     }
 
-    const category = options.category ? decodeURIComponent(options.category) : '';
-    const start = options.start ? new Date(options.start).getTime() : 0;
-    const end = options.end ? new Date(options.end).getTime() : 0;
+    const category = q.category ? decodeURIComponent(q.category) : '';
+    const start = q.start ? new Date(q.start).getTime() : 0;
+    const end = q.end ? new Date(q.end).getTime() : 0;
     (this as any)._filter = { start, end, category };
     // 刚记完一笔：进页面后滚到最新一条（列表按时间倒序，最新在最上）
-    (this as any)._scrollNew = options.new === '1';
+    (this as any)._scrollNew = q.new === '1';
 
-    const rangeText = options.start && options.end ? `${options.start.slice(5)} ~ ${options.end.slice(5)}` : '';
+    const rangeText = q.start && q.end ? `${q.start.slice(5)} ~ ${q.end.slice(5)}` : '';
     const filterText = [carName, category, rangeText].filter(Boolean).join(' · ');
 
-    const tab = (['fuel', 'maintain', 'repair', 'cost'] as string[]).includes(options.tab)
-      ? options.tab
+    const tab = (['fuel', 'maintain', 'repair', 'cost'] as string[]).includes(q.tab)
+      ? q.tab
       : category
         ? 'cost'
         : 'fuel';

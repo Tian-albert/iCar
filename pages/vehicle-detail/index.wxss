@@ -386,3 +386,18 @@
   color: var(--color-text-3);
   line-height: 1.5;
 }
+
+/* 保险 / 年检到期：一行两个胶囊，未设置时整行不渲染 */
+.expire-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+.expire-item {
+  padding: 6rpx 16rpx;
+  border-radius: 10rpx;
+  background: var(--color-fill);
+  font-size: 22rpx;
+  color: var(--color-text-2);
+}

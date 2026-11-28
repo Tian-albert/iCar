@@ -282,7 +282,14 @@ export async function queryRecords(args: Args = {}): Promise<AgentApiResult> {
     // 页面接力：带上车辆/类别/区间，落进去就是筛好的列表，不再是空白页
     handoff: () => ({
       query,
-      payload: { carName, count: rows.length, rangeLabel: rangeText, categoryName: catLabel }
+      payload: {
+        carId: carName ? matched.car?.sourceId || '' : '',
+        carName,
+        tab: matched.car ? (catLabel ? 'cost' : 'fuel') : '',
+        categoryName: catLabel,
+        count: rows.length,
+        rangeLabel: rangeText
+      }
     })
   };
 }

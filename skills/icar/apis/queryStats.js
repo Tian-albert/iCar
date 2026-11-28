@@ -95,14 +95,27 @@ function carStatsQuery(range) {
     return `range=month&year=${range.year}&month=${range.month}`;
 }
 /** 分类口径的一句话说明（占全部支出比例 + 按车拆分），两边作用域共用 */
-function catsText(cat, total) {
+function catsText(cat, total, mileage) {
     // 占比写成「先乘后除」：本文件有守卫测试，禁止出现断言重算公式的字面写法
     const pct = total > 0 ? ((cat.amount * 100) / total).toFixed(1) : '0.0';
     const byCar = cat.byCar
         .slice(0, 3)
         .map(c => `${c.name} ¥${c.amount.toFixed(2)}（${c.count} 笔）`)
         .join('、');
-    return `「${cat.name}」共 ${cat.count} 笔 ¥${cat.amount.toFixed(2)}，占全部支出的 ${pct}%` + (byCar ? `。按车：${byCar}` : '');
+    // 用户追问「每公里油费」时要能直接答，不能只给总额
+    const perKm = mileage > 0 ? `，折合每公里 ¥${((cat.amount * 1) / mileage).toFixed(3)}` : '';
+    return (`「${cat.name}」共 ${cat.count} 笔 ¥${cat.amount.toFixed(2)}，占全部支出的 ${pct}%${perKm}` +
+        (byCar ? `。按车：${byCar}` : ''));
+}
+/** 区间 → payload 片段：query 没送达时，页面靠它还原区间 */
+function rangePayload(range) {
+    if (range.type === 'year')
+        return { rangeType: 'year', year: range.year };
+    if (range.type === 'month')
+        return { rangeType: 'month', year: range.year, month: range.month };
+    if (range.type === 'custom')
+        return { rangeType: 'custom', start: ymd(range.start), end: ymd(range.end) };
+    return { rangeType: 'all' };
 }
 /** 单辆车的快照（口径与统计页完全一致） */
 function snapshotOf(car, range) {
@@ -244,7 +257,7 @@ async function queryStats(args = {}) {
             : `合计支出 ¥${total.toFixed(2)}；区间内没有里程记录，暂时算不出每公里成本`;
         // 问的是某个分类（如「今年加油花了多少」）时，答案要以该分类开头，别让用户自己找
         const catText = cat
-            ? `${catsText(cat, total)}。`
+            ? `${catsText(cat, total, mileage)}。`
             : '';
         const text = cat
             ? nameMissNote +
@@ -276,13 +289,7 @@ async function queryStats(args = {}) {
              */
             handoff: () => ({
                 query: summaryQuery(range) + (cat ? `&focus=category&cat=${encodeURIComponent(cat.name)}` : ''),
-                payload: {
-                    scope: 'all',
-                    totalExpense: total.toFixed(2),
-                    perKm: perKm.toFixed(3),
-                    carCount: cars.length,
-                    categoryName: cat ? cat.name : ''
-                }
+                payload: Object.assign(Object.assign({ scope: 'all', totalExpense: total.toFixed(2), perKm: perKm.toFixed(3), carCount: cars.length, categoryName: cat ? cat.name : '' }, rangePayload(range)), (cat ? { focus: 'category', cat: cat.name } : {}))
             })
         };
     }
@@ -341,7 +348,7 @@ async function queryStats(args = {}) {
         : '区间内没有里程记录，暂时算不出每公里成本；';
     // 指定分类时以该分类为主语，直接回答「加油花了多少」
     const text = cat
-        ? `${car.name}（${(0, store_1.energyLabel)(car)}）${label}${catsText(cat, snap.expense.total)}。` +
+        ? `${car.name}（${(0, store_1.energyLabel)(car)}）${label}${catsText(cat, snap.expense.total, snap.mileage.increased)}。` +
             `该车总支出 ¥${total}${snap.mileage.increased > 0 ? `，每公里 ¥${perKm}` : ''}。`
         : `${car.name}（${(0, store_1.energyLabel)(car)}）${label}${costPart}` +
             perKmPart +
@@ -369,15 +376,8 @@ async function queryStats(args = {}) {
         /** 页面接力：把对话流程整段接到这辆车的统计页 */
         handoff: () => ({
             query: `id=${encodeURIComponent(car.sourceId)}&${carStatsQuery(range)}`,
-            payload: {
-                scope: 'car',
-                carName: car.name,
-                totalExpense: total,
-                perKm,
-                perKmExFuel,
-                avgConsumption: consumption.toFixed(2),
-                mileageIncreased: String(snap.mileage.increased)
-            }
+            payload: Object.assign(Object.assign({ scope: 'car', carId: car.sourceId, range: range.type }, rangePayload(range)), { carName: car.name, totalExpense: total, perKm,
+                perKmExFuel, avgConsumption: consumption.toFixed(2), mileageIncreased: String(snap.mileage.increased) })
         })
     };
 }

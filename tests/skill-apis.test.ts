@@ -225,7 +225,10 @@ function loadApis() {
     addMaintain: require('../skills/icar/apis/addMaintain').addMaintain,
     addCar: require('../skills/icar/apis/addCar').addCar,
     updateCar: require('../skills/icar/apis/updateCar').updateCar,
-    queryRecords: require('../skills/icar/apis/queryRecords').queryRecords
+    queryRecords: require('../skills/icar/apis/queryRecords').queryRecords,
+    queryExpiring: require('../skills/icar/apis/queryExpiring').queryExpiring,
+    queryCarDetail: require('../skills/icar/apis/queryCarDetail').queryCarDetail,
+    queryFaq: require('../skills/icar/apis/queryFaq').queryFaq
   };
 }
 
@@ -444,16 +447,25 @@ describe('addCost', () => {
     expect(res.content[0].text).toContain('超出合理范围');
   });
 
-  it('类别不存在时降级到默认类别，并如实告知用户', async () => {
+  it('类别匹配不到时反问，绝不静默归到第一个类别', async () => {
     const { addCost } = loadApis();
-    const res = await addCost({ amount: 30, categoryName: '洗车' });
+    const res = await addCost({ amount: 299, categoryName: '行车记录仪' });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('没有叫「行车记录仪」的支出类别');
+    // 列出可选，让模型问用户
+    expect(res.content[0].text).toContain('停车');
+    expect(res.handoff({ result: res } as any).query).toBe('ask=1');
+  });
+
+  it('同义词仍可命中：过路费 → 高速', async () => {
+    const { addCost } = loadApis();
+    const res = await addCost({ amount: 20, categoryName: '过路费' });
     expect(res.isError).toBe(false);
-    expect(res.content[0].text).toContain('没有「洗车」这个类别');
   });
 
   it('日期按 YYYY-MM-DD 解析，且回写结构化的同一日期', async () => {
     const { addCost } = loadApis();
-    const res = await addCost({ amount: 20, dateText: '2026-11-01' });
+    const res = await addCost({ amount: 20, categoryName: '停车', dateText: '2026-11-01' });
     expect(res.structuredContent.dateText).toBe('2026-11-01');
     expect(res.content[0].text).toContain('11月1日');
   });
@@ -1268,5 +1280,109 @@ describe('写操作的落点分流：追问 → 车辆列表，成功 → 该车
     const res = await addRefuel({ volume: 40, amount: 316 });
     expect(res.isError).toBe(true);
     expect(res.handoff({ result: res } as any).query).toBe('ask=1');
+  });
+});
+
+describe('改名后旧名仍可查（aliases）', () => {
+  it('updateCar 改名时把旧名写进 aliases', async () => {
+    const { updateCar } = loadApis();
+    const res = await updateCar({ carName: '我的 CRV', newName: '老王的 CRV' });
+    expect(res.isError).toBe(false);
+    const car: any = memory.get(`icar:cars:${CAR_ID}`);
+    expect(car.name).toBe('老王的 CRV');
+    expect(car.aliases).toContain('我的 CRV');
+  });
+
+  it('用旧名查询仍定位到这一辆（两人都有 CRV 时也不会回落全车）', async () => {
+    put('cars', {
+      sourceId: 'mp:cars:crv2',
+      sourcePlatform: 'mp',
+      name: '老婆的 CRV',
+      type: 'car',
+      icon: '🚙',
+      customIconAssetId: '',
+      initDate: NOW,
+      initMileages: 0,
+      mileages: 8000,
+      evMileages: 0,
+      hevMileages: 0,
+      batteryCapacity: 0,
+      energyType: 'fuel',
+      energyTrackingEnabled: true,
+      maintainSoonMileage: 500,
+      maintainSoonDays: 15,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deleted: false
+    });
+
+    const { updateCar, queryStats } = loadApis();
+    await updateCar({ carName: '我的 CRV', newName: '老王的 CRV' });
+
+    const res = await queryStats({ carName: '我的 CRV', rangeType: 'all' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.scope).toBe('car');
+    expect(res.structuredContent.carName).toBe('老王的 CRV');
+  });
+});
+
+describe('P1：到期提醒（queryExpiring）', () => {
+  it('保险到期日可通过 updateCar 写入，并在到期提醒里返回', async () => {
+    const { updateCar, queryExpiring } = loadApis();
+    const soon = new Date(Date.now() + 20 * 86400000);
+    const text = `${soon.getFullYear()}-${String(soon.getMonth() + 1).padStart(2, '0')}-${String(soon.getDate()).padStart(2, '0')}`;
+    const upd = await updateCar({ carName: '我的 CRV', insuranceExpireText: text });
+    expect(upd.isError).toBe(false);
+
+    const res = await queryExpiring({ carName: '我的 CRV' });
+    expect(res.isError).toBe(false);
+    expect(res.content[0].text).toContain('保险');
+  });
+
+  it('没有到期项时说明「没有要到期的」，而不是空回答', async () => {
+    const { addCar, queryExpiring } = loadApis();
+    // 新车没有任何保养项与到期日 → 走空分支
+    await addCar({ name: '空车', energyType: 'fuel' });
+    const res = await queryExpiring({ carName: '空车' });
+    expect(res.isError).toBe(false);
+    expect(res.content[0].text).toContain('没有要到期的');
+  });
+});
+
+describe('P1：单车基础信息（queryCarDetail）', () => {
+  it('返回类型、里程、保养项数与今年支出', async () => {
+    const { queryCarDetail } = loadApis();
+    const res = await queryCarDetail({ carName: '我的 CRV' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.carName).toBe('我的 CRV');
+    expect(res.structuredContent.energyType).toBe('燃油');
+    expect(res.content[0].text).toContain('当前里程');
+    expect(res.handoff({ result: res } as any).query).toContain('id=');
+  });
+
+  it('多车没指定时报错并列出车名，不瞎挑一辆', async () => {
+    addSecondCar();
+    const { queryCarDetail } = loadApis();
+    const res = await queryCarDetail({});
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('我的 CRV');
+  });
+});
+
+describe('P2：常见问题（queryFaq）', () => {
+  it('按关键词命中条目并给出答案', async () => {
+    const { queryFaq } = loadApis();
+    const res = await queryFaq({ question: '换手机了数据怎么办' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.matched).toContain('备份');
+    expect(res.content[0].text).toContain('数据导入导出');
+  });
+
+  it('命不中时列出可问的问题，而不是硬答一条', async () => {
+    const { queryFaq } = loadApis();
+    const res = await queryFaq({ question: '今天天气' });
+    expect(res.isError).toBe(false);
+    expect(res.structuredContent.matched).toBe('');
+    expect(res.structuredContent.topics).toContain('备份');
   });
 });

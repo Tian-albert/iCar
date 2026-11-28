@@ -9,9 +9,9 @@ const read = (p: string): string => fsx2.readFileSync(p, 'utf-8');
 describe('接力落点：记录页接参数', () => {
   it('records 页面解析 carName / category / start / end', () => {
     const ts = read('pages/records/index.ts');
-    expect(ts).toContain('options.carName');
-    expect(ts).toContain('options.category');
-    expect(ts).toContain('options.start');
+    expect(ts).toContain('q.carName');
+    expect(ts).toContain('q.category');
+    expect(ts).toContain('q.start');
     expect(ts).toContain('filterText');
   });
 
@@ -64,7 +64,7 @@ describe('写操作落点分流（mcp 一个接口只能声明一个 landing 页
   it('records 页处理 ask=1 / go=maintain-manage / new=1', () => {
     const ts = read('pages/records/index.ts');
     // 追问轮：转「我的车辆」，不能停在记录页
-    expect(ts).toContain("options.ask === '1'");
+    expect(ts).toContain("q.ask === '1'");
     expect(ts).toContain("'/pages/index/index'");
     // 保养项缺失：转保养项管理
     expect(ts).toContain("'maintain-manage'");
@@ -72,7 +72,7 @@ describe('写操作落点分流（mcp 一个接口只能声明一个 landing 页
     expect(ts).toContain('_scrollNew');
     expect(ts).toContain('pageScrollTo');
     // 接力带的 id 是编码过的，必须解码，否则查不到车、列表空态
-    expect(ts).toContain('decodeURIComponent(options.id)');
+    expect(ts).toContain('decodeURIComponent(q.id)');
   });
 });
 
@@ -84,5 +84,30 @@ describe('我的车辆：能量类型要能在列表里看到', () => {
 
     const wxml = read('pages/index/index.wxml');
     expect(wxml).toContain('item.energyText');
+  });
+});
+
+describe('保养页按项定位（focus=item）', () => {
+  it('支持 name 参数：切到「全部」并滚到该项、加高亮类', () => {
+    const ts = read('pages/maintain-all/index.ts');
+    expect(ts).toContain('_focusName');
+    expect(ts).toContain('pageScrollTo');
+    expect(ts).toContain('focusKey');
+
+    const wxml = read('pages/maintain-all/index.wxml');
+    expect(wxml).toContain('item-focus');
+    expect(wxml).toContain('id="{{mnt.anchor}}"');
+  });
+});
+
+describe('保险 / 年检到期在详情页可见', () => {
+  it('详情页渲染到期行，未设置时整行不显示', () => {
+    const wxml = read('pages/vehicle-detail/index.wxml');
+    expect(wxml).toContain('insuranceText');
+    expect(wxml).toContain('inspectText');
+    expect(wxml).toContain('expire-row');
+
+    const ts = read('pages/vehicle-detail/index.ts');
+    expect(ts).toContain('expireTextOf');
   });
 });

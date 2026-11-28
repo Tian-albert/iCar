@@ -181,3 +181,9 @@
   color: var(--color-success);
   font-size: 30rpx;
 }
+
+/* 接力定位到的那一项：淡底色 + 左侧强调条，滚到位后一眼能看到 */
+.item-focus {
+  background: var(--color-primary-light);
+  border-radius: 12rpx;
+}

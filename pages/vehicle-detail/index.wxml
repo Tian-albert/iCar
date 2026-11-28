@@ -14,6 +14,11 @@
 <view wx:if="{{mileages === 0}}" class="mileage-hint" hover-class="hover-dim" bindtap="onEditCar">
   还没记录当前里程，点这里补上 ›
 </view>
+<!-- 到期提醒：保险 / 年检。未设置时整行不显示，避免出现「保险 未设置」的空行 -->
+<view wx:if="{{insuranceText || inspectText}}" class="expire-row">
+  <text wx:if="{{insuranceText}}" class="expire-item">保险 {{insuranceText}}</text>
+  <text wx:if="{{inspectText}}" class="expire-item">年检 {{inspectText}}</text>
+</view>
     </view>
     <view class="header-actions">
       <view class="header-link" hover-class="header-link-hover" bindtap="onEditCar">编辑 ›</view>

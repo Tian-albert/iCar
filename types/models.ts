@@ -22,6 +22,15 @@ export interface BaseEntity {
 
 export interface Car extends BaseEntity {
   name: string;
+  /**
+   * 旧车名。改名后保留——用户仍可能说「我的 CRV」。
+   * 不参与展示，只用于按名字找车。
+   */
+  aliases?: string[];
+  /** 保险到期日（时间戳）；未填为 undefined。评测要求「车辆相关到期提醒」不只是保养 */
+  insuranceExpire?: number;
+  /** 年检到期日（时间戳）；未填为 undefined */
+  inspectExpire?: number;
   type: 'car' | 'motorcycle' | 'other';
   icon: string;
   customIconAssetId: string;

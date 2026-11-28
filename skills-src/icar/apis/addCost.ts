@@ -121,14 +121,49 @@ export async function addCost(args: Args = {}): Promise<AgentApiResult> {
     };
   }
 
+  /**
+   * 类别只走「精确 → 包含 → 同义词」，**匹配不到就问用户**。
+   *
+   * 原来没命中就落到第一个类别：用户说「行车记录仪 299」，结果被记成「保险」——
+   * 静默归错类比多问一句糟得多，账目从此不可信。
+   */
   const key = (args.categoryName || '').trim();
-  let category = spendCategories[0];
-  if (key) {
-    const hit =
-      spendCategories.find(c => c.name === key) ||
-      spendCategories.find(c => c.name.includes(key) || key.includes(c.name));
-    if (hit) category = hit;
-    // 没命中就用默认类别记下，并在 content 里说明用了哪个——比直接报错更不打断用户
+  const SYNONYMS: Array<[RegExp, RegExp]> = [
+    [/停车|车位|地库/, /停车/],
+    [/洗车/, /洗车/],
+    [/高速|过路|路桥|通行/, /高速|过路/],
+    [/停车费|洗车费|高速费/, /停车|洗车|高速/],
+    [/保险/, /保险/],
+    [/罚款|违章|罚单/, /罚款|违章/],
+    [/保养|机滤|机油|轮胎|配件|记录仪|维修|修理/, /保养|维修|配件/]
+  ];
+
+  let category = key ? spendCategories.find(c => c.name === key) : undefined;
+  if (!category && key) {
+    category = spendCategories.find(c => c.name.includes(key) || key.includes(c.name));
+  }
+  if (!category && key) {
+    for (const [pattern, target] of SYNONYMS) {
+      if (!pattern.test(key)) continue;
+      category = spendCategories.find(c => target.test(c.name));
+      if (category) break;
+    }
+  }
+
+  if (!category) {
+    const names = spendCategories.map(c => c.name).join('、');
+    return {
+      isError: true,
+      content: [
+        {
+          type: 'text',
+          text: key
+            ? `没有叫「${key}」的支出类别，现有：${names}。请让用户选一个，不要自己归到别的类别里。`
+            : `这笔支出还没有类别，现有：${names}。请先问用户记到哪一类，不要默认用第一个。`
+        }
+      ],
+      handoff: () => ({ query: 'ask=1', payload: { question: 'which-category', names } })
+    };
   }
 
   const costDate = parseDate(args.dateText, now);
@@ -189,7 +224,13 @@ export async function addCost(args: Args = {}): Promise<AgentApiResult> {
     // 页面接力：记完账直接带用户进这辆车的详情看记录
     handoff: () => ({
       query: `id=${encodeURIComponent(car.sourceId)}&tab=cost&new=1`,
-      payload: { carName: car.name, amount: saved.amount.toFixed(2), categoryName: category.name }
+      payload: {
+        carId: car.sourceId,
+        tab: 'cost',
+        carName: car.name,
+        amount: saved.amount.toFixed(2),
+        categoryName: category.name
+      }
     })
   };
 }

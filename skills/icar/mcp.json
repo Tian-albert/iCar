@@ -157,7 +157,7 @@
           "pagePath": "pages/maintain-all/index"
         }
       },
-      "description": "查询保养项剩余里程与剩余天数。**用户没说哪辆车且有多辆车时，汇总所有车辆的待保养项**（「有几项要保养」问的是全部）；说了车名则只查那一辆。默认只返回已超期或临近到期的项。只读。",
+      "description": "查保养项剩余里程/天数与超期情况（单车或全车汇总）。用户只问某一项（「机油还能跑多少」）时传 itemName，页面会定位到该项。只读。",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -168,6 +168,10 @@
           "onlyUrgent": {
             "type": "boolean",
             "description": "是否只返回超期/临近的项，默认 true。用户问「所有保养项」时传 false"
+          },
+          "itemName": {
+            "type": "string",
+            "description": "只看某一项保养（如「机油」「空气滤芯」）。用户问「机油还剩多少」时传，页面会滚到并高亮该项"
           }
         }
       },
@@ -207,7 +211,7 @@
           "pagePath": "pages/records/index"
         }
       },
-      "description": "帮用户记一笔支出并写入本地存储，例如「记一笔停车费 15 块」「昨天高速费 80」。金额必填且必须大于 0；缺少金额时不要调用本接口，先向用户追问。写入成功前不要告诉用户已经记好。",
+      "description": "记一笔日常支出（停车、高速、洗车、保险、配件等）。**类别必须能从已有分类里匹配上**：匹配不到会返回可选类别列表，据此问用户，不要自己归到别的类别里。用户没说哪辆车且有多辆车时不要传 carName，先问。",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -217,7 +221,7 @@
           },
           "categoryName": {
             "type": "string",
-            "description": "支出类别名，如 停车 / 高速 / 保险 / 洗车。不确定时不要编造，省略即可"
+            "description": "支出类别名，如「停车」「洗车」「高速」。不确定就先不传/传用户原话，接口会返回可选列表让你问"
           },
           "carName": {
             "type": "string",
@@ -542,6 +546,14 @@
           "batteryCapacity": {
             "type": "number",
             "description": "新的电池容量 kWh。不改就不传"
+          },
+          "insuranceExpireText": {
+            "type": "string",
+            "description": "保险到期日 YYYY-MM-DD；空串表示清空"
+          },
+          "inspectExpireText": {
+            "type": "string",
+            "description": "年检到期日 YYYY-MM-DD；空串表示清空"
           }
         }
       },
@@ -676,6 +688,151 @@
           "byCar": {
             "type": "string",
             "description": "全车作用域下的按车金额列表"
+          }
+        }
+      }
+    },
+    {
+      "name": "queryExpiring",
+      "description": "查车辆的到期提醒：保险到期、年检到期、保养超期/临期。用户问「有什么要到期的」「保险什么时候到期」「年检还有多久」时用。只读。",
+      "_meta": {
+        "ui": {
+          "pagePath": "pages/maintain-all/index"
+        }
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string",
+            "description": "车辆名称。多辆车又没说时不要传，会汇总全部车辆"
+          },
+          "days": {
+            "type": "number",
+            "description": "多少天内算「即将到期」，默认 30"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string"
+          },
+          "carName": {
+            "type": "string"
+          },
+          "count": {
+            "type": "string"
+          },
+          "overdueCount": {
+            "type": "string"
+          },
+          "items": {
+            "type": "string"
+          },
+          "linkText": {
+            "type": "string"
+          },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
+    },
+    {
+      "name": "queryCarDetail",
+      "description": "查某一辆车的基础信息：类型、当前里程、购车日期与服役天数、保养项数与待处理数、今年支出。用户问「我那辆车什么情况」「跑了多少公里了」时用。只读。",
+      "_meta": {
+        "ui": {
+          "pagePath": "pages/vehicle-detail/index"
+        }
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string",
+            "description": "哪辆车；只有一辆时可省略，多辆必须指定"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string"
+          },
+          "energyType": {
+            "type": "string"
+          },
+          "mileages": {
+            "type": "string"
+          },
+          "initDate": {
+            "type": "string"
+          },
+          "serviceDays": {
+            "type": "string"
+          },
+          "maintainTotal": {
+            "type": "string"
+          },
+          "maintainPending": {
+            "type": "string"
+          },
+          "yearExpense": {
+            "type": "string"
+          },
+          "linkText": {
+            "type": "string"
+          },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
+          }
+        }
+      }
+    },
+    {
+      "name": "queryFaq",
+      "description": "常见问题：数据备份与换手机、删错了怎么恢复、支出分类怎么改、记错了怎么改、保养周期怎么设、每公里成本与油耗怎么算。用户问「怎么用」类问题时用。只读。",
+      "_meta": {
+        "ui": {
+          "pagePath": "pages/faq/index"
+        }
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "用户的问题原话，用于匹配条目"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "matched": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "topics": {
+            "type": "string"
+          },
+          "linkText": {
+            "type": "string"
+          },
+          "pagePath": {
+            "type": "string",
+            "format": "page-link",
+            "x-link-text-field": "linkText"
           }
         }
       }

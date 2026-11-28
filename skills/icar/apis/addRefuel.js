@@ -296,6 +296,8 @@ async function addRefuel(args = {}) {
         handoff: () => ({
             query: `id=${encodeURIComponent(car.sourceId)}&tab=fuel&new=1`,
             payload: {
+                carId: car.sourceId,
+                tab: 'fuel',
                 carName: car.name,
                 amount: actualPay.toFixed(2),
                 consumption: latest ? latest.fuelConsumption.toFixed(2) : ''

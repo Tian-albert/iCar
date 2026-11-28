@@ -15,6 +15,20 @@ interface Args {
   mileages?: number;
   /** 新的电池容量 kWh */
   batteryCapacity?: number;
+  /** 保险到期日 YYYY-MM-DD；传空串表示清空 */
+  insuranceExpireText?: string;
+  /** 年检到期日 YYYY-MM-DD；传空串表示清空 */
+  inspectExpireText?: string;
+}
+
+/** YYYY-MM-DD → 当天 0 点；空串返回 null（表示清空），非法返回 undefined（表示忽略） */
+function parseExpire(text: string | undefined): number | null | undefined {
+  if (text === undefined) return undefined;
+  const t = text.trim();
+  if (!t) return null;
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);
+  if (!m) return undefined;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
 }
 
 export async function updateCar(args: Args = {}): Promise<AgentApiResult> {
@@ -69,7 +83,10 @@ export async function updateCar(args: Args = {}): Promise<AgentApiResult> {
         handoff: () => ({ query: `id=${encodeURIComponent(car.sourceId)}`, payload: { carName: car.name } })
       };
     }
-    changed.push(`名称 ${car.name} → ${newName}`);
+    // 旧名进 aliases：改名后用户还会说「我的 CRV」，不能就此查不到
+    const prevName = car.name;
+    car.aliases = Array.from(new Set([...(car.aliases || []), prevName].filter(n => n && n !== newName)));
+    changed.push(`名称 ${prevName} → ${newName}`);
     car.name = newName;
   }
 
@@ -90,6 +107,27 @@ export async function updateCar(args: Args = {}): Promise<AgentApiResult> {
   if (isFinite(battery) && battery > 0 && battery !== car.batteryCapacity) {
     changed.push(`电池容量 ${car.batteryCapacity} → ${battery} kWh`);
     car.batteryCapacity = battery;
+  }
+
+  // 保险 / 年检到期日：场景「查看车辆相关到期提醒」靠它，只有保养提醒是不够的
+  const insurance = parseExpire(args.insuranceExpireText);
+  if (insurance !== undefined) {
+    const old = car.insuranceExpire;
+    if ((insurance ?? 0) !== (old ?? 0)) {
+      car.insuranceExpire = insurance === null ? undefined : insurance;
+      changed.push(
+        insurance === null ? '清空保险到期日' : `保险到期日 → ${args.insuranceExpireText}`
+      );
+    }
+  }
+
+  const inspect = parseExpire(args.inspectExpireText);
+  if (inspect !== undefined) {
+    const old = car.inspectExpire;
+    if ((inspect ?? 0) !== (old ?? 0)) {
+      car.inspectExpire = inspect === null ? undefined : inspect;
+      changed.push(inspect === null ? '清空年检到期日' : `年检到期日 → ${args.inspectExpireText}`);
+    }
   }
 
   if (!changed.length) {

@@ -79,7 +79,8 @@ describe('详情页消费 section 参数', () => {
 
   it('onLoad 读取 section 参数', () => {
     expect(src).toContain('targetSection');
-    expect(src).toMatch(/options\.section/);
+    // 现在走三层兜底：URL 参数 → handoff.query → payload，最终都汇成 q.section
+    expect(src).toMatch(/q\.section/);
   });
 
   it('三个 section 都映射到对应锚点', () => {

@@ -223,7 +223,7 @@ async function queryMaintain(args = {}) {
         // 单车接力 → 这辆车的详情页（有「保养进度」区块），这里是正确的落点
         handoff: () => ({
             query: `id=${encodeURIComponent(car.sourceId)}`,
-            payload: { carName: car.name, overdueCount, urgentCount: visible.length }
+            payload: Object.assign(Object.assign({ carId: car.sourceId, carName: car.name }, (args.itemName ? { focus: 'item', name: args.itemName } : {})), { overdueCount, urgentCount: visible.length })
         })
     };
 }

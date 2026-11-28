@@ -39,7 +39,8 @@
             wx:key="key"
             wx:if="{{filter === 'all' || mnt.level !== 'ok'}}"
             hover-class="hover-dim"
-            class="item"
+            id="{{mnt.anchor}}"
+            class="item {{focusKey === mnt.key ? 'item-focus' : ''}}"
             data-id="{{item.carSourceId}}"
             bindtap="onTapCar"
           >

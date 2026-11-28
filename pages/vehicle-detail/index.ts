@@ -10,7 +10,7 @@ import { displayIcon, isImageIcon } from '../../utils/icons';
 import { formatDateTime, formatDate } from '../../utils/date';
 import { FuelConsumption, RefuelLog } from '../../types/models';
 import { safeBack } from '../../utils/safe-back';
-import { takeAgentHandoff } from '../../utils/agent-handoff';
+import { resolveAgentParams } from '../../utils/agent-handoff';
 
 /** 详情页最多展示的加油/充电记录条数（其余进「查看全部」） */
 const RECENT_RECORD_LIMIT = 3;
@@ -66,6 +66,10 @@ Page({
     recordNoun: '加油',
     mileageHelpText: MILEAGE_HELP_FUEL,
     mileages: 0,
+    /** 保险到期文案（空串表示未设置，页面隐藏该行） */
+    insuranceText: '',
+    /** 年检到期文案 */
+    inspectText: '',
     // 最近油耗
     hasLatest: false,
     latestConsumptionText: '--',
@@ -85,14 +89,14 @@ Page({
     targetSection: ''
   },
   onLoad(options: Record<string, string>) {
-    // 从小微卡片接力进来时取走 payload（读完即删）
-    const handoff = takeAgentHandoff(this);
+    // 三层兜底：URL → handoff.query → handoff.payload（query 不保证送达）
+    const { params: q, fromAgent } = resolveAgentParams(this, options);
     this.setData({
       // handoff 的 query 由开发者 encode，平台不会自动 decode，这里必须自己解
-      carId: options.id ? decodeURIComponent(options.id) : '',
+      carId: q.id ? decodeURIComponent(q.id) : '',
       // 概览页跳转时带 section，进入后滚动到对应区块
-      targetSection: options.section || '',
-      fromAgent: !!handoff
+      targetSection: q.section || '',
+      fromAgent
     });
   },
   onShow() {
@@ -186,6 +190,9 @@ Page({
       recordNoun,
       mileageHelpText: isEvCar ? MILEAGE_HELP_EV : MILEAGE_HELP_FUEL,
       mileages: car.mileages,
+      // 到期提醒：保险 / 年检（评测场景要求「车辆相关到期提醒」不只保养）
+      insuranceText: expireTextOf(car.insuranceExpire, Date.now()),
+      inspectText: expireTextOf(car.inspectExpire, Date.now()),
       hasLatest: !!latest,
       latestConsumptionText: latest ? latest.fuelConsumption.toFixed(2) : '--',
       latestMileageText: latest ? String(latest.mileage) : '--',
@@ -246,6 +253,17 @@ Page({
     wx.navigateTo({ url: `/pages/records/index?id=${this.data.carId}&tab=fuel` });
   }
 });
+
+/** 到期日 → 「2027-03-01（剩 93 天）」；未设置返回空串（页面据此隐藏该行） */
+function expireTextOf(ts: number | undefined, now: number): string {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const mm = `${d.getMonth() + 1}`.padStart(2, '0');
+  const dd = `${d.getDate()}`.padStart(2, '0');
+  const ymd = `${d.getFullYear()}-${mm}-${dd}`;
+  const days = Math.ceil((ts - now) / 86400000);
+  return days < 0 ? `${ymd}（已过期 ${-days} 天）` : `${ymd}（剩 ${days} 天）`;
+}
 
 function buildRecords(refuels: RefuelLog[], segs: FuelConsumption[]): RecordView[] {
   const segByEnd = new Map(segs.map(c => [c.endFuelRecordSourceId, c]));

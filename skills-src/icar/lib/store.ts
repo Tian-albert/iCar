@@ -165,6 +165,18 @@ export function resolveCarStrict(
     if (exact.length > 1) return { car: null, reason: 'ambiguous', candidates: exact.map(c => c.name) };
 
     /**
+     * 旧名（aliases）：改名后用户仍会说「我的 CRV」。
+     * 命中旧名时直接认这一辆——它比「包含匹配」更确定，不会被同名车抢走。
+     */
+    const byAlias = cars.find(c =>
+      (c.aliases || []).some(a => {
+        const na = normName(a);
+        return na === nk || na.includes(nk) || nk.includes(na);
+      })
+    );
+    if (byAlias) return { car: byAlias };
+
+    /**
      * 包含匹配必须**先收集再判定**：只取第一个会把「CRV」在两辆车里随便挑一辆，
      * 用户问的是自己的车，答成另一辆就是错账。
      */

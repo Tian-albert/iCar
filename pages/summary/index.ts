@@ -16,7 +16,7 @@ import { StatsRange, TrendGranularity, TrendPoint } from '../../domain/stats.ser
 import { Cost, FuelConsumption, RefuelLog } from '../../types/models';
 import { formatCompact } from '../../utils/num-format';
 import { applyPageSkin } from '../../utils/skin';
-import { takeAgentHandoff } from '../../utils/agent-handoff';
+import { resolveAgentParams } from '../../utils/agent-handoff';
 import { DonutSegment } from '../../utils/chart-render';
 
 interface BarView {
@@ -99,22 +99,22 @@ Page({
 
   onLoad(query: Record<string, string>) {
     applyPageSkin(this);
-    // 从小微卡片接力进来时取走 payload（读完即删）
-    const handoff = takeAgentHandoff(this);
+    // 三层兜底：URL → handoff.query → handoff.payload（query 不保证送达）
+    const { params: q, fromAgent } = resolveAgentParams(this, query);
     const now = new Date();
     const type =
-      query.rangeType === 'month'
+      q.rangeType === 'month'
         ? 'month'
-        : query.rangeType === 'all'
+        : q.rangeType === 'all'
           ? 'all'
-          : query.rangeType === 'custom'
+          : q.rangeType === 'custom'
             ? 'custom'
             : 'year';
-    const year = Number(query.year) || now.getFullYear();
-    const month = Math.min(12, Math.max(1, Number(query.month) || now.getMonth() + 1));
+    const year = Number(q.year) || now.getFullYear();
+    const month = Math.min(12, Math.max(1, Number(q.month) || now.getMonth() + 1));
     // 自定义区间：没传就默认最近 14 天（含今天）
-    const endDate = query.end || this.formatDate(now.getTime());
-    const startDate = query.start || this.formatDate(now.getTime() - 13 * 86400000);
+    const endDate = q.end || this.formatDate(now.getTime());
+    const startDate = q.start || this.formatDate(now.getTime() - 13 * 86400000);
 
     const storage = getStorage();
     const years = this.buildYears(storage);
@@ -127,10 +127,10 @@ Page({
         startDate,
         endDate,
         years,
-        fromAgent: !!handoff,
+        fromAgent,
         // focus=category&cat=加油 → 定位到该分类；focus=energy → 定位到能耗卡
-        focusCat: query.cat ? decodeURIComponent(query.cat) : '',
-        focusEnergy: query.focus === 'energy'
+        focusCat: q.cat ? decodeURIComponent(q.cat) : '',
+        focusEnergy: q.focus === 'energy'
       },
       () => this.load()
     );

@@ -226,7 +226,13 @@ export async function addMaintain(args: Args = {}): Promise<AgentApiResult> {
     // 页面接力：这辆车的保养进度区块
     handoff: () => ({
       query: `id=${encodeURIComponent(car.sourceId)}&tab=maintain&new=1`,
-      payload: { carName: car.name, maintainName: target.name, remainText }
+      payload: {
+        carId: car.sourceId,
+        tab: 'maintain',
+        carName: car.name,
+        maintainName: target.name,
+        remainText
+      }
     })
   };
 }

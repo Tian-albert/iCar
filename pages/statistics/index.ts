@@ -23,7 +23,7 @@ import {
 import { formatDate } from '../../utils/date';
 import { buildShareMessage, buildTimelineMessage, enableShareMenu } from '../../utils/share';
 import { safeBack } from '../../utils/safe-back';
-import { takeAgentHandoff } from '../../utils/agent-handoff';
+import { resolveAgentParams } from '../../utils/agent-handoff';
 
 /**
  * 分享选项：风格 × 模式共六种。
@@ -93,17 +93,32 @@ Page({
   },
   onLoad(options: Record<string, string>) {
     const now = new Date();
-    // 从小微卡片接力进来时取走 payload（读完即删，避免 globalData 增长）
-    const handoff = takeAgentHandoff(this);
+    // 三层兜底：URL → handoff.query → handoff.payload（query 不保证送达）
+    const { params: q, fromAgent } = resolveAgentParams(this, options);
+
+    // 页面只有 月/年/全部 三个维度；任意区间按「同月→月、否则→年」就近还原
+    let rangeType = q.range === 'year' ? 'year' : q.range === 'month' ? 'month' : 'all';
+    let year = Number(q.year) || now.getFullYear();
+    let month = Number(q.month) || now.getMonth() + 1;
+
+    if (q.range === 'custom' || q.rangeType === 'custom') {
+      const s = new Date(q.start || '');
+      const e = new Date(q.end || '');
+      if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
+        const sameMonth = s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth();
+        rangeType = sameMonth ? 'month' : 'year';
+        year = s.getFullYear();
+        month = s.getMonth() + 1;
+      }
+    }
+
     this.setData({
       // handoff 的 query 由开发者 encode，平台不会自动 decode，这里必须自己解
-      carId: options.id ? decodeURIComponent(options.id) : '',
-      // 从车辆详情「今年统计」进入时默认展示年维度；
-      // 从「数据总览」的各车明细进来时会把当时的区间一起带过来（含月）
-      rangeType: options.range === 'year' ? 'year' : options.range === 'month' ? 'month' : 'all',
-      year: Number(options.year) || now.getFullYear(),
-      month: Number(options.month) || now.getMonth() + 1,
-      fromAgent: !!handoff
+      carId: q.id ? decodeURIComponent(q.id) : '',
+      rangeType,
+      year,
+      month,
+      fromAgent
     });
   },
   onShow() {

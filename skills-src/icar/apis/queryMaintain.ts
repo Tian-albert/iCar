@@ -14,6 +14,8 @@ interface Args {
   carName?: string;
   /** 只看已超期/临近的项，默认 true */
   onlyUrgent?: boolean;
+  /** 只关心某一项（如「机油」），页面会滚到并高亮它 */
+  itemName?: string;
 }
 
 interface Row {
@@ -252,7 +254,13 @@ export async function queryMaintain(args: Args = {}): Promise<AgentApiResult> {
     // 单车接力 → 这辆车的详情页（有「保养进度」区块），这里是正确的落点
     handoff: () => ({
       query: `id=${encodeURIComponent(car.sourceId)}`,
-      payload: { carName: car.name, overdueCount, urgentCount: visible.length }
+      payload: {
+        carId: car.sourceId,
+        carName: car.name,
+        ...(args.itemName ? { focus: 'item', name: args.itemName } : {}),
+        overdueCount,
+        urgentCount: visible.length
+      }
     })
   };
 }
